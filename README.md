@@ -331,14 +331,10 @@ Tom David Dan Harel
 Lidor Ben David 
 
 **Current QA Lead:**
-
+Yoav Ben Nun
 
 **Team Members:**  
-Tom David Dan Harel,
-Lidor Ben David, 
-Yoav Ben Noon,
-Omri Halfon,
-Samuel Mimoun
+Tom David Dan Harel, Lidor Ben David, Yoav Ben Nun, Omri Halfon, Samuel Mimoun
 
 ---
 
