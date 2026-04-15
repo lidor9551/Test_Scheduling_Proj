@@ -324,11 +324,21 @@ According to the requirements, future versions of the system are expected to inc
 ---
 
 ## 👥 Team
-**Team Leader:**  
-[Add Name]
+**Current Team Lead:**  
+Tom David Dan Harel
+
+**Current Design Lead:**
+Lidor Ben David 
+
+**Current QA Lead:**
+
 
 **Team Members:**  
-[Add Names]
+Tom David Dan Harel,
+Lidor Ben David, 
+Yoav Ben Noon,
+Omri Halfon,
+Samuel Mimoun
 
 ---
 
