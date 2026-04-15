@@ -1,111 +1,171 @@
-# Exam Scheduling System – Version 1.0
+# 📘 Exam Scheduling System – Version 1.0
 
-## Overview
-This project implements **Version 1.0** of an exam scheduling system for the Faculty of Engineering.  
-The goal of the system is to generate **all possible valid exam schedules** for selected study programs, while preventing **critical scheduling conflicts** between exams according to the project requirements.
+## ✨ Overview
+The **Exam Scheduling System** is a software project designed to generate **all valid exam scheduling options** for selected engineering study programs.
 
-The system is designed as a **file-based application** in this version, with input taken from structured text files and output written to a readable text file.  
-The software is developed using **Object-Oriented Programming (OOP)** principles and is designed to support future extensions in later versions. :contentReference[oaicite:1]{index=1}
+As the number of courses and academic programs grows, scheduling exams manually becomes more difficult and may lead to conflicts or inefficient solutions. This system helps solve that problem by automatically generating all possible valid exam systems based on structured input files and predefined scheduling rules.
 
----
+**Version 1.0** focuses on the core functionality of the system:
+- reading input data from files,
+- identifying relevant courses that require exams,
+- generating all valid exam schedules,
+- preventing critical conflicts,
+- and producing a clear, human-readable output file.
 
-## Project Goals
-The system is required to:
-
-- Read course data, exam periods, and selected study programs from input files.
-- Identify all courses that are evaluated by **Exam**.
-- Generate **all valid exam scheduling options** for the selected programs.
-- Prevent critical conflicts between exams according to the rules defined in the requirements.
-- Output all generated exam systems in a clear, readable, and sorted format.
-- Maintain a design that is modular and extensible for future versions. :contentReference[oaicite:2]{index=2}
+This version is implemented as a **file-based application** and follows **Object-Oriented Programming (OOP)** principles.
 
 ---
 
-## Version 1.0 Scope
-Version 1.0 focuses on the core scheduling engine and includes:
+## 🎯 Project Objectives
+The system is intended to:
 
-- Reading input data from files.
-- Creating all valid exam schedule combinations.
-- Conflict validation based on dates only.
-- Producing human-readable output files.
+- Read academic and scheduling data from input files
+- Allow the user to choose up to **5 study programs**
+- Generate **all possible valid exam schedules** for the selected programs
+- Prevent critical exam conflicts according to the official project rules
+- Output all valid exam systems in a clear and sorted format
+- Provide a modular and extensible architecture for future versions
+
+---
+
+## 🧩 Scope of Version 1.0
+Version 1.0 includes:
+
+- Input handling through files only
+- Parsing course data, exam periods, and selected programs
+- Filtering courses whose evaluation method is `Exam`
+- Generating all valid scheduling combinations
+- Detecting conflicts according to the defined rules
+- Writing all valid exam systems to a readable output file
 
 Version 1.0 does **not** include:
 
-- Advanced user interface
-- User preference filtering
-- Automatic validation tools
-- Advanced sorting and recommendation capabilities
+- Graphical user interface
+- Advanced filtering and sorting by user preferences
+- Automatic schedule validation tools
+- Advanced recommendation or optimization features
 
-These features are planned for future versions. :contentReference[oaicite:3]{index=3}
+These features are planned for future versions of the system.
 
 ---
 
-## Functional Requirements
-The system allows the user to select up to **5 study programs** from a predefined list of engineering programs.  
-Based on these selected programs, the system generates all possible exam schedules for relevant courses whose evaluation type is `Exam`. :contentReference[oaicite:4]{index=4}
+## ⚙️ Functional Requirements
 
-A generated exam schedule is considered valid if it does not contain **critical conflicts**, meaning:
+### 📌 Program Selection
+The user may select up to **5 study programs** from the predefined list of supported engineering programs.
 
-- Two exams from the **same program** and the **same year** may not be assigned to the same date,
+### 📚 Course Filtering
+The system considers only courses whose evaluation type is **`Exam`**.
+
+### 🗓️ Schedule Generation
+The system generates **all possible valid exam systems** for the selected study programs.
+
+### 🚫 Conflict Rules
+A generated exam schedule is considered valid if it satisfies the following rule:
+
+- Two exams that belong to the **same study program** and the **same academic year** may **not** be scheduled on the same date,
 - unless **both courses are elective**.
 
-In Version 1.0, conflicts are checked **by date only**, without considering exam hours.  
-Additionally, the requirements explicitly state that in this version there may still be conflicts for students repeating courses, and conflicts between two elective courses in the same program are allowed. :contentReference[oaicite:5]{index=5}
+In **Version 1.0**:
+- conflicts are checked **by date only**
+- exam hours are **not** taken into account
+- conflicts between two elective courses are allowed
+- conflicts involving repeated courses may still exist
 
 ---
 
-## Input Files
-The system receives **three input files**:
+## 📥 Input
+The system receives **three input files**.
 
-1. **Courses data file**  
-   Contains information about all courses, including:
-   - course name
-   - course number
-   - instructor name
-   - study programs in which the course is taught
-   - year
-   - semester
-   - requirement type (`Obligatory` / `Elective`)
-   - evaluation type (`Exam` / `Project` / `Attendance`)
+### 1️⃣ Courses File
+Contains all available courses in the system, including:
 
-2. **Exam periods file**  
-   Contains:
-   - semester
-   - exam period (Moed)
-   - start and end dates
-   - excluded dates or excluded date ranges (e.g. holidays, Saturdays)
+- Course name
+- Course number
+- Instructor name
+- Study program(s)
+- Academic year
+- Semester
+- Requirement type (`Obligatory` / `Elective`)
+- Evaluation type (`Exam` / `Project` / `Attendance`)
 
-3. **Selected programs file**  
-   Contains the selected study program IDs.  
-   The user may select up to **5 programs**. :contentReference[oaicite:6]{index=6}
+### 2️⃣ Exam Periods File
+Contains exam scheduling periods, including:
+
+- Semester
+- Exam period (`Aleph`, `Bet`, `Gimel`)
+- Start date
+- End date
+- Excluded dates or excluded date ranges  
+  for example: holidays, Saturdays, unavailable dates
+
+### 3️⃣ Selected Programs File
+Contains the IDs of the study programs selected by the user.
+
+Example:
+```text
+83101, 83102, 83108
+```
 
 ---
 
-## Output
-The system outputs a list of **all possible valid exam systems**.
+## 📤 Output
+The output of the system is a list of **all valid exam systems**.
 
-Each generated system includes:
+Each generated exam system includes:
 
 - all exams included in that system
 - for each exam:
-  - exam date
+  - course name
+  - course number
   - instructor name
+  - exam date
+  - semester
+  - exam period
 
 The output is:
 
 - clearly formatted
+- human-readable
 - sorted by exam date
 - separated by semester
-- separated by exam periods (e.g. Moed Aleph / Moed Bet) :contentReference[oaicite:7]{index=7}
+- separated by exam period
 
 ---
 
-## Suggested Architecture
-The project is built using an object-oriented design.  
-A possible architecture includes the following core components:
+## 🏫 Supported Study Programs
+The following study programs are supported in Version 1.0:
 
+- `83101` – Computer Engineering
+- `83102` – Electrical Engineering
+- `83104` – Industrial Engineering and Information Systems
+- `83107` – Data Engineering
+- `83108` – Software Engineering
+- `83109` – Materials Engineering
+- `83105` – Computer Hardware Track – Computer Engineering
+- `83182` – Quantum Engineering Track – Electrical Engineering
+- `83103` – Neuroengineering Track – Electrical Engineering
+- `83115` – Biomedical Engineering Track – Electrical Engineering
+
+---
+
+## 🏗️ System Design
+The system is designed according to **Object-Oriented Programming (OOP)** principles.
+
+The architecture separates responsibilities into distinct components such as:
+
+- data representation
+- file parsing
+- date generation
+- conflict validation
+- schedule generation
+- output formatting
+
+This modular design improves readability, maintainability, testability, and support for future extensions.
+
+### Suggested Core Classes
 - `Course`
-- `CourseOffering` / `ProgramCourseInfo`
+- `CourseOffering`
 - `ExamPeriod`
 - `ExamAssignment`
 - `ExamSystem`
@@ -115,47 +175,33 @@ A possible architecture includes the following core components:
 - `ScheduleGenerator`
 - `OutputWriter`
 
-This structure helps separate responsibilities between:
+---
 
-- data modeling
-- file parsing
-- scheduling logic
-- conflict validation
-- output generation
+## 🧠 Scheduling Strategy
+The core engine of the system is responsible for generating **all valid schedule combinations**.
 
-Such separation is important in order to support the future versions described in the requirements. :contentReference[oaicite:8]{index=8}
+A suitable approach for Version 1.0 is:
+
+1. Read and parse all input files
+2. Filter only relevant courses with `Exam` evaluation
+3. Generate all legal dates from exam periods while excluding blocked dates
+4. Assign dates to courses
+5. Check for conflicts during assignment
+6. Save every fully valid schedule as a separate exam system
+
+A common implementation strategy for this process is a **backtracking / search-based algorithm**, with pruning of invalid branches when conflicts are detected.
 
 ---
 
-## Scheduling Approach
-The scheduling engine is responsible for generating **all valid combinations** of exam assignments.
+## 🚀 Performance Requirement
+According to the project requirements, the generation of the full output should take **no more than 30 seconds**.
 
-A typical solution for this version is based on:
-
-- generating all legal dates from each exam period
-- filtering relevant courses
-- checking conflicts during assignment
-- using a search/backtracking approach to build all valid schedules
-
-Since the system must generate **all possible valid outputs**, correctness and efficient pruning of invalid options are both important.  
-The project requirements also specify that the complete output generation must not exceed **30 seconds**. :contentReference[oaicite:9]{index=9}
+For this reason, the scheduling logic should be implemented efficiently and should avoid unnecessary repeated checks whenever possible.
 
 ---
 
-## Development Requirements
-According to the project requirements:
-
-- The software must be implemented in **C++** or **Python**
-- The design must follow **OOP**
-- Development should be managed using **Git**
-- Task management should be done using **JIRA**
-- The project should follow an **Agile** development methodology
-- The project documentation must include design, testing, implementation, and code review materials. :contentReference[oaicite:10]{index=10}
-
----
-
-## Project Structure
-Example project structure:
+## 🗂️ Project Structure
+A recommended project structure is shown below:
 
 ```text
 project-root/
@@ -184,4 +230,109 @@ project-root/
 ├── output/
 │   └── generated_schedules.txt
 │
+├── main.py
 └── README.md
+```
+
+> If the project is implemented in C++, replace `main.py` with the relevant C++ entry file and build files.
+
+---
+
+## ▶️ Build and Run
+
+### Python
+```bash
+python main.py data/courses.txt data/exam_periods.txt data/selected_programs.txt
+```
+
+### C++
+```bash
+g++ -std=c++17 -o exam_scheduler main.cpp
+./exam_scheduler data/courses.txt data/exam_periods.txt data/selected_programs.txt
+```
+
+> Use the command that matches your implementation language.
+
+---
+
+## ✅ Testing
+The project should include the following types of tests:
+
+### Unit Tests
+- Course parsing
+- Exam period parsing
+- Date generation
+- Conflict checking
+- Output formatting
+
+### Integration Tests
+- Full end-to-end execution using example input files
+- Verification that all required exam courses are scheduled
+- Verification that no invalid schedule is included in the output
+
+### Edge Case Tests
+- No selected programs
+- No exam courses
+- All dates blocked
+- Invalid input format
+- Maximum number of selected programs
+- Multiple overlapping program-year combinations
+
+### Performance Tests
+- Large input scenarios
+- Runtime validation against the 30-second requirement
+
+---
+
+## 🔄 Development Process
+The project is developed according to the official requirements using:
+
+- **Git** for version control
+- **JIRA** for task and workflow management
+- **Agile methodology** for iterative development
+- **Code Review** as part of the development and quality assurance process
+
+---
+
+## 📝 Documentation
+The project documentation should include:
+
+- Software design document
+- Test plan
+- Implementation documentation
+- Code review summary
+- Test execution results
+
+In addition, the code itself should contain internal documentation that explains the purpose of key classes, methods, and variables.
+
+---
+
+## 🔮 Future Versions
+According to the requirements, future versions of the system are expected to include:
+
+### Version 2.0
+- Advanced interface capabilities
+
+### Version 3.0
+- Automatic exam schedule validation tools
+- Sorting and filtering of results
+- Better adaptation to user preferences
+
+### Version 4.0
+- Additional advanced extensions and improvements
+
+---
+
+## 👥 Team
+**Team Leader:**  
+[Add Name]
+
+**Team Members:**  
+[Add Names]
+
+---
+
+## 📌 Notes
+This repository contains the implementation of **Version 1.0** of the Exam Scheduling System, based on the official software requirements document.
+
+The focus of this version is correctness, modular design, and generation of all valid exam scheduling systems according to the required input and conflict rules.
