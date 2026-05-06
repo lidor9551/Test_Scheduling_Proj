@@ -1,0 +1,457 @@
+# Software Design Document – Exam Scheduling System
+
+## 1. Introduction
+
+The **Exam Scheduling System** is a file-based Object-Oriented application designed to generate all valid exam schedules for selected engineering study programs.
+
+The system receives structured input files, processes course and exam period data, filters only relevant exam-based courses, generates legal exam dates, and produces all valid exam scheduling systems according to the official conflict rules.
+
+Version 1.0 focuses on the core scheduling logic and does not include a graphical interface, advanced filtering, room assignment, or hour-based scheduling.
+
+---
+
+## 2. Design Goals
+
+The main design goals of the system are:
+
+- Maintain a clear Object-Oriented structure
+- Separate responsibilities between system components
+- Support file-based input and output
+- Generate all valid exam schedules
+- Detect conflicts efficiently
+- Keep the system easy to extend in future versions
+- Meet the performance requirement of generating the output within 30 seconds
+
+The design intentionally avoids using a large multidimensional array as the main scheduling structure.  
+Instead, the system is based on objects, lists, maps, backtracking, and separated conflict rules.
+
+---
+
+## 3. General Architecture
+
+The system is designed as a pipeline controlled by a central controller.
+
+```text
+Input Files
+    ↓
+InputParser
+    ↓
+DataStore / Repository
+    ↓
+DateGenerator
+    ↓
+Preprocessor
+    ↓
+ScheduleGenerator
+    ↓
+ConflictChecker
+    ↓
+OutputWriter
+    ↓
+Output File
+```
+
+Each component has a clear responsibility, making the system easier to maintain, test, and extend.
+
+---
+
+## 4. Main Components
+
+### 4.1 ExamSchedulingController
+
+The `ExamSchedulingController` manages the main flow of the application.
+
+Responsibilities:
+
+- Receive input file paths
+- Activate the input parser
+- Store parsed data in the repository
+- Activate preprocessing
+- Run the scheduling algorithm
+- Send valid schedules to the output writer
+
+The controller does not implement the scheduling logic itself.  
+Its role is to coordinate the system pipeline.
+
+---
+
+### 4.2 InputParser
+
+The `InputParser` is responsible for reading and parsing the three required input files:
+
+- `courses.txt`
+- `exam_periods.txt`
+- `selected_programs.txt`
+
+Responsibilities:
+
+- Read raw text files
+- Validate basic file structure
+- Convert text records into system objects
+- Create courses, exam periods, and selected program collections
+
+Possible methods:
+
+```cpp
+parseCourses()
+parseExamPeriods()
+parseSelectedPrograms()
+```
+
+---
+
+### 4.3 DataStore / Repository
+
+The `DataStore` stores all parsed and generated data in memory.
+
+This component is not a real database.  
+It is an in-memory repository used during the program execution.
+
+Possible stored data:
+
+- All courses
+- Exam periods
+- Selected study programs
+- Relevant exam courses
+- Legal exam dates
+- Generated valid exam systems
+
+The repository may use structures such as:
+
+```cpp
+std::vector
+std::set
+std::map
+```
+
+---
+
+### 4.4 DateGenerator
+
+The `DateGenerator` generates all legal exam dates from the exam period definitions.
+
+Responsibilities:
+
+- Receive exam periods
+- Generate all dates between start date and end date
+- Remove excluded single dates
+- Remove excluded date ranges
+- Return legal dates per semester and exam period
+
+The generated dates are used by the scheduling algorithm.
+
+---
+
+### 4.5 Preprocessor
+
+The `Preprocessor` prepares the data before the scheduling algorithm starts.
+
+Responsibilities:
+
+- Filter only courses with `Evaluation = Exam`
+- Keep only courses that belong to the selected study programs
+- Connect courses to relevant legal exam dates
+- Sort courses by scheduling priority
+
+Recommended sorting heuristic:
+
+1. Shared courses first
+2. Obligatory courses before elective courses
+3. Courses with fewer possible dates first
+
+This heuristic improves performance by reducing unnecessary backtracking.  
+It does not change the correctness of the algorithm.
+
+---
+
+### 4.6 ScheduleGenerator
+
+The `ScheduleGenerator` is the core scheduling engine.
+
+It uses a **Backtracking algorithm** to generate all valid exam systems.
+
+Responsibilities:
+
+- Assign legal dates to courses
+- Build partial schedules recursively
+- Use the conflict checker before adding a new assignment
+- Prune invalid branches immediately
+- Save every complete valid schedule
+
+The backtracking approach is suitable because the system must generate all valid solutions, not only one schedule.
+
+---
+
+### 4.7 ConflictChecker
+
+The `ConflictChecker` validates whether a new exam assignment creates a conflict.
+
+In Version 1.0, the main conflict rule is:
+
+> Two exams from the same study program and the same academic year may not be scheduled on the same date, unless both courses are elective.
+
+The conflict check is based only on dates.  
+Exam hours are not considered in Version 1.0.
+
+For efficient checking, the system may use a map-based structure:
+
+```cpp
+std::map<ConflictKey, std::vector<ExamAssignment>> occupied;
+```
+
+Where `ConflictKey` represents:
+
+```text
+programId + academicYear + examDate
+```
+
+This allows the system to quickly detect whether a date is already occupied for a specific program and academic year.
+
+Future versions may implement conflict rules using a common interface:
+
+```cpp
+class ConflictRule
+```
+
+This will allow new rules to be added without changing the main scheduling algorithm.
+
+---
+
+### 4.8 OutputWriter
+
+The `OutputWriter` converts valid schedules into a readable output file.
+
+Responsibilities:
+
+- Receive all valid exam systems
+- Sort exams by date
+- Separate results by semester
+- Separate results by exam period
+- Write the result to a human-readable text file
+
+In Version 1.0, the main output format is:
+
+```text
+generated_schedules.txt
+```
+
+Future versions may support PDF and Excel export.
+
+---
+
+## 5. Core Data Model
+
+### 5.1 Course
+
+Represents a course in the system.
+
+Possible fields:
+
+```cpp
+courseName
+courseNumber
+instructorName
+offerings
+evaluationType
+```
+
+A course may belong to more than one study program.
+
+---
+
+### 5.2 CourseOffering
+
+Represents the connection between a course and a specific study program.
+
+Possible fields:
+
+```cpp
+programId
+academicYear
+semester
+requirementType
+```
+
+This class is important because the same course may appear in several programs or years.
+
+---
+
+### 5.3 ExamPeriod
+
+Represents a period in which exams may be scheduled.
+
+Possible fields:
+
+```cpp
+semester
+moed
+startDate
+endDate
+excludedDates
+excludedRanges
+```
+
+---
+
+### 5.4 ExamAssignment
+
+Represents a single course assigned to a specific exam date.
+
+Possible fields:
+
+```cpp
+course
+examDate
+semester
+moed
+```
+
+---
+
+### 5.5 ExamSystem
+
+Represents one complete valid exam schedule.
+
+Possible fields:
+
+```cpp
+assignments
+```
+
+Each `ExamSystem` contains all exam assignments for the selected study programs.
+
+---
+
+### 5.6 ConflictKey
+
+Represents the key used for fast conflict detection.
+
+Possible fields:
+
+```cpp
+programId
+academicYear
+examDate
+```
+
+This key allows the system to quickly check whether another exam is already scheduled for the same program, year, and date.
+
+---
+
+## 6. Scheduling Algorithm
+
+The system uses Backtracking to generate all valid schedules.
+
+General flow:
+
+1. Read and parse all input files
+2. Filter relevant courses
+3. Generate legal exam dates
+4. Sort courses by priority
+5. Start recursive scheduling
+6. Try assigning a legal date to the current course
+7. Check whether the assignment is valid
+8. Continue recursively if valid
+9. Backtrack when needed
+10. Save every complete valid schedule
+
+Pseudocode:
+
+```text
+backtrack(courseIndex):
+
+    if courseIndex == number of courses:
+        save current schedule
+        return
+
+    course = courses[courseIndex]
+
+    for each legal date for the course semester:
+        assignment = course + date
+
+        if ConflictChecker approves assignment:
+            add assignment to current schedule
+            mark assignment in occupied map
+
+            backtrack(courseIndex + 1)
+
+            remove assignment from current schedule
+            unmark assignment from occupied map
+```
+
+---
+
+## 7. Conflict Handling
+
+The conflict rule in Version 1.0 is checked by date only.
+
+A conflict exists when:
+
+- Two exams belong to the same study program
+- They belong to the same academic year
+- They are scheduled on the same date
+- At least one of them is not elective
+
+A conflict does not exist when:
+
+- The exams belong to different programs
+- The exams belong to different academic years
+- The exams are on different dates
+- Both exams are elective
+
+---
+
+## 8. Performance Considerations
+
+The system must generate the full output within 30 seconds.
+
+To improve performance, the design includes:
+
+- Filtering irrelevant courses before scheduling
+- Generating legal dates only once
+- Sorting constrained courses first
+- Using maps for fast conflict detection
+- Pruning invalid branches during backtracking
+- Avoiding repeated full-schedule validation when possible
+
+The algorithm checks conflicts while building the schedule, instead of waiting until the schedule is complete.
+
+---
+
+## 9. Extensibility
+
+The system is designed to support future versions.
+
+Possible future extensions:
+
+- Graphical user interface
+- Sorting schedules by user preferences
+- Filtering generated schedules
+- Automatic schedule validation tools
+- Exam hour assignment
+- Exam room assignment
+- Additional conflict rules
+- PDF and Excel output
+
+The use of separate components and possible `ConflictRule` classes allows the system to grow without rewriting the core algorithm.
+
+---
+
+## 10. Summary
+
+The design of the Exam Scheduling System follows a modular Object-Oriented architecture.
+
+The system is divided into clear components:
+
+- Controller
+- Parser
+- Repository
+- Date Generator
+- Preprocessor
+- Schedule Generator
+- Conflict Checker
+- Output Writer
+
+The core algorithm is based on Backtracking, supported by efficient map-based conflict detection.
+
+This design is suitable for Version 1.0 because it is simple enough to implement, but flexible enough to support future versions and additional scheduling requirements.
