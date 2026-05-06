@@ -518,7 +518,7 @@ Recommended performance improvements:
 
 ---
 
-## 🗂️ Recommended Project Structure
+## 🗂️ Project Structure
 
 ```text
 Test_Scheduling_Proj/
