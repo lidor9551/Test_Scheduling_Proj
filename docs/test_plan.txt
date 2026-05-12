@@ -1,0 +1,36 @@
+## ✅ Testing Plan
+
+The project should include the following types of tests.
+
+### Unit Tests
+
+- Course parsing
+- Exam period parsing
+- Selected programs parsing
+- Date generation
+- Conflict checking
+- Output formatting
+
+### Integration Tests
+
+- Full end-to-end execution using example input files
+- Verification that all required exam courses are scheduled
+- Verification that no invalid schedule is included in the output
+
+### Edge Case Tests
+
+- No selected programs
+- More than 5 selected programs
+- No exam courses
+- All dates blocked
+- Invalid input format
+- Multiple overlapping program-year combinations
+- Two elective courses on the same date
+- Obligatory and elective course conflict on the same date
+
+### Performance Tests
+
+- Large input scenarios
+- Runtime validation against the 30-second requirement
+
+---
