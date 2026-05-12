@@ -1,3 +1,12 @@
 #The_Programs
 
-83101, 83102, 83104 ,83107 ,83108 ,83109 , 83105 , 83182 , 83103 , 83115
+83101 , computer Eng. 
+83102 , electrical Eng. 
+83104 , industrial Eng and information systems
+83107 , Data Eng.
+83108 , Software Eng.
+83109 , Matirials Eng.
+83105 , Computer Hardware Track - Computer Eng.
+83182 ,Quantom Engineering Track - Electrical Eng.
+83103 ,neuroengineering Track - Electrical Eng.
+83115 ,Computer Engineering Track - Electrical Eng.
