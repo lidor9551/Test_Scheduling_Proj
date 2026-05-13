@@ -1,0 +1,18 @@
+$$$$
+Elective A
+83210
+Dr. Gamma
+83108,2,SPRI,Elective
+Exam
+$$$$
+Elective B
+83211
+Dr. Delta
+83108,2,SPRI,Elective
+Exam
+$$$$
+Mandatory C
+83212
+Dr. Epsilon
+83108,2,SPRI,Obligatory
+Exam

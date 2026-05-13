@@ -1,0 +1,12 @@
+$$$$
+Linear Algebra
+83140
+Dr. Alpha
+83108,1,FALL,Obligatory
+Exam
+$$$$
+Calculus
+83141
+Dr. Beta
+83108,1,FALL,Obligatory
+Exam
