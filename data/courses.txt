@@ -8,6 +8,7 @@ Prof. O. Some
 83102,1,FALL,Obligatory
 Exam
 $$$$
+
 Software Project
 83533
 Dr. Terry Bell
@@ -15,6 +16,7 @@ Dr. Terry Bell
 83108,2,SPRI,Obligatory
 Project
 $$$$
+
 Calculus 1 
 83112
 Dr. Erez Scheiner
