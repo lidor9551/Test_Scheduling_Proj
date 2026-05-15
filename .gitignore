@@ -416,3 +416,9 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# CMake build directory
+build/
+
+# Local output files
+output.txt
