@@ -13,15 +13,15 @@ void Course::addProgram(const std::string& progID, int year, Semester sem, Requi
 
 // === Getters ===
 
-std::string Course::getCourseName() const {
+const std::string& Course::getCourseName() const {
     return courseName;
 }
 
-std::string Course::getCourseNumber() const {
+const std::string& Course::getCourseNumber() const {
     return courseNumber;
 }
 
-std::string Course::getInstructorName() const {
+const std::string& Course::getInstructorName() const {
     return instructorName;
 }
 

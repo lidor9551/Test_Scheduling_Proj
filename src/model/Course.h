@@ -29,9 +29,9 @@ public:
     void addProgram(const std::string& progID, int year, Semester sem, Requirement req);
 
     // Getters
-    std::string getCourseName() const;
-    std::string getCourseNumber() const;
-    std::string getInstructorName() const;
+    const std::string& getCourseName() const;
+    const std::string& getCourseNumber() const;
+    const std::string& getInstructorName() const;
     const std::vector<ProgramDetails>& getPrograms() const;
     Evaluation getEvaluationMethod() const;
 
