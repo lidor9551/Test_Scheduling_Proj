@@ -110,6 +110,12 @@ std::vector<Course> InputParser::parseCourses(const std::string& filePath) const
 
     for (const std::string& record : records) {
         std::vector<std::string> lines = Utils::nonEmptyLines(record);
+        if (lines.empty()) {
+            continue;
+        }
+        if (!lines[0].empty() && lines[0].front() == '#') {
+            continue;
+        }
         if (lines.size() < 5) {
             throw ParseException("Course record is too short.");
         }
@@ -185,6 +191,12 @@ std::vector<ExamPeriod> InputParser::parseExamPeriods(const std::string& filePat
 
     for (const std::string& record : records) {
         std::vector<std::string> lines = Utils::nonEmptyLines(record);
+        if (lines.empty()) {
+            continue;
+        }
+        if (!lines[0].empty() && lines[0].front() == '#') {
+            continue;
+        }
         if (lines.size() < 2) {
             throw ParseException("Exam period record is too short.");
         }

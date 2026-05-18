@@ -10,15 +10,12 @@ namespace Utils {
 
     // removes leading and trailing whitespace from a string
     inline std::string trim(const std::string& s) {
-        auto start = s.begin();
-        while (start != s.end() && std::isspace(*start)) {
-            start++;
+        size_t start = s.find_first_not_of(" \n\r\t\f\v");
+        if (start == std::string::npos) {
+            return ""; // String is empty or contains only whitespaces
         }
-        auto end = s.end();
-        do {
-            end--;
-        } while (std::distance(start, end) > 0 && std::isspace(*end));
-        return std::string(start, end + 1);
+        size_t end = s.find_last_not_of(" \n\r\t\f\v");
+        return s.substr(start, end - start + 1);
     }
 
     // splits a string into a list by a delimiter (e.g., hyphen in dates)

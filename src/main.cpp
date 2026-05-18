@@ -1,9 +1,11 @@
-#include "OutputWriter.h"
-#include "Parser.h"
-#include "Preprocessor.h"
-#include "Scheduler.h"
+#include "exporter/OutputWriter.h"
+#include "parser/InputParser.h"
+#include "preprocessing/Preprocessor.h"
+#include "scheduler/ScheduleGenerator.h"
 #include <fstream>
 #include <iostream>
+#include <vector>
+#include <string>
 
 struct Arguments {
     std::string coursesFile;
@@ -67,16 +69,16 @@ Arguments parseArguments(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
     try {
+        // 1. read and validate command-line arguments
         Arguments args = parseArguments(argc, argv);
 
-        CourseFileParser courseParser;
-        ExamPeriodFileParser periodParser;
-        SelectedProgramsFileParser selectedProgramsParser;
+        // 2. read and validate input data (Parser Layer)
+        InputParser parser;
+        std::vector<Course> courses = parser.parseCourses(args.coursesFile);
+        std::vector<ExamPeriod> periods = parser.parseExamPeriods(args.periodsFile);
+        std::vector<std::string> selectedPrograms = parser.parseSelectedPrograms(args.selectedProgramsFile);
 
-        std::vector<Course> courses = courseParser.parse(args.coursesFile);
-        std::vector<ExamPeriod> periods = periodParser.parse(args.periodsFile);
-        std::vector<std::string> selectedPrograms = selectedProgramsParser.parse(args.selectedProgramsFile);
-
+        // 3. pre-processing (Preprocessing Layer)
         SchedulingPreprocessor preprocessor(courses, periods, selectedPrograms);
         std::vector<SchedulingBlock> blocks = preprocessor.buildBlocks();
 
@@ -86,9 +88,10 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
+        // 4. scheduling (Scheduling Layer)
         std::vector<std::vector<std::vector<int>>> blockSolutions;
         for (const SchedulingBlock& block : blocks) {
-            ExamScheduler scheduler(block, args.maxRuntimeSeconds);
+            ScheduleGenerator scheduler(block, args.maxRuntimeSeconds);
             std::vector<std::vector<int>> solutions = scheduler.generateAll(args.perBlockLimit);
 
             if (solutions.empty()) {
@@ -101,6 +104,7 @@ int main(int argc, char* argv[]) {
             blockSolutions.push_back(std::move(solutions));
         }
 
+        // 5. output (Exporter Layer)
         OutputWriter writer;
         writer.writeCombinedSchedules(
             args.outputFile,
@@ -109,8 +113,9 @@ int main(int argc, char* argv[]) {
             args.combinedLimit
         );
 
-        std::cout << "Output written to " << args.outputFile << "\n";
+        std::cout << "Output successfully written to " << args.outputFile << "\n";
         return 0;
+        
     } catch (const ParseException& ex) {
         std::cerr << "Parse error: " << ex.what() << "\n";
         return 1;
