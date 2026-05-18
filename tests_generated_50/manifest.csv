@@ -1,19 +1,19 @@
 path,category,description
-unit/unit_01,unit,small focused parsing/scheduling scenario
-unit/unit_02,unit,small focused parsing/scheduling scenario
-unit/unit_03,unit,small focused parsing/scheduling scenario
-unit/unit_04,unit,small focused parsing/scheduling scenario
-unit/unit_05,unit,small focused parsing/scheduling scenario
-unit/unit_06,unit,small focused parsing/scheduling scenario
-unit/unit_07,unit,small focused parsing/scheduling scenario
-unit/unit_08,unit,small focused parsing/scheduling scenario
-unit/unit_09,unit,small focused parsing/scheduling scenario
-unit/unit_10,unit,small focused parsing/scheduling scenario
-unit/unit_11,unit,small focused parsing/scheduling scenario
-unit/unit_12,unit,small focused parsing/scheduling scenario
-unit/unit_13,unit,small focused parsing/scheduling scenario
-unit/unit_14,unit,small focused parsing/scheduling scenario
-unit/unit_15,unit,small focused parsing/scheduling scenario
+unit/single_shared_course_all_programs,unit,small focused parsing/scheduling scenario
+unit/two_courses_no_conflict,unit,small focused parsing/scheduling scenario
+unit/two_courses_same_program_year_conflict,unit,small focused parsing/scheduling scenario
+unit/fall_semester_only,unit,small focused parsing/scheduling scenario
+unit/spring_semester_only,unit,small focused parsing/scheduling scenario
+unit/fall_and_spring_basic,unit,small focused parsing/scheduling scenario
+unit/multiple_programs_shared_first_year,unit,small focused parsing/scheduling scenario
+unit/program_specific_second_year,unit,small focused parsing/scheduling scenario
+unit/elective_course_overlap_allowed,unit,small focused parsing/scheduling scenario
+unit/blocked_dates_are_skipped,unit,small focused parsing/scheduling scenario
+unit/friday_saturday_are_blocked,unit,small focused parsing/scheduling scenario
+unit/two_exam_periods_same_semester,unit,small focused parsing/scheduling scenario
+unit/five_selected_programs_basic,unit,small focused parsing/scheduling scenario
+unit/four_years_basic_structure,unit,small focused parsing/scheduling scenario
+unit/course_filtering_by_selected_programs,unit,small focused parsing/scheduling scenario
 integration/integration_01,integration,5 programs, 4 years, overlapping courses
 integration/integration_02,integration,5 programs, 4 years, overlapping courses
 integration/integration_03,integration,5 programs, 4 years, overlapping courses
