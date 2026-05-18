@@ -1,0 +1,51 @@
+path,category,description
+unit/unit_01,unit,small focused parsing/scheduling scenario
+unit/unit_02,unit,small focused parsing/scheduling scenario
+unit/unit_03,unit,small focused parsing/scheduling scenario
+unit/unit_04,unit,small focused parsing/scheduling scenario
+unit/unit_05,unit,small focused parsing/scheduling scenario
+unit/unit_06,unit,small focused parsing/scheduling scenario
+unit/unit_07,unit,small focused parsing/scheduling scenario
+unit/unit_08,unit,small focused parsing/scheduling scenario
+unit/unit_09,unit,small focused parsing/scheduling scenario
+unit/unit_10,unit,small focused parsing/scheduling scenario
+unit/unit_11,unit,small focused parsing/scheduling scenario
+unit/unit_12,unit,small focused parsing/scheduling scenario
+unit/unit_13,unit,small focused parsing/scheduling scenario
+unit/unit_14,unit,small focused parsing/scheduling scenario
+unit/unit_15,unit,small focused parsing/scheduling scenario
+integration/integration_01,integration,5 programs, 4 years, overlapping courses
+integration/integration_02,integration,5 programs, 4 years, overlapping courses
+integration/integration_03,integration,5 programs, 4 years, overlapping courses
+integration/integration_04,integration,5 programs, 4 years, overlapping courses
+integration/integration_05,integration,5 programs, 4 years, overlapping courses
+integration/integration_06,integration,5 programs, 4 years, overlapping courses
+integration/integration_07,integration,5 programs, 4 years, overlapping courses
+integration/integration_08,integration,5 programs, 4 years, overlapping courses
+integration/integration_09,integration,5 programs, 4 years, overlapping courses
+integration/integration_10,integration,5 programs, 4 years, overlapping courses
+integration/integration_11,integration,5 programs, 4 years, overlapping courses
+integration/integration_12,integration,5 programs, 4 years, overlapping courses
+integration/integration_13,integration,5 programs, 4 years, overlapping courses
+integration/integration_14,integration,5 programs, 4 years, overlapping courses
+integration/integration_15,integration,5 programs, 4 years, overlapping courses
+integration/integration_16,integration,5 programs, 4 years, overlapping courses
+integration/integration_17,integration,5 programs, 4 years, overlapping courses
+integration/integration_18,integration,5 programs, 4 years, overlapping courses
+integration/integration_19,integration,5 programs, 4 years, overlapping courses
+integration/integration_20,integration,5 programs, 4 years, overlapping courses
+no_solution/no_solution_01,no_solution,intentionally impossible
+no_solution/no_solution_02,no_solution,intentionally impossible
+no_solution/no_solution_03,no_solution,intentionally impossible
+no_solution/no_solution_04,no_solution,intentionally impossible
+no_solution/no_solution_05,no_solution,intentionally impossible
+no_solution/no_solution_06,no_solution,intentionally impossible
+no_solution/no_solution_07,no_solution,intentionally impossible
+no_solution/no_solution_08,no_solution,intentionally impossible
+no_solution/no_solution_09,no_solution,intentionally impossible
+no_solution/no_solution_10,no_solution,intentionally impossible
+limits/limit_01,limits,heavy test with combined/per-block limit 50
+limits/limit_02,limits,heavy test with combined/per-block limit 200
+limits/limit_03,limits,heavy test with combined/per-block limit 1000
+limits/limit_04,limits,heavy test with combined/per-block limit 10000
+limits/limit_05,limits,heavy test with combined/per-block limit 1000000

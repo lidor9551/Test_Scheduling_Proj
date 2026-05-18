@@ -1,0 +1,97 @@
+$$$$
+Year 1 Shared Math Foundations
+12401
+Dr. Math
+83101,1,FALL,Obligatory
+83102,1,FALL,Obligatory
+83108,1,FALL,Obligatory
+83109,1,FALL,Obligatory
+83115,1,FALL,Obligatory
+Exam
+$$$$
+Year 1 Programming Core
+12402
+Dr. Programming
+83101,1,FALL,Obligatory
+83102,1,FALL,Obligatory
+83108,1,FALL,Obligatory
+Exam
+$$$$
+Year 1 Physics Core
+12403
+Dr. Physics
+83101,1,SPRI,Obligatory
+83102,1,SPRI,Obligatory
+83109,1,SPRI,Obligatory
+83115,1,SPRI,Obligatory
+Exam
+$$$$
+Year 2 Systems Foundations
+12404
+Dr. Systems
+83101,2,FALL,Obligatory
+83102,2,FALL,Obligatory
+83108,2,FALL,Obligatory
+83115,2,FALL,Obligatory
+Exam
+$$$$
+Year 2 Materials Foundations
+12405
+Dr. Materials
+83109,2,FALL,Obligatory
+83115,2,FALL,Obligatory
+Exam
+$$$$
+Year 2 Algorithms Signals
+12406
+Dr. Algorithms
+83101,2,SPRI,Obligatory
+83102,2,SPRI,Obligatory
+83108,2,SPRI,Obligatory
+83115,2,SPRI,Obligatory
+Exam
+$$$$
+Year 3 Embedded Operating Systems
+12407
+Dr. Embedded
+83101,3,FALL,Obligatory
+83102,3,FALL,Obligatory
+83108,3,FALL,Obligatory
+83115,3,FALL,Obligatory
+Exam
+$$$$
+Year 3 Software Control
+12408
+Dr. Control
+83101,3,SPRI,Obligatory
+83102,3,SPRI,Obligatory
+83108,3,SPRI,Obligatory
+83109,3,SPRI,Obligatory
+83115,3,SPRI,Obligatory
+Exam
+$$$$
+Year 4 Capstone Project
+12409
+Dr. Capstone
+83101,4,FALL,Obligatory
+83102,4,FALL,Obligatory
+83108,4,FALL,Obligatory
+83109,4,FALL,Obligatory
+83115,4,FALL,Obligatory
+Exam
+$$$$
+Year 4 Specialization A
+12410
+Dr. SpecA
+83101,4,SPRI,Obligatory
+83102,4,SPRI,Obligatory
+83108,4,SPRI,Obligatory
+Exam
+$$$$
+Year 4 Specialization B
+12411
+Dr. SpecB
+83108,4,SPRI,Obligatory
+83109,4,SPRI,Obligatory
+83115,4,SPRI,Obligatory
+Exam

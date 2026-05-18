@@ -1,0 +1,46 @@
+$$$$
+FALL, Aleph
+01-02-2026, 14-02-2026
+- 06-02-2026 Friday
+- 07-02-2026 Saturday
+- 13-02-2026 Friday
+- 14-02-2026 Saturday
+$$$$
+FALL, Bet
+01-03-2026, 14-03-2026
+- 06-03-2026 Friday
+- 07-03-2026 Saturday
+- 13-03-2026 Friday
+- 14-03-2026 Saturday
+$$$$
+SPRI, Aleph
+01-07-2026, 14-07-2026
+- 03-07-2026 Friday
+- 04-07-2026 Saturday
+- 10-07-2026 Friday
+- 11-07-2026 Saturday
+$$$$
+SPRI, Bet
+01-08-2026, 14-08-2026
+- 01-08-2026 Saturday
+- 07-08-2026 Friday
+- 08-08-2026 Saturday
+- 14-08-2026 Friday
+$$$$
+SUMM, Aleph
+01-09-2026, 21-09-2026
+- 04-09-2026 Friday
+- 05-09-2026 Saturday
+- 11-09-2026 Friday
+- 12-09-2026 Saturday
+- 18-09-2026 Friday
+- 19-09-2026 Saturday
+$$$$
+SUMM, Bet
+01-10-2026, 21-10-2026
+- 02-10-2026 Friday
+- 03-10-2026 Saturday
+- 09-10-2026 Friday
+- 10-10-2026 Saturday
+- 16-10-2026 Friday
+- 17-10-2026 Saturday
