@@ -7,15 +7,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(exam_scheduler
     src/main.cpp
-    src/Date.cpp
-    src/Domain.cpp
-    src/Parser.cpp
-    src/Preprocessor.cpp
-    src/Scheduler.cpp
-    src/OutputWriter.cpp
+    src/dates/Date.cpp
+    src/model/Course.cpp
+    src/model/ExamPeriod.cpp
+    src/parser/InputParser.cpp
+    src/preprocessing/Preprocessor.cpp
+    src/scheduler/ScheduleGenerator.cpp
+    src/exporter/OutputWriter.cpp
 )
 
-target_include_directories(exam_scheduler PRIVATE include)
+target_include_directories(exam_scheduler PRIVATE src)
 
 if (MSVC)
     target_compile_options(exam_scheduler PRIVATE /W4)
