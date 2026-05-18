@@ -1,0 +1,191 @@
+$$$$
+Year 1 Shared Math Foundations
+21601
+Dr. Math
+83101,1,FALL,Obligatory
+83102,1,FALL,Obligatory
+83108,1,FALL,Obligatory
+83109,1,FALL,Obligatory
+83115,1,FALL,Obligatory
+Exam
+$$$$
+Year 1 Programming Core
+21602
+Dr. Programming
+83101,1,FALL,Obligatory
+83102,1,FALL,Obligatory
+83108,1,FALL,Obligatory
+Exam
+$$$$
+Year 1 Physics Core
+21603
+Dr. Physics
+83101,1,SPRI,Obligatory
+83102,1,SPRI,Obligatory
+83109,1,SPRI,Obligatory
+83115,1,SPRI,Obligatory
+Exam
+$$$$
+Year 2 Systems Foundations
+21604
+Dr. Systems
+83101,2,FALL,Obligatory
+83102,2,FALL,Obligatory
+83108,2,FALL,Obligatory
+83115,2,FALL,Obligatory
+Exam
+$$$$
+Year 2 Materials Foundations
+21605
+Dr. Materials
+83109,2,FALL,Obligatory
+83115,2,FALL,Obligatory
+Exam
+$$$$
+Year 2 Algorithms Signals
+21606
+Dr. Algorithms
+83101,2,SPRI,Obligatory
+83102,2,SPRI,Obligatory
+83108,2,SPRI,Obligatory
+83115,2,SPRI,Obligatory
+Exam
+$$$$
+Year 3 Embedded Operating Systems
+21607
+Dr. Embedded
+83101,3,FALL,Obligatory
+83102,3,FALL,Obligatory
+83108,3,FALL,Obligatory
+83115,3,FALL,Obligatory
+Exam
+$$$$
+Year 3 Software Control
+21608
+Dr. Control
+83101,3,SPRI,Obligatory
+83102,3,SPRI,Obligatory
+83108,3,SPRI,Obligatory
+83109,3,SPRI,Obligatory
+83115,3,SPRI,Obligatory
+Exam
+$$$$
+Year 4 Capstone Project
+21609
+Dr. Capstone
+83101,4,FALL,Obligatory
+83102,4,FALL,Obligatory
+83108,4,FALL,Obligatory
+83109,4,FALL,Obligatory
+83115,4,FALL,Obligatory
+Exam
+$$$$
+Year 4 Specialization A
+21610
+Dr. SpecA
+83101,4,SPRI,Obligatory
+83102,4,SPRI,Obligatory
+83108,4,SPRI,Obligatory
+Exam
+$$$$
+Year 4 Specialization B
+21611
+Dr. SpecB
+83108,4,SPRI,Obligatory
+83109,4,SPRI,Obligatory
+83115,4,SPRI,Obligatory
+Exam
+$$$$
+Year 1 Summer Engineering Lab
+21612
+Dr. Lab1
+83101,1,SUMM,Obligatory
+83102,1,SUMM,Obligatory
+83108,1,SUMM,Obligatory
+83109,1,SUMM,Obligatory
+83115,1,SUMM,Obligatory
+Exam
+$$$$
+Year 2 Summer Applied Engineering
+21613
+Dr. Applied
+83101,2,SUMM,Obligatory
+83102,2,SUMM,Obligatory
+83108,2,SUMM,Obligatory
+83109,2,SUMM,Obligatory
+83115,2,SUMM,Obligatory
+Exam
+$$$$
+Year 3 Summer Advanced Lab
+21614
+Dr. Lab3
+83101,3,SUMM,Obligatory
+83102,3,SUMM,Obligatory
+83108,3,SUMM,Obligatory
+83109,3,SUMM,Obligatory
+83115,3,SUMM,Obligatory
+Exam
+$$$$
+Year 4 Summer Final Seminar
+21615
+Dr. Seminar
+83101,4,SUMM,Obligatory
+83102,4,SUMM,Obligatory
+83108,4,SUMM,Obligatory
+83109,4,SUMM,Obligatory
+83115,4,SUMM,Obligatory
+Exam
+$$$$
+Extra Conflict Cluster 1
+21630
+Dr. Extra1
+83101,1,FALL,Obligatory
+83102,1,FALL,Obligatory
+83108,1,FALL,Obligatory
+Exam
+$$$$
+Extra Conflict Cluster 2
+21631
+Dr. Extra2
+83102,2,SPRI,Obligatory
+83108,2,SPRI,Obligatory
+83109,2,SPRI,Obligatory
+83115,2,SPRI,Obligatory
+Exam
+$$$$
+Extra Conflict Cluster 3
+21632
+Dr. Extra3
+83101,3,SUMM,Obligatory
+83102,3,SUMM,Obligatory
+83108,3,SUMM,Obligatory
+83109,3,SUMM,Obligatory
+83115,3,SUMM,Obligatory
+Exam
+$$$$
+Extra Conflict Cluster 4
+21633
+Dr. Extra4
+83102,4,FALL,Obligatory
+83108,4,FALL,Obligatory
+83109,4,FALL,Obligatory
+Exam
+$$$$
+Extra Conflict Cluster 5
+21634
+Dr. Extra5
+83101,1,SPRI,Obligatory
+83102,1,SPRI,Obligatory
+83108,1,SPRI,Obligatory
+83109,1,SPRI,Obligatory
+Exam
+$$$$
+Extra Conflict Cluster 6
+21635
+Dr. Extra6
+83102,2,SUMM,Obligatory
+83108,2,SUMM,Obligatory
+83109,2,SUMM,Obligatory
+83115,2,SUMM,Obligatory
+83101,2,SUMM,Obligatory
+Exam

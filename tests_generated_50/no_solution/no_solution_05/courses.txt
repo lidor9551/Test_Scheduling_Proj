@@ -1,0 +1,18 @@
+$$$$
+Impossible A
+31501
+Dr. A
+83101,1,FALL,Obligatory
+Exam
+$$$$
+Impossible B
+31502
+Dr. B
+83101,1,FALL,Obligatory
+Exam
+$$$$
+Impossible C
+31503
+Dr. C
+83101,1,FALL,Obligatory
+Exam
