@@ -28,6 +28,9 @@ Version 1 responsibilities were divided between the team members as follows:
 - **Omri – Design Lead**  
   Responsible for the software design, UML diagrams, system architecture, and maintaining a modular Object-Oriented structure.
 
+- **Samuel – Technichal Support & Integration**  
+  Responsible for the software build, mange the versions , I\O files.
+
 ---
 
 ## Project Management
