@@ -6,6 +6,15 @@ Exam Scheduling System is a file-based software project for generating valid exa
 
 The system receives structured input files, parses course and exam-period data, filters the relevant exam-based courses, generates legal exam dates, and produces all valid exam schedules according to the required conflict rules.
 
+Version 1.0 focuses on the core scheduling engine:
+- Reading input from files
+- Processing courses and exam periods
+- Generating valid exam schedules
+- Detecting date-based conflicts
+- Exporting readable output to a text file
+The system is designed using Object-Oriented Programming principles and is built in a modular way to support future extensions.
+
+---
 ## Team Roles and Responsibilities
 
 Version 1 responsibilities were divided between the team members as follows:
@@ -18,15 +27,6 @@ Version 1 responsibilities were divided between the team members as follows:
 
 - **Omri – Design Lead**  
   Responsible for the software design, UML diagrams, system architecture, and maintaining a modular Object-Oriented structure.
-
-Version 1.0 focuses on the core scheduling engine:
-- Reading input from files
-- Processing courses and exam periods
-- Generating valid exam schedules
-- Detecting date-based conflicts
-- Exporting readable output to a text file
-
-The system is designed using Object-Oriented Programming principles and is built in a modular way to support future extensions.
 
 ---
 
