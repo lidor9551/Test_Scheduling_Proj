@@ -1,0 +1,24 @@
+$$$$
+Course A
+10001
+Dr. Cohen
+83101,1,FALL,Obligatory
+Exam
+$$$$
+Course B
+10002
+Dr. Levi
+83102,1,FALL,Obligatory
+Exam
+$$$$
+Course C
+10003
+Dr. Yisrael
+83108,1,SPRI,Obligatory
+Exam
+$$$$
+Course D
+10004
+Dr. David
+83109,1,SPRI,Obligatory
+Exam
