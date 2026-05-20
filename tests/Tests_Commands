@@ -1,0 +1,21 @@
+first enter to 'build' folder:
+cd build
+
+256_test:
+.\Debug\exam_scheduler.exe --courses ../tests/256_test/courses.txt --periods ../tests/256_test/periods.txt --selected-programs ../tests/256_test/selected_programs.txt --output ../output.txt 
+
+elective_conflict_test:
+.\Debug\exam_scheduler.exe --courses ../tests/elective_conflict_test/courses.txt --periods ../tests/origin_test/exam_periods.txt --selected-programs ../tests/origin_test/selected_programs.txt --output ../output.txt         
+
+integration_test:
+.\Debug\exam_scheduler.exe --courses ../tests/integration_test/courses.txt --periods ../tests/integration_test/periods.txt --selected-programs ../tests/integration_test/selected_programs.txt --output ../output.txt      
+
+no_solution_test:
+.\Debug\exam_scheduler.exe --courses ../tests/no_solution_test/courses.txt --periods ../tests/no_solution_test/periods.txt --selected-programs ../tests/no_solution_test/selected_programs.txt --output ../output.txt         
+
+origin_test (with the files given in the task):
+.\Debug\exam_scheduler.exe --courses ../tests/origin_test/courses.txt --periods ../tests/origin_test/exam_periods.txt --selected-programs ../tests/origin_test/selected_programs.txt --output ../output.txt   
+
+stress_tests_high_load:
+activate run time limit of 5 second to avoid collapse.
+.\Debug\exam_scheduler.exe --courses ../tests/stress_tests_high_load/courses.txt --periods ../tests/origin_test/exam_periods.txt --selected-programs ../tests/origin_test/selected_programs.txt --output ../output.txt --max-runtime-seconds 5 
