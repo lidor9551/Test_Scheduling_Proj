@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import QtQuick.Controls 2.15
 
 Window {
     width: 800
@@ -48,6 +49,14 @@ Window {
                 id: mouseArea
                 anchors.fill: parent
                 onClicked: console.log("Click registered! UI is fully responsive.")
+            }
+
+            Button {
+                text: "בדוק חיבור ל-C++"
+                onClicked: {
+                    console.log("Button clicked, calling C++...")
+                    scheduler.startScheduling(-1)
+                }
             }
         }
     }

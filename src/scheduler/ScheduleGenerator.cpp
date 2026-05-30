@@ -3,6 +3,8 @@
 #include <chrono>
 #include <functional>
 #include <limits>
+#include <QtConcurrent>
+#include <QFutureWatcher>
 
 SolverTimeoutException::SolverTimeoutException(const std::string& message)
     : std::runtime_error(message) {}
@@ -218,3 +220,32 @@ std::vector<std::vector<int>> ScheduleGenerator::generateAll(int limitPerBlock) 
     backtrack();
     return solutions;
 }
+
+void ScheduleGenerator::startScheduling(int limitPerBlock) {
+    if (hasCachedResult_) {
+        qDebug() << ">>> Returning cached results! <<<";
+        emit schedulingFinished(cachedSolutions_);
+        return;
+    }
+
+    auto future = QtConcurrent::run([this, limitPerBlock]() {
+        try {
+            return this->generateAll(limitPerBlock);
+        } catch (const SolverTimeoutException& e) {
+            emit errorOccurred(QString::fromStdString(e.what()));
+            return std::vector<std::vector<int>>();
+        }
+    });
+
+    auto* watcher = new QFutureWatcher<std::vector<std::vector<int>>>();
+    connect(watcher, &QFutureWatcher<std::vector<std::vector<int>>>::finished, this, [this, watcher]() {
+        this->cachedSolutions_ = watcher->result();
+        this->hasCachedResult_ = true;
+        
+        emit schedulingFinished(this->cachedSolutions_);
+        watcher->deleteLater(); 
+    });
+    
+    watcher->setFuture(future);
+}
+
