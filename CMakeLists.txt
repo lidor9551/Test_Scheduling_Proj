@@ -14,7 +14,7 @@ endif()
 
 set(CMAKE_PREFIX_PATH "C:/Users/user/OneDrive/Desktop/6.7.2/msvc2019_64")
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Quick Concurrent)
 
 qt_add_executable(exam_scheduler
     src/main.cpp
@@ -35,7 +35,7 @@ else()
     target_compile_options(exam_scheduler PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-target_link_libraries(exam_scheduler PRIVATE Qt6::Quick)
+target_link_libraries(exam_scheduler PRIVATE Qt6::Quick Qt6::Concurrent)
 
 install(FILES Main.qml DESTINATION .)
 
