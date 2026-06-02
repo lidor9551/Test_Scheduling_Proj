@@ -44,6 +44,26 @@ QString CalendarManager::getCurrentSemester() const {
     );
 }
 
+QString CalendarManager::getCurrentStartDate() const {
+    if (periods_.empty()) return "";
+    const Date& d = periods_[currentPeriodIndex_].getStartDate();
+    return QDate(d.getYear(), d.getMonth(), d.getDay()).toString("yyyy-MM-dd");
+}
+
+QString CalendarManager::getCurrentEndDate() const {
+    if (periods_.empty()) return "";
+    const Date& d = periods_[currentPeriodIndex_].getEndDate();
+    return QDate(d.getYear(), d.getMonth(), d.getDay()).toString("yyyy-MM-dd");
+}
+
+QVariantList CalendarManager::getSemesterList() const {
+    QVariantList list;
+    for (const ExamPeriod& p : periods_) {
+        list.append(QString::fromStdString(p.getSemester() + " - " + p.getMoed()));
+    }
+    return list;
+}
+
 void CalendarManager::toggleDay(const QString& dateStr) {
     QDate targetDate = QDate::fromString(dateStr, "yyyy-MM-dd");
     if (!targetDate.isValid()) {
@@ -66,18 +86,31 @@ void CalendarManager::shiftPeriod(const QString& semester,
                                    const QString& newStartStr,
                                    const QString& newEndStr)
 {
-    qDebug() << ">>> shiftPeriod called:" << newStartStr << "->" << newEndStr;
     if (periods_.empty()) return;
 
     QDate newStart = QDate::fromString(newStartStr, "yyyy-MM-dd");
     QDate newEnd   = QDate::fromString(newEndStr,   "yyyy-MM-dd");
 
+    if (!newStart.isValid() || !newEnd.isValid()) {
+        qDebug() << ">>> shiftPeriod: invalid dates" << newStartStr << newEndStr;
+        return;
+    }
+
     ExamPeriod& p = periods_[currentPeriodIndex_];
     Date start(newStart.day(), newStart.month(), newStart.year());
-    Date end(newEnd.day(),   newEnd.month(),   newEnd.year());
+    Date end(newEnd.day(),     newEnd.month(),   newEnd.year());
     p = ExamPeriod(p.getSemester(), p.getMoed(), start, end, p.getExcludedRanges());
 
     rebuildDays();
+    emit semesterChanged();
+    emit daysChanged();
+}
+
+void CalendarManager::selectPeriod(int index) {
+    if (index < 0 || index >= (int)periods_.size()) return;
+    currentPeriodIndex_ = index;
+    rebuildDays();
+    emit semesterChanged();
     emit daysChanged();
 }
 
@@ -119,4 +152,10 @@ void CalendarManager::rebuildDays() {
         info.status = excluded ? 2 : 1;
         days_.push_back(info);
     }
+    void CalendarManager::saveChanges() {
+    qDebug() << ">>> Changes saved for period:" << getCurrentSemester();
+    // Changes are already live in periods_ and days_
+    // This confirms the state is ready for the solver
+    emit daysChanged();
+}
 }

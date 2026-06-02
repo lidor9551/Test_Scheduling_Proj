@@ -35,13 +35,16 @@ class CalendarManager : public QObject {
 
     Q_PROPERTY(QVariantList days READ getDays NOTIFY daysChanged)
     Q_PROPERTY(QString currentSemester READ getCurrentSemester NOTIFY semesterChanged)
+    Q_PROPERTY(QString currentStartDate READ getCurrentStartDate NOTIFY semesterChanged)
+    Q_PROPERTY(QString currentEndDate READ getCurrentEndDate NOTIFY semesterChanged)
+    Q_PROPERTY(QVariantList semesterList READ getSemesterList NOTIFY semesterChanged)
 
 public:
     explicit CalendarManager(QObject* parent = nullptr);
 
     /** @brief Load exam periods and courses into the manager. */
-    Q_INVOKABLE void setData( QVariantList periods,
-                              QVariantList courses);
+    Q_INVOKABLE void setData(QVariantList periods,
+                             QVariantList courses);
 
     /** @brief Returns the full list of days as QVariantList for QML. */
     QVariantList getDays() const;
@@ -49,30 +52,45 @@ public:
     /** @brief Returns the currently displayed semester label. */
     QString getCurrentSemester() const;
 
+    /** @brief Returns the start date of the current period as yyyy-MM-dd string. */
+    QString getCurrentStartDate() const;
+
+    /** @brief Returns the end date of the current period as yyyy-MM-dd string. */
+    QString getCurrentEndDate() const;
+
+    /** @brief Returns the list of all semester labels for the sidebar. */
+    QVariantList getSemesterList() const;
+
     /**
      * @brief Toggles a day between Active (1) and Excluded (2).
-     * @param date The day to toggle.
+     * @param dateStr The day to toggle, formatted as yyyy-MM-dd.
      */
-    Q_INVOKABLE void toggleDay (const QString& dateStr) ;
+    Q_INVOKABLE void toggleDay(const QString& dateStr);
 
     /**
      * @brief Shifts the exam period bounds for a given semester.
-     * @param semester  Semester identifier, e.g. "FALL" or "SPRI".
+     * @param semester     Semester identifier, e.g. "FALL" or "SPRI".
      * @param newStartStr  New start date for the period (yyyy-MM-dd).
      * @param newEndStr    New end date for the period (yyyy-MM-dd).
      */
     Q_INVOKABLE void shiftPeriod(const QString& semester,
-                              const QString& newStartStr,
-                              const QString& newEndStr);
-    /**
-     * @brief Navigate to the next semester in the list.
-     */
-    Q_INVOKABLE void nextSemester();
+                                  const QString& newStartStr,
+                                  const QString& newEndStr);
 
     /**
-     * @brief Navigate to the previous semester in the list.
+     * @brief Selects a period directly by index (used by the sidebar).
+     * @param index Zero-based index into the periods list.
      */
+    Q_INVOKABLE void selectPeriod(int index);
+
+    /** @brief Navigate to the next semester in the list. */
+    Q_INVOKABLE void nextSemester();
+
+    /** @brief Navigate to the previous semester in the list. */
     Q_INVOKABLE void previousSemester();
+
+    /** @brief Marks current state as confirmed and ready for the solver. */
+    Q_INVOKABLE void saveChanges();
 
 signals:
     /** @brief Emitted whenever the days list changes (toggle or shift). */

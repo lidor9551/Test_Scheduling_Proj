@@ -40,11 +40,25 @@ Page {
         }
     }
 
-    // ── Build padded day model (with empty offset cells) ─────────────────────
+    // Pre-fill date fields when the screen loads
+    Component.onCompleted: {
+        startDateField.text = calendarManager.currentStartDate
+        endDateField.text   = calendarManager.currentEndDate
+    }
+
+    // Refresh fields if the period changes while screen is open
+    Connections {
+        target: calendarManager
+        function onSemesterChanged() {
+            startDateField.text = calendarManager.currentStartDate
+            endDateField.text   = calendarManager.currentEndDate
+        }
+    }
+
     function buildPaddedModel(rawDays) {
         if (!rawDays || rawDays.length === 0) return []
         var firstDate = rawDays[0].date
-        var dow = firstDate.getDay()          // JS Date: Sun=0 ... Sat=6
+        var dow = firstDate.getDay()
         var padded = []
         for (var i = 0; i < dow; i++)
             padded.push({ date: null, status: -1, label: "" })
@@ -63,7 +77,7 @@ Page {
         anchors.margins: 24
         spacing: 20
 
-        // Date range inputs
+        // Date range inputs + Save button
         Rectangle {
             Layout.fillWidth: true
             height: 120
@@ -109,6 +123,7 @@ Page {
                     }
                 }
 
+                // Apply date range shift
                 Button {
                     text: "Apply Shift"
                     Layout.alignment: Qt.AlignBottom
@@ -130,6 +145,44 @@ Page {
                             endDateField.text
                         )
                     }
+                }
+
+                // Save changes — keeps modified days for the solver
+                Button {
+                    text: "💾 Save"
+                    Layout.alignment: Qt.AlignBottom
+                    background: Rectangle {
+                        radius: 8
+                        color: parent.hovered ? "#1a6b45" : "#157347"
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: {
+                        calendarManager.saveChanges()
+                        saveConfirm.visible = true
+                        saveTimer.restart()
+                    }
+                }
+
+                // Confirmation message after save
+                Text {
+                    id: saveConfirm
+                    text: "✅ Saved"
+                    color: "#157347"
+                    font.pixelSize: 13
+                    font.bold: true
+                    visible: false
+                }
+
+                Timer {
+                    id: saveTimer
+                    interval: 2000
+                    onTriggered: saveConfirm.visible = false
                 }
             }
         }
@@ -155,7 +208,6 @@ Page {
                     font.italic: true
                 }
 
-                // Month label
                 Text {
                     id: editorMonthTitle
                     text: editorScreen.monthLabel(calendarManager.days)
@@ -165,7 +217,6 @@ Page {
                     Layout.alignment: Qt.AlignHCenter
                 }
 
-                // Day-of-week headers
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 4
@@ -195,8 +246,8 @@ Page {
                     Connections {
                         target: calendarManager
                         function onDaysChanged() {
-                            editorGrid.paddedDays    = editorScreen.buildPaddedModel(calendarManager.days)
-                            editorMonthTitle.text    = editorScreen.monthLabel(calendarManager.days)
+                            editorGrid.paddedDays = editorScreen.buildPaddedModel(calendarManager.days)
+                            editorMonthTitle.text = editorScreen.monthLabel(calendarManager.days)
                         }
                     }
 
