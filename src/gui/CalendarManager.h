@@ -60,7 +60,10 @@ public:
 
     /** @brief Returns the list of all semester labels for the sidebar. */
     QVariantList getSemesterList() const;
-
+   /** @brief Returns the tree structure for the sidebar as a QVariantList.
+    *  Each item: { year, semester, moed, index }
+    */
+    Q_INVOKABLE QVariantList getPeriodTree() const;
     /**
      * @brief Toggles a day between Active (1) and Excluded (2).
      * @param dateStr The day to toggle, formatted as yyyy-MM-dd.
@@ -107,4 +110,6 @@ private:
 
     /** @brief Rebuilds the days_ list from the current period. */
     void rebuildDays();
+    /** @brief Persists current days_ toggle state back into periods_[currentPeriodIndex_]. */
+    void flushDaysToPeriod();
 };

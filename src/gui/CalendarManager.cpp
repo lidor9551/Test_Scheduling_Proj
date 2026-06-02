@@ -64,6 +64,20 @@ QVariantList CalendarManager::getSemesterList() const {
     return list;
 }
 
+QVariantList CalendarManager::getPeriodTree() const {
+    QVariantList tree;
+    for (int i = 0; i < (int)periods_.size(); i++) {
+        const ExamPeriod& p = periods_[i];
+        QVariantMap entry;
+        entry["year"]     = p.getStartDate().getYear();
+        entry["semester"] = QString::fromStdString(p.getSemester());
+        entry["moed"]     = QString::fromStdString(p.getMoed());
+        entry["index"]    = i;
+        tree.append(entry);
+    }
+    return tree;
+}
+
 void CalendarManager::toggleDay(const QString& dateStr) {
     QDate targetDate = QDate::fromString(dateStr, "yyyy-MM-dd");
     if (!targetDate.isValid()) {
@@ -108,6 +122,7 @@ void CalendarManager::shiftPeriod(const QString& semester,
 
 void CalendarManager::selectPeriod(int index) {
     if (index < 0 || index >= (int)periods_.size()) return;
+    flushDaysToPeriod();
     currentPeriodIndex_ = index;
     rebuildDays();
     emit semesterChanged();
@@ -116,6 +131,7 @@ void CalendarManager::selectPeriod(int index) {
 
 void CalendarManager::nextSemester() {
     if (currentPeriodIndex_ < (int)periods_.size() - 1) {
+        flushDaysToPeriod();
         currentPeriodIndex_++;
         rebuildDays();
         emit daysChanged();
@@ -125,11 +141,40 @@ void CalendarManager::nextSemester() {
 
 void CalendarManager::previousSemester() {
     if (currentPeriodIndex_ > 0) {
+        flushDaysToPeriod();
         currentPeriodIndex_--;
         rebuildDays();
         emit daysChanged();
         emit semesterChanged();
     }
+}
+
+void CalendarManager::saveChanges() {
+    flushDaysToPeriod();
+    qDebug() << ">>> Changes saved for period:" << getCurrentSemester();
+    emit daysChanged();
+}
+
+void CalendarManager::flushDaysToPeriod() {
+    if (periods_.empty()) return;
+
+    ExamPeriod& p = periods_[currentPeriodIndex_];
+    std::vector<ExcludedRange> newExclusions;
+
+    for (const DayInfo& d : days_) {
+        if (d.status == 2) {
+            Date dt(d.date.day(), d.date.month(), d.date.year());
+            ExcludedRange r;
+            r.start  = dt;
+            r.end    = dt;
+            r.reason = "manual";
+            newExclusions.push_back(r);
+        }
+    }
+
+    p = ExamPeriod(p.getSemester(), p.getMoed(),
+                   p.getStartDate(), p.getEndDate(),
+                   newExclusions);
 }
 
 void CalendarManager::rebuildDays() {
@@ -152,10 +197,4 @@ void CalendarManager::rebuildDays() {
         info.status = excluded ? 2 : 1;
         days_.push_back(info);
     }
-    void CalendarManager::saveChanges() {
-    qDebug() << ">>> Changes saved for period:" << getCurrentSemester();
-    // Changes are already live in periods_ and days_
-    // This confirms the state is ready for the solver
-    emit daysChanged();
-}
 }
