@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <QMetaType>
 
 enum class Semester { FALL, SPRI, SUMM };
 enum class Requirement { OBLIGATORY, ELECTIVE };
@@ -22,13 +23,13 @@ private:
     Evaluation evaluationMethod;
 
 public:
-    // Constructor
+    Course() {}
+
     Course(const std::string& name, const std::string& number, 
            const std::string& instructor, Evaluation eval);
 
     void addProgram(const std::string& progID, int year, Semester sem, Requirement req);
 
-    // Getters
     const std::string& getCourseName() const;
     const std::string& getCourseNumber() const;
     const std::string& getInstructorName() const;
@@ -37,3 +38,5 @@ public:
 
     bool requiresExam() const; 
 };
+
+Q_DECLARE_METATYPE(Course)

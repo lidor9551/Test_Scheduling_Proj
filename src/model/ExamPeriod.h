@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <QMetaType>
 #include "../dates/Date.h" 
 
-// struct ExcludedRange {
 struct ExcludedRange {
     Date start;
     Date end;
-    std::string reason; // 
+    std::string reason; 
 
     bool contains(const Date& date) const;
 };
@@ -21,11 +21,11 @@ private:
     std::vector<ExcludedRange> excludedRanges;
 
 public:
-    // Constructor
+    ExamPeriod() {}
+
     ExamPeriod(std::string sem, std::string m, const Date& start, 
                const Date& end, std::vector<ExcludedRange> excluded);
 
-    // Getters
     const std::string& getSemester() const;
     const std::string& getMoed() const;
     const Date& getStartDate() const;
@@ -34,3 +34,5 @@ public:
 
     std::vector<Date> allowedDates() const;
 };
+
+Q_DECLARE_METATYPE(ExamPeriod)

@@ -94,3 +94,10 @@ bool Date::operator==(const Date& other) const {
 bool Date::operator!=(const Date& other) const {
     return !(*this == other);
 }
+bool Date::operator>(const Date& other) const {
+    return other < *this;
+}
+
+bool Date::operator>=(const Date& other) const {
+    return other <= *this;
+}

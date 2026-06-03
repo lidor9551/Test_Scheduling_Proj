@@ -27,4 +27,6 @@ public:
     bool operator<=(const Date& other) const;
     bool operator==(const Date& other) const;
     bool operator!=(const Date& other) const;
+    bool operator>(const Date& other) const;
+    bool operator>=(const Date& other) const;
 };
