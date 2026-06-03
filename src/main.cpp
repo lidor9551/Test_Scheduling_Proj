@@ -3,6 +3,7 @@
 #include <QQmlContext>
 #include <QDebug>
 #include <QQuickStyle>
+#include <QCoreApplication>
 
 #include "gui/AppController.h"
 #include "gui/CalendarManager.h"
@@ -28,7 +29,7 @@ int main(int argc, char *argv[]) {
 
     qDebug() << "Loading Main.qml from disk...";
     engine.load(QUrl::fromLocalFile(
-    QCoreApplication::applicationDirPath() + "/../../Main.qml"
+    QCoreApplication::applicationDirPath() + "/Main.qml"
 ));
 
     if (engine.rootObjects().isEmpty()) {

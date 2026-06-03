@@ -48,10 +48,17 @@ target_link_libraries(exam_scheduler
         Qt6::Concurrent
 )
 
-install(FILES Main.qml DESTINATION .)
-
-add_custom_command(TARGET exam_scheduler POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/Main.qml"
-        "$<TARGET_FILE_DIR:exam_scheduler>/Main.qml"
+set(QML_FILES
+    Main.qml
+    CalendarScreen.qml
 )
+
+install(FILES ${QML_FILES} DESTINATION .)
+
+foreach(QML_FILE ${QML_FILES})
+    add_custom_command(TARGET exam_scheduler POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/${QML_FILE}"
+            "$<TARGET_FILE_DIR:exam_scheduler>/${QML_FILE}"
+    )
+endforeach()
