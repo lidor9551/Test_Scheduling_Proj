@@ -7,6 +7,9 @@
 #include "model/Course.h"
 #include "model/ExamPeriod.h"
 
+#include <QVariant>
+#include <QVariantList>
+
 class AppController : public QObject {
     Q_OBJECT
 
@@ -20,8 +23,13 @@ class AppController : public QObject {
     Q_PROPERTY(int examPeriodCount READ examPeriodCount NOTIFY dataChanged)
     Q_PROPERTY(bool hasData READ hasData NOTIFY dataChanged)
 
+    Q_PROPERTY(QVariantList courses READ getCoursesVariant NOTIFY dataChanged)
+    Q_PROPERTY(QVariantList examPeriods READ getExamPeriodsVariant NOTIFY dataChanged)
 public:
     explicit AppController(QObject* parent = nullptr);
+
+    QVariantList getCoursesVariant() const;
+    QVariantList getExamPeriodsVariant() const;
 
     QString coursesFilePath() const;
     QString examPeriodsFilePath() const;

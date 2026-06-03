@@ -422,3 +422,21 @@ build/
 
 # Local output files
 output.txt
+
+# CMake build output
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake.check_cache
+CMakeConfigure.yaml
+CMakeCXXCompiler.cmake
+CMakeDetermineCompilerABI_CXX.bin
+CMakeRCCompiler.cmake
+CMakeSystem.cmake
+VCTargetsPath.txt
+VCTargetsPath.vcxproj
+CMakeCXXCompilerId.cpp
+CompilerIdCXX.exe
+CompilerIdCXX.vcxproj
+*.vcxproj
+*.yaml

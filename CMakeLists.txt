@@ -13,13 +13,13 @@ if(COMMAND qt_policy)
     qt_policy(SET QTP0001 NEW)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Concurrent)
+# CHANGEMENT: Ajout de QuickControls2 à la liste des composants requis
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Concurrent)
 
 qt_add_executable(exam_scheduler
     src/main.cpp
-
     src/gui/AppController.cpp
-
+    src/gui/CalendarManager.cpp
     src/dates/Date.cpp
     src/model/Course.cpp
     src/model/ExamPeriod.cpp
@@ -37,12 +37,14 @@ else()
     target_compile_options(exam_scheduler PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# CHANGEMENT: Ajout de Qt6::QuickControls2 aux bibliothèques liées
 target_link_libraries(exam_scheduler
     PRIVATE
         Qt6::Core
         Qt6::Gui
         Qt6::Qml
         Qt6::Quick
+        Qt6::QuickControls2
         Qt6::Concurrent
 )
 

@@ -213,3 +213,17 @@ void AppController::setError(const QString& message) {
     errorMessage_ = message;
     emit errorMessageChanged();
 }
+
+QVariantList AppController::getCoursesVariant() const {
+    QVariantList list;
+    for (const Course& c : courses_)
+        list.append(QVariant::fromValue(c));
+    return list;
+}
+
+QVariantList AppController::getExamPeriodsVariant() const {
+    QVariantList list;
+    for (const ExamPeriod& p : examPeriods_)
+        list.append(QVariant::fromValue(p));
+    return list;
+}
