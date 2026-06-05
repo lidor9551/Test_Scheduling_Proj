@@ -63,3 +63,25 @@ foreach(QML_FILE ${QML_FILES})
             "$<TARGET_FILE_DIR:exam_scheduler>/${QML_FILE}"
     )
 endforeach()
+
+include(CTest)
+
+if(BUILD_TESTING)
+    add_executable(program_course_model_test
+        tests/ProgramCourseModelTest.cpp
+        src/gui/ProgramCourseModel.cpp
+        src/model/Course.cpp
+    )
+
+    target_include_directories(program_course_model_test PRIVATE src)
+
+    target_link_libraries(program_course_model_test
+        PRIVATE
+            Qt6::Core
+    )
+
+    add_test(
+        NAME ProgramCourseModelTest
+        COMMAND program_course_model_test
+    )
+endif()
