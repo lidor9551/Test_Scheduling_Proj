@@ -19,6 +19,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Concurren
 qt_add_executable(exam_scheduler
     src/main.cpp
     src/gui/AppController.cpp
+    src/gui/ProgramCourseModel.cpp
     src/gui/CalendarManager.cpp
     src/dates/Date.cpp
     src/model/Course.cpp

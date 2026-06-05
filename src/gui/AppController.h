@@ -3,10 +3,9 @@
 #include <QObject>
 #include <QString>
 #include <vector>
-
 #include "model/Course.h"
 #include "model/ExamPeriod.h"
-
+#include "gui/ProgramCourseModel.h"
 #include <QVariant>
 #include <QVariantList>
 
@@ -25,6 +24,8 @@ class AppController : public QObject {
 
     Q_PROPERTY(QVariantList courses READ getCoursesVariant NOTIFY dataChanged)
     Q_PROPERTY(QVariantList examPeriods READ getExamPeriodsVariant NOTIFY dataChanged)
+
+    Q_PROPERTY(ProgramCourseModel* programCourseModel READ programCourseModel CONSTANT)
 public:
     explicit AppController(QObject* parent = nullptr);
 
@@ -48,6 +49,8 @@ public:
     Q_INVOKABLE void appendData();
     Q_INVOKABLE void clearMessages();
 
+    ProgramCourseModel* programCourseModel();
+
 signals:
     void coursesFilePathChanged();
     void examPeriodsFilePathChanged();
@@ -63,6 +66,8 @@ private:
     bool validateSelectedFiles();
     void setStatus(const QString& message);
     void setError(const QString& message);
+    
+    ProgramCourseModel programCourseModel_;
 
 private:
     QString coursesFilePath_;

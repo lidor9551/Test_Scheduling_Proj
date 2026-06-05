@@ -52,6 +52,10 @@ void AppController::setExamPeriodsFilePath(const QString& path) {
     emit examPeriodsFilePathChanged();
 }
 
+ProgramCourseModel* AppController::programCourseModel() {
+    return &programCourseModel_;
+}
+
 void AppController::replaceData() {
     clearMessages();
 
@@ -70,6 +74,7 @@ void AppController::replaceData() {
 
         courses_ = std::move(loadedCourses);
         examPeriods_ = std::move(loadedPeriods);
+        programCourseModel_.setCourses(courses_);
 
         emit dataChanged();
 
@@ -139,7 +144,8 @@ void AppController::appendData() {
                 skippedPeriods++;
             }
         }
-
+        programCourseModel_.setCourses(courses_);
+        
         emit dataChanged();
 
         setStatus(
