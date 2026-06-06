@@ -233,3 +233,67 @@ QVariantList AppController::getExamPeriodsVariant() const {
         list.append(QVariant::fromValue(p));
     return list;
 }
+
+QStringList AppController::availablePrograms() const {
+    if (m_availablePrograms.isEmpty()) {
+        return QStringList{"83101", "83102", "83103", "83104", "83105", "83107", "83108", "83109", "83115", "83182"};
+    }
+    return m_availablePrograms;
+}
+
+QStringList AppController::selectedPrograms() const {
+    return m_selectedPrograms;
+}
+
+void AppController::toggleProgram(const QString& programId) {
+    if (m_selectedPrograms.contains(programId)) {
+        m_selectedPrograms.removeAll(programId);
+        emit selectedProgramsChanged();
+    } 
+    else {
+        if (m_selectedPrograms.size() < 5) {
+            m_selectedPrograms.append(programId);
+            emit selectedProgramsChanged();
+        } else {
+            qDebug() << "Cannot select more than 5 programs.";
+        }
+    }
+}
+
+QVariantList AppController::getCoursesForProgram(const QString& programId, int year, int semester) {
+    QVariantList courseList;
+    std::string pid = programId.toStdString();
+
+    for (const auto& course : courses_) { 
+        const auto& programs = course.getPrograms();
+        
+        for (const auto& p : programs) {
+            // basic filtering by program ID
+            bool match = (p.programID == pid);
+            
+            // if year or semester are specified (not -1), also filter by them
+            if (year != -1) match &= (p.year == year);
+            if (semester != -1) match &= (static_cast<int>(p.semester) == semester);
+
+            if (match) {
+                // convert Course to QVariant and add to list
+                QVariantMap courseData;
+                courseData["name"] = QString::fromStdString(course.getCourseName());
+
+                // course requirement (obligatory/elective)
+                courseData["req"] = (p.requirement == Requirement::OBLIGATORY) ? "חובה" : "בחירה";
+
+                // evaluation method (exam/project/attendance)
+                Evaluation eval = course.getEvaluationMethod();
+                QString evalText;
+                if (eval == Evaluation::EXAM) evalText = "מבחן";
+                else if (eval == Evaluation::PROJECT) evalText = "פרויקט";
+                else evalText = "נוכחות";
+                courseData["eval"] = evalText;
+
+                courseList.append(courseData);
+            }
+        }
+    }
+    return courseList;
+}

@@ -25,6 +25,11 @@ class AppController : public QObject {
     Q_PROPERTY(QVariantList courses READ getCoursesVariant NOTIFY dataChanged)
     Q_PROPERTY(QVariantList examPeriods READ getExamPeriodsVariant NOTIFY dataChanged)
 
+    // For the program course model
+    Q_PROPERTY(QStringList availablePrograms READ availablePrograms CONSTANT)
+    // only selected program IDs, not the full course data, since the model will handle that dynamically
+    Q_PROPERTY(QStringList selectedPrograms READ selectedPrograms NOTIFY selectedProgramsChanged)
+
     Q_PROPERTY(ProgramCourseModel* programCourseModel READ programCourseModel CONSTANT)
 public:
     explicit AppController(QObject* parent = nullptr);
@@ -49,9 +54,20 @@ public:
     Q_INVOKABLE void appendData();
     Q_INVOKABLE void clearMessages();
 
+    QStringList availablePrograms() const;
+    QStringList selectedPrograms() const;
+
+    // to present in the UI the relevant courses for the selected program
+    Q_INVOKABLE QVariantList getCoursesForProgram(const QString& programId, int year = -1, int semester = -1);
+
+    //qml checboxes will call this to toggle program selection
+    Q_INVOKABLE void toggleProgram(const QString& programId);
+
+
     ProgramCourseModel* programCourseModel();
 
 signals:
+
     void coursesFilePathChanged();
     void examPeriodsFilePathChanged();
 
@@ -59,6 +75,7 @@ signals:
     void errorMessageChanged();
 
     void dataChanged();
+    void selectedProgramsChanged();
 
 private:
     QString normalizePath(const QString& rawPath) const;
@@ -78,4 +95,7 @@ private:
 
     std::vector<Course> courses_;
     std::vector<ExamPeriod> examPeriods_;
+
+    QStringList m_availablePrograms;
+    QStringList m_selectedPrograms;
 };

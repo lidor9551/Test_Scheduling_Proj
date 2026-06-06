@@ -17,6 +17,7 @@ public:
     static bool isValidProgramId(const std::string& programId);
     static bool isValidSemester(const std::string& semester);
     static bool isValidMoed(const std::string& moed);
+    std::vector<std::string> getAllProgramIds();
 };
 
 // Main Parser class handling all file inputs
