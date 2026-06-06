@@ -57,6 +57,9 @@ public:
     QStringList availablePrograms() const;
     QStringList selectedPrograms() const;
 
+    // to present in the UI the relevant courses for the selected program
+    Q_INVOKABLE QVariantList getCoursesForProgram(const QString& programId);
+
     //qml checboxes will call this to toggle program selection
     Q_INVOKABLE void toggleProgram(const QString& programId);
 

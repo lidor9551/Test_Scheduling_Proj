@@ -259,3 +259,36 @@ void AppController::toggleProgram(const QString& programId) {
         }
     }
 }
+
+QVariantList AppController::getCoursesForProgram(const QString& programId) {
+    QVariantList courseList;
+    std::string pid = programId.toStdString();
+
+    // Debug output to verify the program ID being searched for
+    qDebug() << "Searching for courses with ID:" << programId;
+
+    for (const auto& course : courses_) {
+        const auto& programs = course.getPrograms();
+        
+        // search for the program in the course's programs
+        auto it = std::find_if(programs.begin(), programs.end(), 
+            [&](const ProgramDetails& p) { return p.programID == pid; });
+
+        if (it != programs.end()) {
+            qDebug() << "Found course:" << QString::fromStdString(course.getCourseName()); /// Debug output to verify a matching course was found
+            QVariantMap courseData;
+            courseData["name"] = QString::fromStdString(course.getCourseName());
+            courseData["req"] = (it->requirement == Requirement::OBLIGATORY) ? "חובה" : "בחירה";
+            
+            // translate the Evaluation to a readable text
+            Evaluation eval = course.getEvaluationMethod();
+            QString evalText = (eval == Evaluation::EXAM) ? "מבחן" : 
+                               (eval == Evaluation::PROJECT) ? "פרויקט" : "נוכחות";
+            courseData["eval"] = evalText;
+
+            courseList.append(courseData);
+        }
+    }
+    qDebug() << "Total courses found for" << programId << ":" << courseList.size(); // debug output to verify the total number of courses found for the program
+    return courseList;
+}

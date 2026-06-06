@@ -23,6 +23,33 @@ Window {
     property color textMuted: "#69737a"
     property color danger: "#b91c1c"
     property color success: "#047857"
+    property string currentProgramView: ""
+
+    Dialog {
+    id: courseDetailsDialog
+    title: "קורסים לתוכנית: " + root.currentProgramView
+    width: 500; height: 400
+    anchors.centerIn: parent
+    modal: true
+    standardButtons: Dialog.Close
+
+    ListView {
+        anchors.fill: parent
+        clip: true
+        model: appController.getCoursesForProgram(root.currentProgramView)
+        delegate: Rectangle {
+            width: parent.width; height: 50
+            border.color: "#e1e5df"
+            Row {
+                spacing: 20
+                padding: 10
+                Text { text: modelData.name; font.bold: true; width: 250 }
+                Text { text: modelData.req; color: "blue" }
+                Text { text: modelData.eval; color: "green" }
+            }
+        }
+    }
+}
 
     // Custom Button Component
     component AppButton: Button {
@@ -435,12 +462,10 @@ Window {
                                             border.width: 1
                                             radius: 8
                                         }
-                                        onClicked: console.log("Show courses for: " + progId)
-                                        // Ensure the button gets the click instead of the underlying Row's MouseArea
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: parent.clicked()
+                                        onClicked: {
+                                            console.log("Passing to C++: ID =", progId, "Name =", progName);
+                                            root.currentProgramView = progId;
+                                            courseDetailsDialog.open();
                                         }
                                     }
                                 }
