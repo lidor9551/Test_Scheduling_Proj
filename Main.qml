@@ -24,33 +24,62 @@ Window {
     property color danger: "#b91c1c"
     property color success: "#047857"
     property string currentProgramView: ""
-
+    property string currentProgramId: ""  
+    property string currentProgramName: ""
+    
     Dialog {
     id: courseDetailsDialog
-    title: "קורסים לתוכנית: " + root.currentProgramView
-    width: 500; height: 400
+    title: "קורסים לתוכנית: " + root.currentProgramName + " (" + root.currentProgramId + ")"
+    width: 600; height: 500
     anchors.centerIn: parent
     modal: true
     standardButtons: Dialog.Close
 
-    ListView {
+    ColumnLayout {
         anchors.fill: parent
-        clip: true
-        model: appController.getCoursesForProgram(root.currentProgramView)
-        delegate: Rectangle {
-            width: parent.width; height: 50
-            border.color: "#e1e5df"
+        spacing: 0
+
+        // Header
+        Rectangle {
+            Layout.fillWidth: true
+            height: 40
+            color: "#f1f5f9"
             Row {
-                spacing: 20
+                anchors.fill: parent
                 padding: 10
-                Text { text: modelData.name; font.bold: true; width: 250 }
-                Text { text: modelData.req; color: "blue" }
-                Text { text: modelData.eval; color: "green" }
+                spacing: 20
+                Text { text: "שם הקורס"; font.bold: true; width: 300; horizontalAlignment: Text.AlignLeft }
+                Text { text: "דרישה"; font.bold: true; width: 80; horizontalAlignment: Text.AlignRight }
+                Text { text: "הערכה"; font.bold: true; width: 100; horizontalAlignment: Text.AlignRight }
+            }
+        }
+
+        // List
+        ListView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            
+            // חיבור ישיר - יתעדכן לבד כשה-ID משתנה
+            model: appController.getCoursesForProgram(root.currentProgramId, -1, -1)
+            
+            delegate: Rectangle {
+                width: parent.width; height: 45
+                color: index % 2 === 0 ? "#ffffff" : "#f8fafc"
+                border.color: "#e2e8f0"; border.width: 1
+                
+                Row {
+                    anchors.fill: parent; padding: 10; spacing: 20
+                    
+                    // שימוש בהגנה: אם אין נתון, מציג מחרוזת ריקה במקום לזרוק שגיאה
+                    Text { text: modelData.name !== undefined ? modelData.name : ""; width: 300; elide: Text.ElideRight }
+                    Text { text: modelData.req !== undefined ? modelData.req : ""; color: text === "חובה" ? "#dc2626" : "#059669"; width: 80 }
+                    Text { text: modelData.eval !== undefined ? modelData.eval : ""; color: "#475569"; width: 100 }
+                }
             }
         }
     }
 }
-
     // Custom Button Component
     component AppButton: Button {
         id: control
@@ -463,8 +492,9 @@ Window {
                                             radius: 8
                                         }
                                         onClicked: {
+                                            root.currentProgramId = progId;
+                                            root.currentProgramName = progName;
                                             console.log("Passing to C++: ID =", progId, "Name =", progName);
-                                            root.currentProgramView = progId;
                                             courseDetailsDialog.open();
                                         }
                                     }
