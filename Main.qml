@@ -35,11 +35,58 @@ Window {
     modal: true
     standardButtons: Dialog.Close
 
+    function refreshData() {
+        // year 1 is index 1, year 2 is index 2, etc. 'הכל' is index 0, so we return -1 for that case to indicate no filtering by year.
+        let year = yearCombo.currentIndex === 0 ? -1 : yearCombo.currentIndex;
+        
+        // semester: 'הכל' is index 0, 'א' is index 1, 'ב' is index 2, 'קיץ' is index 3.
+        // in C++ your Enum starts from 0, so we subtract 1. (0 becomes -1, meaning all).
+        let sem = semesterCombo.currentIndex === 0 ? -1 : semesterCombo.currentIndex - 1;
+        
+        courseListModel.model = appController.getCoursesForProgram(root.currentProgramId, year, sem);
+    }
+
+    // reset filters and refresh data every time dialog is opened
+    onOpened: {
+        yearCombo.currentIndex = 0;
+        semesterCombo.currentIndex = 0;
+        refreshData();
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        // Header
+        // filter section (with right-to-left layout)
+        Rectangle {
+            Layout.fillWidth: true
+            height: 60
+            color: "white"
+            
+            Row {
+                anchors.centerIn: parent
+                spacing: 15
+                layoutDirection: Qt.RightToLeft
+
+                Text { text: "שנה:"; anchors.verticalCenter: parent.verticalCenter; font.bold: true }
+                ComboBox {
+                    id: yearCombo
+                    width: 100
+                    model: ["הכל", "שנה א'", "שנה ב'", "שנה ג'", "שנה ד'"]
+                    onActivated: courseDetailsDialog.refreshData()
+                }
+
+                Text { text: "סמסטר:"; anchors.verticalCenter: parent.verticalCenter; font.bold: true }
+                ComboBox {
+                    id: semesterCombo
+                    width: 120
+                    model: ["הכל", "סמסטר א'", "סמסטר ב'", "סמסטר קיץ"]
+                    onActivated: courseDetailsDialog.refreshData()
+                }
+            }
+        }
+
+        // header row for the course list
         Rectangle {
             Layout.fillWidth: true
             height: 40
@@ -54,14 +101,12 @@ Window {
             }
         }
 
-        // List
+        // the scrollable list of courses
         ListView {
+            id: courseListModel
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            
-            // חיבור ישיר - יתעדכן לבד כשה-ID משתנה
-            model: appController.getCoursesForProgram(root.currentProgramId, -1, -1)
             
             delegate: Rectangle {
                 width: parent.width; height: 45
@@ -71,10 +116,9 @@ Window {
                 Row {
                     anchors.fill: parent; padding: 10; spacing: 20
                     
-                    // שימוש בהגנה: אם אין נתון, מציג מחרוזת ריקה במקום לזרוק שגיאה
-                    Text { text: modelData.name !== undefined ? modelData.name : ""; width: 300; elide: Text.ElideRight }
-                    Text { text: modelData.req !== undefined ? modelData.req : ""; color: text === "חובה" ? "#dc2626" : "#059669"; width: 80 }
-                    Text { text: modelData.eval !== undefined ? modelData.eval : ""; color: "#475569"; width: 100 }
+                    Text { text: modelData.name !== undefined ? modelData.name : ""; width: 300; elide: Text.ElideRight; horizontalAlignment: Text.AlignLeft }
+                    Text { text: modelData.req !== undefined ? modelData.req : ""; color: text === "חובה" ? "#dc2626" : "#059669"; width: 80; horizontalAlignment: Text.AlignRight }
+                    Text { text: modelData.eval !== undefined ? modelData.eval : ""; color: "#475569"; width: 100; horizontalAlignment: Text.AlignRight }
                 }
             }
         }
