@@ -452,14 +452,6 @@ Window {
                         }
                     }
                 }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "TES-55 | Main Screen & File Loading"
-                    color: "#8b949e"
-                    font.pixelSize: 13
-                    horizontalAlignment: Text.AlignLeft
-                }
             }
         }
     }
