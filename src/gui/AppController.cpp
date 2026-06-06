@@ -233,3 +233,29 @@ QVariantList AppController::getExamPeriodsVariant() const {
         list.append(QVariant::fromValue(p));
     return list;
 }
+
+QStringList AppController::availablePrograms() const {
+    if (m_availablePrograms.isEmpty()) {
+        return QStringList{"83101", "83102", "83103", "83104", "83105", "83107", "83108", "83109", "83115", "83182"};
+    }
+    return m_availablePrograms;
+}
+
+QStringList AppController::selectedPrograms() const {
+    return m_selectedPrograms;
+}
+
+void AppController::toggleProgram(const QString& programId) {
+    if (m_selectedPrograms.contains(programId)) {
+        m_selectedPrograms.removeAll(programId);
+        emit selectedProgramsChanged();
+    } 
+    else {
+        if (m_selectedPrograms.size() < 5) {
+            m_selectedPrograms.append(programId);
+            emit selectedProgramsChanged();
+        } else {
+            qDebug() << "Cannot select more than 5 programs.";
+        }
+    }
+}

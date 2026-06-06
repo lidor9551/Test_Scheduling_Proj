@@ -24,9 +24,9 @@ Window {
     property color danger: "#b91c1c"
     property color success: "#047857"
 
+    // Custom Button Component
     component AppButton: Button {
         id: control
-
         property bool outline: false
 
         implicitWidth: 165
@@ -53,6 +53,7 @@ Window {
         }
     }
 
+    // Custom Card Component for file selection
     component FileCard: Rectangle {
         id: card
 
@@ -60,6 +61,11 @@ Window {
         property string descriptionText: ""
         property string iconText: ""
         property string selectedPath: ""
+        
+        property string emptyTitle: "בחר קובץ"
+        property string emptyDesc: "לחץ כאן לבחירת קובץ txt"
+        property string filledTitle: "קובץ נבחר בהצלחה"
+        
         signal browseClicked()
 
         Layout.fillWidth: true
@@ -157,7 +163,7 @@ Window {
 
                         Text {
                             Layout.fillWidth: true
-                            text: selectedPath.length > 0 ? "קובץ נבחר בהצלחה" : "בחר קובץ"
+                            text: selectedPath.length > 0 ? card.filledTitle : card.emptyTitle
                             color: root.textDark
                             font.pixelSize: 16
                             font.bold: true
@@ -167,7 +173,7 @@ Window {
                         Text {
                             Layout.fillWidth: true
                             LayoutMirroring.enabled: false
-                            text: selectedPath.length > 0 ? selectedPath : "לחץ כאן לבחירת קובץ txt"
+                            text: selectedPath.length > 0 ? selectedPath : card.emptyDesc
                             color: root.textMuted
                             font.pixelSize: 12
                             elide: Text.ElideMiddle
@@ -179,62 +185,6 @@ Window {
         }
     }
 
-    component StatBox: Rectangle {
-        id: stat
-
-        property string titleText: ""
-        property string valueText: ""
-        property string iconText: ""
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 108
-
-        radius: 16
-        color: "white"
-        border.color: root.borderSoft
-        border.width: 1
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.margins: 20
-            spacing: 14
-
-            Rectangle {
-                width: 46
-                height: 46
-                radius: 14
-                color: root.primarySoft
-
-                Text {
-                    anchors.centerIn: parent
-                    text: stat.iconText
-                    font.pixelSize: 22
-                }
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 4
-
-                Text {
-                    Layout.fillWidth: true
-                    text: stat.valueText
-                    color: root.textDark
-                    font.pixelSize: 31
-                    font.bold: true
-                    horizontalAlignment: Text.AlignRight
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: stat.titleText
-                    color: root.textMuted
-                    font.pixelSize: 14
-                    horizontalAlignment: Text.AlignRight
-                }
-            }
-        }
-    }
     StackView {
         id: stackView
         anchors.fill: parent
@@ -246,6 +196,7 @@ Window {
 
         Item {
 
+            // Windows/Mac File Dialog for Courses
             FileDialog {
                 id: coursesDialog
                 title: "בחר קובץ קורסים"
@@ -253,6 +204,7 @@ Window {
                 onAccepted: appController.setCoursesFilePath(selectedFile)
             }
 
+            // Windows/Mac File Dialog for Periods
             FileDialog {
                 id: periodsDialog
                 title: "בחר קובץ תאריכים"
@@ -265,6 +217,7 @@ Window {
                 anchors.margins: 34
                 spacing: 22
 
+                // Header Section
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 6
@@ -296,6 +249,7 @@ Window {
                     }
                 }
 
+                // Top Cards Section
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 24
@@ -317,72 +271,185 @@ Window {
                     }
                 }
 
+                // Bottom Section: Program Selection List
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 178
+                    Layout.fillHeight: true // Takes all remaining vertical space
                     radius: 18
                     color: "white"
-                    border.color: root.borderSoft
-                    border.width: 1
+                    border.color: appController.selectedPrograms.length > 0 ? root.primary : root.borderSoft
+                    border.width: appController.selectedPrograms.length > 0 ? 1.5 : 1
+                    clip: true
 
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 24
                         spacing: 16
 
+                        // Section Header
                         RowLayout {
                             Layout.fillWidth: true
+                            layoutDirection: Qt.RightToLeft
+                            spacing: 16
 
                             Rectangle {
-                                width: 78
-                                height: 30
-                                radius: 15
-                                color: root.primary
-
+                                width: 46
+                                height: 46
+                                radius: 14
+                                color: root.primarySoft
                                 Text {
                                     anchors.centerIn: parent
-                                    text: appController.courseCount + " / " + appController.examPeriodCount
-                                    color: "white"
-                                    font.pixelSize: 13
-                                    font.bold: true
+                                    text: "📋"
+                                    font.pixelSize: 22
                                 }
                             }
 
-                            Text {
+                            ColumnLayout {
                                 Layout.fillWidth: true
-                                text: "סיכום נתונים שנטענו"
-                                color: root.textDark
-                                font.pixelSize: 23
-                                font.bold: true
-                                horizontalAlignment: Text.AlignRight
+                                spacing: 2
+                                Text {
+                                    text: "בחירת תוכניות לימוד"
+                                    font.pixelSize: 22
+                                    font.bold: true
+                                    color: root.textDark
+                                    horizontalAlignment: Text.AlignRight
+                                    Layout.fillWidth: true
+                                }
+                                Text {
+                                    text: appController.selectedPrograms.length + " / 5 תוכניות נבחרו"
+                                    font.pixelSize: 14
+                                    color: appController.selectedPrograms.length > 0 ? root.success : root.textMuted
+                                    horizontalAlignment: Text.AlignRight
+                                    Layout.fillWidth: true
+                                }
                             }
                         }
 
-                        RowLayout {
+                        // Divider line
+                        Rectangle {
                             Layout.fillWidth: true
-                            spacing: 18
+                            height: 1
+                            color: root.borderSoft
+                        }
 
-                            StatBox {
-                                titleText: appController.hasData ? "המערכת מוכנה להמשך" : "טרם נטענו נתונים"
-                                valueText: appController.hasData ? "מוכן" : "ממתין"
-                                iconText: appController.hasData ? "✅" : "ℹ️"
+                        // Local Data Model holding the exact programs provided
+                        ListModel {
+                            id: programsModel
+                            ListElement { progId: "83101"; progName: "הנדסת מחשבים" }
+                            ListElement { progId: "83102"; progName: "הנדסת חשמל" }
+                            ListElement { progId: "83104"; progName: "הנדסת תעשיה ומערכות מידע" }
+                            ListElement { progId: "83107"; progName: "הנדסת נתונים" }
+                            ListElement { progId: "83108"; progName: "הנדסת תוכנה" }
+                            ListElement { progId: "83109"; progName: "הנדסת חומרים" }
+                            ListElement { progId: "83105"; progName: "הנדסת מחשבים – מגמת חומרת מחשבים" }
+                            ListElement { progId: "83182"; progName: "הנדסת חשמל – מגמת הנדסה קוונטית" }
+                            ListElement { progId: "83103"; progName: "הנדסת חשמל – מגמת נוירו הנדסה" }
+                            ListElement { progId: "83115"; progName: "הנדסת חשמל – מגמת הנדסה ביו-רפואית" }
+                        }
+
+                        // The Scrollable List of Programs
+                        ListView {
+                            id: programListView
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            spacing: 12
+                            model: programsModel
+                            
+                            ScrollBar.vertical: ScrollBar { 
+                                active: true 
                             }
 
-                            StatBox {
-                                titleText: "תקופות בחינה נטענו"
-                                valueText: String(appController.examPeriodCount)
-                                iconText: "🗓️"
-                            }
+                            // The styled rectangle for each program
+                            delegate: Rectangle {
+                                width: programListView.width - 20
+                                height: 72
+                                radius: 12
+                                
+                                property bool isChecked: appController.selectedPrograms.indexOf(progId) !== -1
+                                property bool canBeChecked: isChecked || appController.selectedPrograms.length < 5
+                                
+                                color: isChecked ? "#f0fdf4" : (itemMouseArea.containsMouse ? "#f8fafc" : "white")
+                                border.color: isChecked ? root.success : root.borderSoft
+                                border.width: isChecked ? 2 : 1
 
-                            StatBox {
-                                titleText: "קורסים נטענו"
-                                valueText: String(appController.courseCount)
-                                iconText: "📘"
+                                // Makes the entire row clickable
+                                MouseArea {
+                                    id: itemMouseArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: parent.canBeChecked ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                    onClicked: {
+                                        if (parent.canBeChecked) {
+                                            appController.toggleProgram(progId)
+                                        }
+                                    }
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 16
+                                    layoutDirection: Qt.RightToLeft
+
+                                    CheckBox {
+                                        checked: parent.parent.isChecked
+                                        enabled: parent.parent.canBeChecked
+                                        // Disable hover on checkbox itself so it doesn't conflict with MouseArea
+                                        hoverEnabled: false 
+                                        onClicked: {
+                                            appController.toggleProgram(progId)
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 4
+                                        
+                                        Text {
+                                            text: progName
+                                            font.pixelSize: 16
+                                            font.bold: true
+                                            color: root.textDark
+                                            horizontalAlignment: Text.AlignRight
+                                            Layout.fillWidth: true
+                                        }
+                                        
+                                        Text {
+                                            text: "מספר תוכנית: " + progId
+                                            font.pixelSize: 13
+                                            color: root.textMuted
+                                            horizontalAlignment: Text.AlignRight
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+
+                                    Item { Layout.fillWidth: true } // Spacer
+
+                                    // Eye button for course details
+                                    Button {
+                                        text: "👁️ צפה בקורסים"
+                                        font.pixelSize: 13
+                                        background: Rectangle { 
+                                            color: parent.down ? "#e2e8f0" : (parent.hovered ? "#f1f5f9" : "transparent")
+                                            border.color: root.borderSoft
+                                            border.width: 1
+                                            radius: 8
+                                        }
+                                        onClicked: console.log("Show courses for: " + progId)
+                                        // Ensure the button gets the click instead of the underlying Row's MouseArea
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: parent.clicked()
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
+                // Action Buttons and System Messages Section
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 92

@@ -301,3 +301,7 @@ std::vector<std::string> InputParser::parseSelectedPrograms(const std::string& f
 
     return result;
 }
+
+std::vector<std::string> Validator::getAllProgramIds() {
+    return std::vector<std::string>(VALID_PROGRAM_IDS.begin(), VALID_PROGRAM_IDS.end());
+}
