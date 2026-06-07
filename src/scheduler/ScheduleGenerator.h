@@ -1,11 +1,14 @@
 #pragma once
 
 #include "../preprocessing/Preprocessor.h"
-#include <stdexcept>
-#include <vector>
-#include <string>
+
 #include <QObject>
 #include <QString>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+class QThread;
 
 class SolverTimeoutException : public std::runtime_error {
 public:
@@ -25,8 +28,11 @@ private:
     SchedulingBlock block_;
     int groupCount_;
     double maxRuntimeSeconds_;
+
     std::vector<std::vector<int>> cachedSolutions_;
     bool hasCachedResult_ = false;
+
+    QThread* workerThread_ = nullptr;
 
     int computeGroupCount() const;
     bool canAssign(const SchedulerState& state, const RuntimeCourse& course, int dateIndex) const;
@@ -39,6 +45,9 @@ private:
 
 public:
     explicit ScheduleGenerator(SchedulingBlock block, double maxRuntimeSeconds = 30.0);
+    ~ScheduleGenerator() override;
+
+    std::vector<std::vector<int>> runBacktracking(int limitPerBlock) const;
 
     Q_INVOKABLE void startScheduling(int limitPerBlock = -1);
 

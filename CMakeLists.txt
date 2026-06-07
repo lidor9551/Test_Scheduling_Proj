@@ -27,6 +27,7 @@ qt_add_executable(exam_scheduler
     src/parser/InputParser.cpp
     src/preprocessing/Preprocessor.cpp
     src/scheduler/ScheduleGenerator.cpp
+    src/scheduler/SchedulingWorker.cpp
     src/exporter/OutputWriter.cpp
 )
 
@@ -52,6 +53,7 @@ target_link_libraries(exam_scheduler
 set(QML_FILES
     Main.qml
     CalendarScreen.qml
+    PeriodEditorScreen.qml
 )
 
 install(FILES ${QML_FILES} DESTINATION .)

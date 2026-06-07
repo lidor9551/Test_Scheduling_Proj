@@ -1,10 +1,12 @@
 #include "ScheduleGenerator.h"
+#include "scheduler/SchedulingWorker.h"
+#include <QDebug>
+#include <QMetaType>
+#include <QThread>
 #include <algorithm>
 #include <chrono>
 #include <functional>
 #include <limits>
-#include <QtConcurrent>
-#include <QFutureWatcher>
 
 SolverTimeoutException::SolverTimeoutException(const std::string& message)
     : std::runtime_error(message) {}
@@ -12,7 +14,20 @@ SolverTimeoutException::SolverTimeoutException(const std::string& message)
 ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, double maxRuntimeSeconds)
     : block_(std::move(block)),
       groupCount_(computeGroupCount()),
-      maxRuntimeSeconds_(maxRuntimeSeconds) {}
+      maxRuntimeSeconds_(maxRuntimeSeconds) {
+    qRegisterMetaType<std::vector<std::vector<int>>>("std::vector<std::vector<int>>");
+}
+
+ScheduleGenerator::~ScheduleGenerator() {
+    if (workerThread_ != nullptr && workerThread_->isRunning()) {
+        workerThread_->quit();
+        workerThread_->wait();
+    }
+}
+
+std::vector<std::vector<int>> ScheduleGenerator::runBacktracking(int limitPerBlock) const {
+    return generateAll(limitPerBlock);
+}
 
 int ScheduleGenerator::computeGroupCount() const {
     int maxGroup = -1;
@@ -228,24 +243,49 @@ void ScheduleGenerator::startScheduling(int limitPerBlock) {
         return;
     }
 
-    auto future = QtConcurrent::run([this, limitPerBlock]() {
-        try {
-            return this->generateAll(limitPerBlock);
-        } catch (const SolverTimeoutException& e) {
-            emit errorOccurred(QString::fromStdString(e.what()));
-            return std::vector<std::vector<int>>();
-        }
-    });
+    if (workerThread_ != nullptr && workerThread_->isRunning()) {
+        emit errorOccurred("Scheduling is already running.");
+        return;
+    }
 
-    auto* watcher = new QFutureWatcher<std::vector<std::vector<int>>>();
-    connect(watcher, &QFutureWatcher<std::vector<std::vector<int>>>::finished, this, [this, watcher]() {
-        this->cachedSolutions_ = watcher->result();
-        this->hasCachedResult_ = true;
-        
-        emit schedulingFinished(this->cachedSolutions_);
-        watcher->deleteLater(); 
-    });
-    
-    watcher->setFuture(future);
+    auto* thread = new QThread();
+    auto* worker = new SchedulingWorker(this, limitPerBlock);
+
+    worker->moveToThread(thread);
+    workerThread_ = thread;
+
+    connect(thread, &QThread::started,
+            worker, &SchedulingWorker::run);
+
+    connect(worker, &SchedulingWorker::finished,
+            this, [this](const std::vector<std::vector<int>>& solutions) {
+                cachedSolutions_ = solutions;
+                hasCachedResult_ = true;
+                emit schedulingFinished(cachedSolutions_);
+            });
+
+    connect(worker, &SchedulingWorker::failed,
+            this, [this](const QString& message) {
+                emit errorOccurred(message);
+            });
+
+    connect(worker, &SchedulingWorker::finished,
+            thread, &QThread::quit);
+
+    connect(worker, &SchedulingWorker::failed,
+            thread, &QThread::quit);
+
+    connect(thread, &QThread::finished,
+            worker, &QObject::deleteLater);
+
+    connect(thread, &QThread::finished,
+            this, [this, thread]() {
+                if (workerThread_ == thread) {
+                    workerThread_ = nullptr;
+                }
+                thread->deleteLater();
+            });
+
+    thread->start();
 }
 
