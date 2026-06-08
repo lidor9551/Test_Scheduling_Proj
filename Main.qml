@@ -594,6 +594,18 @@ Window {
                                 stackView.push("CalendarScreen.qml")
                             }
                         }
+                        AppButton {
+                            text: "צור מערכות שיבוץ"
+                            outline: false
+                            // check if there's at least one program selected before showing the button
+                            visible: appController.hasData && appController.selectedPrograms.length > 0
+                            onClicked: {
+                                // need to implement: appController.generateSchedules()
+                                
+                                // go to the output screen after generating schedules
+                                stackView.push("OutputScreen.qml")
+                            }
+                        }
 
                         Item {
                             Layout.fillWidth: true
