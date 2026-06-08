@@ -94,3 +94,31 @@ set_tests_properties(InvalidInputIntegrationTest
     PROPERTIES
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+add_executable(no_solution_integration_test
+    integration/NoSolutionIntegrationTest.cpp
+    ../src/parser/InputParser.cpp
+    ../src/preprocessing/Preprocessor.cpp
+    ../src/scheduler/ScheduleGenerator.cpp
+    ../src/scheduler/SchedulingWorker.cpp
+    ../src/dates/Date.cpp
+    ../src/model/Course.cpp
+    ../src/model/ExamPeriod.cpp
+)
+
+target_include_directories(no_solution_integration_test PRIVATE ../src)
+
+target_link_libraries(no_solution_integration_test
+    PRIVATE
+        Qt6::Core
+)
+
+add_test(
+    NAME NoSolutionIntegrationTest
+    COMMAND no_solution_integration_test
+)
+
+set_tests_properties(NoSolutionIntegrationTest
+    PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
