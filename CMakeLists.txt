@@ -39,7 +39,6 @@ else()
     target_compile_options(exam_scheduler PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# CHANGEMENT: Ajout de Qt6::QuickControls2 aux bibliothèques liées
 target_link_libraries(exam_scheduler
     PRIVATE
         Qt6::Core
