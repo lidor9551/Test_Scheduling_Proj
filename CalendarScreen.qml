@@ -75,9 +75,31 @@ Page {
                 horizontalAlignment: Text.AlignHCenter
             }
 
-            // Save button in header
+            // Save changes in the current calendar state
             Button {
                 text: "💾 Save"
+                contentItem: Text {
+                    text: parent.text
+                    color: "white"
+                    font.pixelSize: 14
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    radius: 8
+                    color: parent.hovered ? "#1a6b45" : "#157347"
+                }
+                onClicked: {
+                    calendarManager.saveChanges()
+                    saveConfirm.text = "✅ Saved"
+                    saveConfirm.visible = true
+                    saveTimer.restart()
+                }
+            }
+
+            // Export the current displayed schedule to a text file
+            Button {
+                text: "💾 Save as File"
                 contentItem: Text {
                     text: parent.text
                     color: "white"
