@@ -11,6 +11,7 @@ Item {
     property int currentScheduleIndex: 1
     property int totalSchedulesCount: 5
 
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 34
@@ -136,7 +137,7 @@ Item {
 
             Item { Layout.fillWidth: true } 
 
-            Text {0
+            Text {
                 text: "סמסטר:"
                 font.pixelSize: 16
                 font.bold: true
