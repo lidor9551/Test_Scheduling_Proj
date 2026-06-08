@@ -1,0 +1,18 @@
+$$$$
+Calculus 1
+83112
+Dr. Erez Scheiner
+83101,1,FALL,Obligatory
+Exam
+$$$$
+Physics 1
+83102
+Prof. O. Some
+83101,1,FALL,Obligatory
+Exam
+$$$$
+Intro to Programming
+83120
+Dr. Ada Cohen
+83101,1,FALL,Obligatory
+Exam
