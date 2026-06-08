@@ -86,4 +86,22 @@ if(BUILD_TESTING)
         NAME ProgramCourseModelTest
         COMMAND program_course_model_test
     )
+
+    add_executable(date_and_exam_period_test
+    tests/unit/DateAndExamPeriodTest.cpp
+    src/dates/Date.cpp
+    src/model/ExamPeriod.cpp
+    )
+
+    target_include_directories(date_and_exam_period_test PRIVATE src)
+
+    target_link_libraries(date_and_exam_period_test
+        PRIVATE
+            Qt6::Core
+    )
+
+    add_test(
+        NAME DateAndExamPeriodTest
+        COMMAND date_and_exam_period_test
+    )
 endif()
