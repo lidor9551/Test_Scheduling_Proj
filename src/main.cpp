@@ -16,10 +16,10 @@ int main(int argc, char *argv[]) {
 
     QGuiApplication app(argc, argv);
 
-    QQmlApplicationEngine engine;
-
     AppController appController;
     CalendarManager calendarManager;
+
+    QQmlApplicationEngine engine;
 
     engine.rootContext()->setContextProperty("appController", &appController);
     engine.rootContext()->setContextProperty("calendarManager", &calendarManager);
