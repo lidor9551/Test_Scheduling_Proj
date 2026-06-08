@@ -40,13 +40,11 @@ Page {
         }
     }
 
-    // Pre-fill date fields when the screen loads
     Component.onCompleted: {
         startDateField.text = calendarManager.currentStartDate
         endDateField.text   = calendarManager.currentEndDate
     }
 
-    // Refresh fields if the period changes while screen is open
     Connections {
         target: calendarManager
         function onSemesterChanged() {
@@ -77,7 +75,7 @@ Page {
         anchors.margins: 24
         spacing: 20
 
-        // Date range inputs + Save button
+        // Date range inputs + buttons
         Rectangle {
             Layout.fillWidth: true
             height: 120
@@ -123,7 +121,7 @@ Page {
                     }
                 }
 
-                // Apply date range shift
+                // Apply Shift button
                 Button {
                     text: "Apply Shift"
                     Layout.alignment: Qt.AlignBottom
@@ -139,6 +137,13 @@ Page {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
+                        var start = new Date(startDateField.text)
+                        var end   = new Date(endDateField.text)
+                        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+                            shiftErrorMsg.visible = true
+                            shiftErrorTimer.restart()
+                            return
+                        }
                         calendarManager.shiftPeriod(
                             calendarManager.currentSemester,
                             startDateField.text,
@@ -147,7 +152,7 @@ Page {
                     }
                 }
 
-                // Save changes — keeps modified days for the solver
+                // Save button
                 Button {
                     text: "💾 Save"
                     Layout.alignment: Qt.AlignBottom
@@ -169,7 +174,7 @@ Page {
                     }
                 }
 
-                // Confirmation message after save
+                // Save confirmation message
                 Text {
                     id: saveConfirm
                     text: "✅ Saved"
@@ -184,10 +189,26 @@ Page {
                     interval: 2000
                     onTriggered: saveConfirm.visible = false
                 }
+
+                // Error message for invalid date range
+                Text {
+                    id: shiftErrorMsg
+                    text: "⚠ Error: Start date is after end date"
+                    color: "#C0392B"
+                    font.pixelSize: 13
+                    font.bold: true
+                    visible: false
+                }
+
+                Timer {
+                    id: shiftErrorTimer
+                    interval: 3000
+                    onTriggered: shiftErrorMsg.visible = false
+                }
             }
         }
 
-        // Calendar grid for toggling exclusions
+        // Calendar grid
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
