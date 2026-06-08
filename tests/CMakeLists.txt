@@ -69,3 +69,28 @@ set_tests_properties(SchedulerIntegrationTest
     PROPERTIES
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+add_executable(invalid_input_integration_test
+    integration/InvalidInputIntegrationTest.cpp
+    ../src/parser/InputParser.cpp
+    ../src/dates/Date.cpp
+    ../src/model/Course.cpp
+    ../src/model/ExamPeriod.cpp
+)
+
+target_include_directories(invalid_input_integration_test PRIVATE ../src)
+
+target_link_libraries(invalid_input_integration_test
+    PRIVATE
+        Qt6::Core
+)
+
+add_test(
+    NAME InvalidInputIntegrationTest
+    COMMAND invalid_input_integration_test
+)
+
+set_tests_properties(InvalidInputIntegrationTest
+    PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
