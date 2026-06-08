@@ -28,6 +28,7 @@ qt_add_executable(exam_scheduler
     src/preprocessing/Preprocessor.cpp
     src/scheduler/ScheduleGenerator.cpp
     src/exporter/OutputWriter.cpp
+    src/exporter/DisplayedScheduleExporter.cpp
 )
 
 target_include_directories(exam_scheduler PRIVATE src)

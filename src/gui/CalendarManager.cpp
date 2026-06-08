@@ -1,5 +1,7 @@
 #include "CalendarManager.h"
+#include "../exporter/DisplayedScheduleExporter.h"
 #include <QDebug>
+#include <QUrl>
 
 CalendarManager::CalendarManager(QObject* parent)
     : QObject(parent), currentPeriodIndex_(0) {}
@@ -154,7 +156,55 @@ void CalendarManager::saveChanges() {
     qDebug() << ">>> Changes saved for period:" << getCurrentSemester();
     emit daysChanged();
 }
+bool CalendarManager::exportCurrentSchedule(const QString& filePath)
+{
+    if (periods_.empty()) {
+        qDebug() << ">>> exportCurrentSchedule: no periods loaded";
+        return false;
+    }
 
+    QString normalizedPath = filePath;
+
+    // QML FileDialog may return a file URL, so convert it to a local path.
+    const QUrl url(filePath);
+    if (url.isLocalFile()) {
+        normalizedPath = url.toLocalFile();
+    }
+
+    if (normalizedPath.isEmpty()) {
+        qDebug() << ">>> exportCurrentSchedule: empty output path";
+        return false;
+    }
+
+    try {
+        // Persist the current visible changes before exporting.
+        flushDaysToPeriod();
+
+        DisplayedScheduleExportData exportData;
+        exportData.periodName = getCurrentSemester().toStdString();
+        exportData.startDate = getCurrentStartDate().toStdString();
+        exportData.endDate = getCurrentEndDate().toStdString();
+
+        // Convert the displayed calendar days into a GUI-independent export format.
+        for (const DayInfo& day : days_) {
+            DisplayedScheduleDay exportDay;
+            exportDay.date = day.date.toString("yyyy-MM-dd").toStdString();
+            exportDay.status = day.status;
+            exportDay.label = day.label.toStdString();
+
+            exportData.days.push_back(exportDay);
+        }
+
+        DisplayedScheduleExporter exporter;
+        exporter.writeToTextFile(normalizedPath.toStdString(), exportData);
+
+        qDebug() << ">>> Schedule exported to:" << normalizedPath;
+        return true;
+    } catch (const std::exception& ex) {
+        qDebug() << ">>> exportCurrentSchedule failed:" << ex.what();
+        return false;
+    }
+}
 void CalendarManager::flushDaysToPeriod() {
     if (periods_.empty()) return;
 
@@ -176,6 +226,7 @@ void CalendarManager::flushDaysToPeriod() {
                    p.getStartDate(), p.getEndDate(),
                    newExclusions);
 }
+
 
 void CalendarManager::rebuildDays() {
     days_.clear();

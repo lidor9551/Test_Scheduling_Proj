@@ -95,6 +95,18 @@ public:
     /** @brief Marks current state as confirmed and ready for the solver. */
     Q_INVOKABLE void saveChanges();
 
+    /**
+     * @brief Exports the schedule currently displayed in the calendar to a text file.
+     *
+     * This function is called from QML after the user selects an output file.
+     * CalendarManager prepares the currently displayed data, while the exporter
+     * layer is responsible for the actual file writing.
+     *
+     * @param filePath Output file path selected by the user.
+     * @return true if the export succeeded, false otherwise.
+     */
+    Q_INVOKABLE bool exportCurrentSchedule(const QString& filePath);
+
 signals:
     /** @brief Emitted whenever the days list changes (toggle or shift). */
     void daysChanged();

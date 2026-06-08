@@ -1,11 +1,46 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 
 Page {
     id: calendarScreen
-    background: Rectangle { color: "#FAF8F3" }
+    FileDialog {
 
+        id: exportDialog
+
+        title: "Export schedule"
+
+        fileMode: FileDialog.SaveFile
+
+        nameFilters: ["Text files (*.txt)", "All files (*)"]
+
+        defaultSuffix: "txt"
+
+        onAccepted: {
+
+            const ok = calendarManager.exportCurrentSchedule(selectedFile)
+
+            if (ok) {
+
+                saveConfirm.text = "✅ Exported"
+
+            } else {
+
+                saveConfirm.text = "❌ Export failed"
+
+            }
+
+            saveConfirm.visible = true
+
+            saveTimer.restart()
+
+        }
+
+    }
+
+    background: Rectangle { color: "#FAF8F3" }
+    
     // ── Header ──────────────────────────────────────────────────────────────
     header: Rectangle {
         width: parent.width
@@ -55,9 +90,7 @@ Page {
                     color: parent.hovered ? "#1a6b45" : "#157347"
                 }
                 onClicked: {
-                    calendarManager.saveChanges()
-                    saveConfirm.visible = true
-                    saveTimer.restart()
+                    exportDialog.open()
                 }
             }
 
