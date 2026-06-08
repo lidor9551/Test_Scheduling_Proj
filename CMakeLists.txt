@@ -121,4 +121,25 @@ if(BUILD_TESTING)
         NAME CourseModelTest
         COMMAND course_model_test
     )
+
+    add_executable(parser_preprocessor_integration_test
+        tests/integration/ParserPreprocessorIntegrationTest.cpp
+        src/parser/InputParser.cpp
+        src/preprocessing/Preprocessor.cpp
+        src/dates/Date.cpp
+        src/model/Course.cpp
+        src/model/ExamPeriod.cpp
+    )
+
+    target_include_directories(parser_preprocessor_integration_test PRIVATE src)
+
+    target_link_libraries(parser_preprocessor_integration_test
+        PRIVATE
+            Qt6::Core
+    )
+
+    add_test(
+        NAME ParserPreprocessorIntegrationTest
+        COMMAND parser_preprocessor_integration_test
+    )
 endif()
