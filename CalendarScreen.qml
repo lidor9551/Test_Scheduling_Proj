@@ -399,21 +399,20 @@ Page {
                         Layout.alignment: Qt.AlignHCenter
                     }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-                        Repeater {
-                            model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-                            delegate: Text {
-                                Layout.fillWidth: true
-                                text: modelData
-                                font.pixelSize: 12
-                                font.bold: true
-                                color: index === 6 ? "#C0392B" : "#6C757D"
-                                horizontalAlignment: Text.AlignHCenter
-                            }
-                        }
-                    }
+                    Row {
+    Layout.fillWidth: true
+    Repeater {
+        model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        delegate: Text {
+            width: Math.floor(calGrid.width / 7)
+            text: modelData
+            font.pixelSize: 12
+            font.bold: true
+            color: index === 6 ? "#C0392B" : "#6C757D"
+            horizontalAlignment: Text.AlignHCenter
+        }
+    }
+}
 
                     GridView {
                         id: calGrid
