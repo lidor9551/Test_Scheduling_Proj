@@ -238,13 +238,12 @@ Page {
                     Layout.alignment: Qt.AlignHCenter
                 }
 
-                RowLayout {
+                Row {
                     Layout.fillWidth: true
-                    spacing: 4
                     Repeater {
                         model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
                         delegate: Text {
-                            Layout.fillWidth: true
+                            width: Math.floor(editorGrid.width / 7)
                             text: modelData
                             font.pixelSize: 12
                             font.bold: true
@@ -300,7 +299,7 @@ Page {
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            enabled: modelData.status !== -1
+                            enabled: modelData.status !== -1 && modelData.date.getDay() !== 6
                             onClicked: {
                                 let dateStr = Qt.formatDate(modelData.date, "yyyy-MM-dd")
                                 calendarManager.toggleDay(dateStr)

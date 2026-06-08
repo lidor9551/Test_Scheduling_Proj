@@ -194,7 +194,8 @@ void CalendarManager::rebuildDays() {
         for (const ExcludedRange& r : period.getExcludedRanges()) {
             if (r.contains(current)) { excluded = true; break; }
         }
-        info.status = excluded ? 2 : 1;
+        bool isSaturday = (info.date.dayOfWeek() == 6);
+        info.status = (excluded || isSaturday) ? 2 : 1;
         days_.push_back(info);
     }
 }

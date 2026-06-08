@@ -494,7 +494,7 @@ Page {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                enabled: modelData.status !== -1
+                                enabled: modelData.status !== -1 && modelData.date.getDay() !== 6
                                 onClicked: {
                                     let dateStr = Qt.formatDate(modelData.date, "yyyy-MM-dd")
                                     calendarManager.toggleDay(dateStr)
