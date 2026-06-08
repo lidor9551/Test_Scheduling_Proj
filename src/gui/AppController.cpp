@@ -1,14 +1,16 @@
 #include "gui/AppController.h"
-
 #include "parser/InputParser.h"
-
+#include "scheduler/ScheduleGenerator.h" 
+#include "scheduler/SchedulingWorker.h"
+#include "preprocessing/Preprocessor.h"
 #include <QFileInfo>
 #include <QUrl>
 #include <QDir>
-
 #include <set>
 #include <string>
 #include <utility>
+#include <QThread>
+
 
 AppController::AppController(QObject* parent)
     : QObject(parent) {
@@ -75,6 +77,7 @@ void AppController::replaceData() {
         courses_ = std::move(loadedCourses);
         examPeriods_ = std::move(loadedPeriods);
         programCourseModel_.setCourses(courses_);
+        m_outputManager.setCourses(courses_);
 
         emit dataChanged();
 
@@ -145,6 +148,7 @@ void AppController::appendData() {
             }
         }
         programCourseModel_.setCourses(courses_);
+        m_outputManager.setCourses(courses_);
         
         emit dataChanged();
 
@@ -296,4 +300,85 @@ QVariantList AppController::getCoursesForProgram(const QString& programId, int y
         }
     }
     return courseList;
+}
+
+ScheduleOutputManager* AppController::outputManager() {
+    return &m_outputManager;
+}
+
+void AppController::generateSchedules() {
+    setStatus("Generating schedules...");
+
+    // keep a reference to the full course list for preprocessing, but the scheduling will focus on exam-only courses since it's based on exam periods
+    std::vector<Course> allCourses = this->courses_; 
+    
+    // create a filtered list of courses that require exams, as the scheduling algorithm is designed around exam periods and constraints related to them
+    std::vector<Course> examOnlyCourses;
+    for (const auto& course : allCourses) {
+        if (course.getEvaluationMethod() == Evaluation::EXAM) {
+            examOnlyCourses.push_back(course);
+        }
+    }
+
+    // Expose the exam-only courses to the output manager  
+    m_outputManager.setCourses(examOnlyCourses);
+
+    // build the scheduling blocks based on the selected programs and the loaded data
+    std::vector<std::string> selectedProgs;
+    for (const auto& prog : m_selectedPrograms) {
+        selectedProgs.push_back(prog.toStdString());
+    }
+
+    SchedulingPreprocessor preprocessor(allCourses, this->examPeriods_, selectedProgs);
+    std::vector<SchedulingBlock> allBlocks = preprocessor.buildBlocks();
+
+    if (allBlocks.empty()) {
+        setError("No valid scheduling blocks found.");
+        return;
+    }
+
+    // Use the first valid block (in the future, filter this based on user input)
+    SchedulingBlock block = allBlocks[0];
+    
+    // Create the algorithm engine
+    ScheduleGenerator* generator = new ScheduleGenerator(block);
+    
+    // Thread setup for background execution
+    QThread* thread = new QThread();
+    SchedulingWorker* worker = new SchedulingWorker(generator, 100); // 100 is the limitPerBlock
+    worker->moveToThread(thread);
+
+    // Connect signals and slots for communication between the worker and the controller
+    connect(thread, &QThread::started, worker, &SchedulingWorker::run);
+    connect(worker, &SchedulingWorker::finished, this, &AppController::onSchedulingFinished);
+    connect(worker, &SchedulingWorker::failed, this, &AppController::onSchedulingFailed);
+    
+    // Cleanup connections to ensure memory is freed after the task
+    connect(worker, &SchedulingWorker::finished, thread, &QThread::quit);
+    connect(worker, &SchedulingWorker::finished, worker, &SchedulingWorker::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    connect(worker, &SchedulingWorker::failed, thread, &QThread::quit);
+    connect(worker, &SchedulingWorker::failed, worker, &SchedulingWorker::deleteLater); // Added for safety
+
+    thread->start();
+}
+
+void AppController::onSchedulingFinished(const std::vector<std::vector<int>>& solutions) {
+    setStatus("Scheduling completed!");
+
+
+    // Filter the courses to only those that require exams, as the scheduling is based on exam periods
+    std::vector<Course> examOnlyCourses;
+    for (const auto& course : this->courses_) {
+        if (course.getEvaluationMethod() == Evaluation::EXAM) {
+            examOnlyCourses.push_back(course);
+        }
+    }
+
+    // Expose the solutions to the output manager so it can prepare the data for the UI
+    m_outputManager.setSchedulingData(solutions, examOnlyCourses, this->examPeriods_);
+}
+
+void AppController::onSchedulingFailed(QString message) {
+    setError("Scheduling failed: " + message);
 }

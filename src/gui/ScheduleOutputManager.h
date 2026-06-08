@@ -1,0 +1,74 @@
+#pragma once
+
+#include <QObject>
+#include <QString>
+#include <QStringList>
+#include <QVariantList>
+#include <QVariantMap>
+#include <vector>
+
+#include "../model/Course.h"
+#include "../model/ExamPeriod.h"
+
+class ScheduleOutputManager : public QObject {
+    Q_OBJECT
+
+    // Expose variables to QML (The visual contract)
+    Q_PROPERTY(int currentScheduleIndex READ getCurrentScheduleIndex NOTIFY currentScheduleIndexChanged)
+    Q_PROPERTY(int totalSchedulesCount READ getTotalSchedulesCount NOTIFY totalSchedulesCountChanged)
+    Q_PROPERTY(QStringList availableSemesters READ getAvailableSemesters NOTIFY availableSemestersChanged)
+    Q_PROPERTY(QStringList availableMoeds READ getAvailableMoeds NOTIFY availableMoedsChanged)
+    Q_PROPERTY(QVariantList currentCalendarData READ getCurrentCalendarData NOTIFY currentCalendarDataChanged)
+
+public:
+    explicit ScheduleOutputManager(QObject* parent = nullptr);
+
+    // Main function called by AppController when the scheduling algorithm finishes
+    void setSchedulingData(const std::vector<std::vector<int>>& solutions,
+                           const std::vector<Course>& courses,
+                           const std::vector<ExamPeriod>& periods);
+
+    // Getters
+    int getCurrentScheduleIndex() const;
+    int getTotalSchedulesCount() const;
+    QStringList getAvailableSemesters() const;
+    QStringList getAvailableMoeds() const;
+    QVariantList getCurrentCalendarData() const;
+    void setCourses(const std::vector<Course>& courses) {
+    m_courses = courses;
+    }
+
+
+    // Actions triggered by the user from the QML interface
+    Q_INVOKABLE void nextSchedule();
+    Q_INVOKABLE void previousSchedule();
+    Q_INVOKABLE void setPeriodFilter(const QString& semester, const QString& moed);
+    Q_INVOKABLE void exportCurrentSchedule();
+
+signals:
+    void currentScheduleIndexChanged();
+    void totalSchedulesCountChanged();
+    void availableSemestersChanged();
+    void availableMoedsChanged();
+    void currentCalendarDataChanged();
+
+private:
+    // Builds the calendar UI data for the specific month/period    
+    void updateCalendarData(); 
+    // Extracts unique semesters and moeds from the ExamPeriod data
+    void extractAvailableFilters(); 
+
+    // Raw data from the algorithm and model
+    std::vector<std::vector<int>> m_solutions;
+    std::vector<Course> m_courses;
+    std::vector<ExamPeriod> m_periods;
+
+    // Current state of the output screen
+    int m_currentIndex = 1;
+    QString m_selectedSemester;
+    QString m_selectedMoed;
+
+    QStringList m_semesters;
+    QStringList m_moeds;
+    QVariantList m_calendarData;
+};

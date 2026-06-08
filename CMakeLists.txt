@@ -28,6 +28,8 @@ qt_add_executable(exam_scheduler
     src/scheduler/ScheduleGenerator.cpp
     src/scheduler/SchedulingWorker.cpp
     src/exporter/OutputWriter.cpp
+    src/gui/ScheduleOutputManager.cpp
+    src/gui/ScheduleOutputManager.h
 
 )
 

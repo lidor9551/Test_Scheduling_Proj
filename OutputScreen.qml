@@ -7,10 +7,6 @@ Item {
     width: parent.width
     height: parent.height
 
-    // demo properties
-    property int currentScheduleIndex: 1
-    property int totalSchedulesCount: 5
-
 
     ColumnLayout {
         anchors.fill: parent
@@ -94,13 +90,13 @@ Item {
                         radius: 8
                     }
                     onClicked: {
-                        outputRoot.currentScheduleIndex--
+                        appController.outputManager.previousSchedule();
                     }
                 }
 
                 Text {
                     Layout.fillWidth: true
-                    text: "מערכת " + outputRoot.currentScheduleIndex + " מתוך " + outputRoot.totalSchedulesCount
+                    text: "מערכת " + appController.outputManager.currentScheduleIndex + " מתוך " + appController.outputManager.totalSchedulesCount
                     font.pixelSize: 18
                     font.bold: true
                     color: "#1f2933"
@@ -113,7 +109,7 @@ Item {
                     font.bold: true
                     Layout.preferredWidth: 100
                     Layout.preferredHeight: 40
-                    enabled: outputRoot.currentScheduleIndex < outputRoot.totalSchedulesCount
+                    enabled: appController.outputManager.currentScheduleIndex < appController.outputManager.totalSchedulesCount
                     
                     background: Rectangle {
                         color: parent.enabled ? (parent.down ? "#e2e8f0" : (parent.hovered ? "#f8fafc" : "white")) : "#f1f5f9"
@@ -121,7 +117,7 @@ Item {
                         radius: 8
                     }
                     onClicked: {
-                        outputRoot.currentScheduleIndex++
+                        appController.outputManager.nextSchedule();
                     }
                 }
             }
@@ -152,7 +148,7 @@ Item {
                 font.bold: true
                 
                 // will be populated dynamically based on the input data, but for demo purposes we hardcode some values here
-                model: ["סתיו", "אביב", "קיץ"]
+                model: ["FALL", "SPRI", "SUMM"]
                 
                 background: Rectangle {
                     color: "#f8fafc"
@@ -162,8 +158,7 @@ Item {
                 }
                 
                 onActivated: {
-                    console.log("Semester selected:", currentText)
-                    // call C++ to refresh the calendar based on the selected semester and moed
+                    appController.outputManager.setPeriodFilter(currentText, moedSelector.currentText);
                 }
             }
 
@@ -184,7 +179,7 @@ Item {
                 font.bold: true
                 
                 // will be populated dynamically based on the input data, but for demo purposes we hardcode some values here
-                model: ["מועד א'", "מועד ב'", "מועד ג'"]
+                model: ["Aleph", "Bet", "Gimel"]
                 
                 background: Rectangle {
                     color: "#f8fafc"
@@ -194,8 +189,7 @@ Item {
                 }
                 
                 onActivated: {
-                    console.log("Moed selected:", currentText)
-                    // call C++ to refresh the calendar based on the selected semester and moed
+                    appController.outputManager.setPeriodFilter(semesterSelector.currentText, currentText);
                 }
             }
 
@@ -276,7 +270,7 @@ Item {
                 cellWidth: width / 7
                 cellHeight: 120
                 
-                model: mockCalendarModel
+                model: appController.outputManager.currentCalendarData
                 layoutDirection: Qt.RightToLeft
                 interactive: false
 
@@ -293,11 +287,11 @@ Item {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.margins: 8
-                        text: model.dayText
+                        text: modelData.dayText || ""
                         font.pixelSize: 14
                         font.bold: true
-                        color: model.isExcluded ? "#dc2626" : "#64748b"
-                        visible: model.dayText !== ""
+                        color: modelData.isExcluded ? "#dc2626" : "#64748b"
+                        visible: modelData.dayText !== ""
                     }
 
                     ColumnLayout {
@@ -305,11 +299,11 @@ Item {
                         anchors.margins: 8
                         anchors.topMargin: 24
                         spacing: 2
-                        visible: model.hasExam
+                        visible: modelData.hasExam === true
 
                         Text {
                             Layout.fillWidth: true
-                            text: model.examName
+                            text: modelData.examName || ""
                             font.pixelSize: 13
                             font.bold: true
                             color: "#1f2933"
@@ -319,7 +313,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: model.courseId + " | " + model.req
+                            text: (modelData.courseId || "") + " | " + (modelData.req || "")
                             font.pixelSize: 11
                             color: model.req === "חובה" ? "#b91c1c" : "#047857"
                             horizontalAlignment: Text.AlignRight
@@ -327,7 +321,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "👤 " + model.program
+                            text: "👤 " + (model.program || "")
                             font.pixelSize: 10
                             color: "#14533f" 
                             elide: Text.ElideRight
