@@ -14,7 +14,6 @@ void ScheduleOutputManager::setSchedulingData(const std::vector<std::vector<int>
     m_periods = periods;
     m_currentIndex = 1;
 
-    extractAvailableFilters();
     updateCalendarData();
 
     emit totalSchedulesCountChanged();
@@ -46,6 +45,8 @@ void ScheduleOutputManager::previousSchedule() {
 void ScheduleOutputManager::setPeriodFilter(const QString& semester, const QString& moed) {
     m_selectedSemester = semester;
     m_selectedMoed = moed;
+
+    qDebug() << "[MANAGER] Filter updated to -> Semester:" << m_selectedSemester << "Moed:" << m_selectedMoed;
     updateCalendarData();
 }
 
@@ -86,6 +87,8 @@ void ScheduleOutputManager::updateCalendarData() {
         return;
     }
 
+    qDebug() << "[CALENDAR] Trying to draw board for -> Sem:" << m_selectedSemester << "Moed:" << m_selectedMoed;
+
     const ExamPeriod* activePeriod = nullptr;
     for (const auto& period : m_periods) {
         if (QString::fromStdString(period.getSemester()) == m_selectedSemester &&
@@ -96,11 +99,13 @@ void ScheduleOutputManager::updateCalendarData() {
     }
 
     if (!activePeriod) {
+        qDebug() << "[CALENDAR] ERROR: Could not find matching period in m_periods!";
         emit currentCalendarDataChanged();
         return;
     }
 
     Date start = activePeriod->getStartDate();
+    qDebug() << "[CALENDAR] Success! Found period starting on month:" << start.getMonth();
     Date end = activePeriod->getEndDate();
     QDate periodStart(start.getYear(), start.getMonth(), start.getDay());
     QDate currentMonthStart(periodStart.year(), periodStart.month(), 1);
@@ -182,4 +187,32 @@ void ScheduleOutputManager::updateCalendarData() {
         m_calendarData.append(dayData);
     }
     emit currentCalendarDataChanged();
+}
+
+void ScheduleOutputManager::setAvailablePeriods(const QStringList& semesters, const QStringList& moeds) {
+    m_semesters = semesters;
+    m_moeds = moeds;
+    
+    emit availableSemestersChanged(); 
+    emit availableMoedsChanged();
+}
+
+void ScheduleOutputManager::clearData() {
+    // empty all data containers
+    m_solutions.clear();
+    m_courses.clear();
+    m_periods.clear();
+    m_calendarData.clear();
+    
+    // set default state
+    m_currentIndex = 0;
+    m_selectedSemester = "";
+    m_selectedMoed = "";
+
+    // refresh the UI by emitting the necessary signals
+    emit totalSchedulesCountChanged();
+    emit currentScheduleIndexChanged();
+    emit currentCalendarDataChanged();
+    
+    qDebug() << "[MANAGER] Data cleared successfully.";
 }

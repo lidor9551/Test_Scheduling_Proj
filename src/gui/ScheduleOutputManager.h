@@ -37,6 +37,7 @@ public:
     void setCourses(const std::vector<Course>& courses) {
     m_courses = courses;
     }
+    void setAvailablePeriods(const QStringList& semesters, const QStringList& moeds);
 
 
     // Actions triggered by the user from the QML interface
@@ -44,6 +45,7 @@ public:
     Q_INVOKABLE void previousSchedule();
     Q_INVOKABLE void setPeriodFilter(const QString& semester, const QString& moed);
     Q_INVOKABLE void exportCurrentSchedule();
+    Q_INVOKABLE void clearData();
 
 signals:
     void currentScheduleIndexChanged();

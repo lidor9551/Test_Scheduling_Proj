@@ -9,6 +9,7 @@
 #include <QVariant>
 #include <QVariantList>
 #include "ScheduleOutputManager.h"
+#include "preprocessing/Preprocessor.h"
 
 class AppController : public QObject {
     Q_OBJECT
@@ -65,6 +66,8 @@ public:
     // to present in the UI the relevant courses for the selected program
     Q_INVOKABLE QVariantList getCoursesForProgram(const QString& programId, int year = -1, int semester = -1);
 
+    Q_INVOKABLE void generateForPeriod(const QString& semester, const QString& moed);
+
     //qml checboxes will call this to toggle program selection
     Q_INVOKABLE void toggleProgram(const QString& programId);
 
@@ -112,6 +115,7 @@ private:
 
     std::vector<Course> courses_;
     std::vector<ExamPeriod> examPeriods_;
+    std::vector<SchedulingBlock> m_allBlocks;
 
     QStringList m_availablePrograms;
     QStringList m_selectedPrograms;

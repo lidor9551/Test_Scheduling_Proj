@@ -23,9 +23,12 @@ Window {
     property color textMuted: "#69737a"
     property color danger: "#b91c1c"
     property color success: "#047857"
+
     property string currentProgramView: ""
     property string currentProgramId: ""  
     property string currentProgramName: ""
+    property var mainStackView: stackView
+    
     
     Dialog {
     id: courseDetailsDialog

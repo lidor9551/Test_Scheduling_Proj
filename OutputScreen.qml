@@ -4,8 +4,6 @@ import QtQuick.Layouts
 
 Item {
     id: outputRoot
-    width: parent.width
-    height: parent.height
 
 
     ColumnLayout {
@@ -27,7 +25,8 @@ Item {
                     radius: 8
                 }
                 onClicked: {
-                    StackView.view.pop()
+                    appController.outputManager.clearData()
+                    root.mainStackView.pop()
                 }
             }
 
@@ -82,7 +81,7 @@ Item {
                     font.bold: true
                     Layout.preferredWidth: 100
                     Layout.preferredHeight: 40
-                    enabled: outputRoot.currentScheduleIndex > 1
+                    enabled: appController.outputManager.currentScheduleIndex > 1
                     
                     background: Rectangle {
                         color: parent.enabled ? (parent.down ? "#e2e8f0" : (parent.hovered ? "#f8fafc" : "white")) : "#f1f5f9"
@@ -147,8 +146,8 @@ Item {
                 font.pixelSize: 15
                 font.bold: true
                 
-                // will be populated dynamically based on the input data, but for demo purposes we hardcode some values here
-                model: ["FALL", "SPRI", "SUMM"]
+                // dynamically linked to the list in C++
+                model: appController.outputManager.availableSemesters
                 
                 background: Rectangle {
                     color: "#f8fafc"
@@ -158,7 +157,7 @@ Item {
                 }
                 
                 onActivated: {
-                    appController.outputManager.setPeriodFilter(currentText, moedSelector.currentText);
+                    appController.generateForPeriod(currentText, moedSelector.currentText);
                 }
             }
 
@@ -178,8 +177,8 @@ Item {
                 font.pixelSize: 15
                 font.bold: true
                 
-                // will be populated dynamically based on the input data, but for demo purposes we hardcode some values here
-                model: ["Aleph", "Bet", "Gimel"]
+                // dynamically linked to the list in C++
+                model: appController.outputManager.availableMoeds
                 
                 background: Rectangle {
                     color: "#f8fafc"
@@ -189,7 +188,7 @@ Item {
                 }
                 
                 onActivated: {
-                    appController.outputManager.setPeriodFilter(semesterSelector.currentText, currentText);
+                    appController.generateForPeriod(semesterSelector.currentText, currentText);
                 }
             }
 

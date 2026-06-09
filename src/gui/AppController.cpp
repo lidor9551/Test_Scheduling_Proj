@@ -307,12 +307,15 @@ ScheduleOutputManager* AppController::outputManager() {
 }
 
 void AppController::generateSchedules() {
+    qDebug() << "=========================================";
+    qDebug() << ">>> generateSchedules STARTED! <<<";
+    qDebug() << "Selected programs count:" << m_selectedPrograms.size();
     setStatus("Generating schedules...");
 
-    // keep a reference to the full course list for preprocessing, but the scheduling will focus on exam-only courses since it's based on exam periods
-    std::vector<Course> allCourses = this->courses_; 
+    // Keep a reference to the full course list for preprocessing
+    std::vector<Course>& allCourses = this->courses_; 
     
-    // create a filtered list of courses that require exams, as the scheduling algorithm is designed around exam periods and constraints related to them
+    // Create a filtered list of courses that require exams
     std::vector<Course> examOnlyCourses;
     for (const auto& course : allCourses) {
         if (course.getEvaluationMethod() == Evaluation::EXAM) {
@@ -320,50 +323,59 @@ void AppController::generateSchedules() {
         }
     }
 
+    qDebug() << ">>> Courses exposed to algorithm:";
+    for (const auto& course : examOnlyCourses) {
+        qDebug() << "    -" << QString::fromStdString(course.getCourseName());
+    }
+
     // Expose the exam-only courses to the output manager  
     m_outputManager.setCourses(examOnlyCourses);
 
-    // build the scheduling blocks based on the selected programs and the loaded data
+    // Build the scheduling blocks based on the selected programs
     std::vector<std::string> selectedProgs;
     for (const auto& prog : m_selectedPrograms) {
         selectedProgs.push_back(prog.toStdString());
     }
 
+    // Build all blocks and save them to the class member (m_allBlocks)
     SchedulingPreprocessor preprocessor(allCourses, this->examPeriods_, selectedProgs);
-    std::vector<SchedulingBlock> allBlocks = preprocessor.buildBlocks();
+    m_allBlocks = preprocessor.buildBlocks();
 
-    if (allBlocks.empty()) {
+    if (m_allBlocks.empty()) {
         setError("No valid scheduling blocks found.");
         return;
     }
 
-    // Use the first valid block (in the future, filter this based on user input)
-    SchedulingBlock block = allBlocks[0];
+    // Extract available semesters and moedim from the blocks to populate the UI dropdowns
+    QStringList availableSemesters;
+    QStringList availableMoeds;
     
-    // Create the algorithm engine
-    ScheduleGenerator* generator = new ScheduleGenerator(block);
-    
-    // Thread setup for background execution
-    QThread* thread = new QThread();
-    SchedulingWorker* worker = new SchedulingWorker(generator, 100); // 100 is the limitPerBlock
-    worker->moveToThread(thread);
+    for (const auto& block : m_allBlocks) {
+        QString sem = QString::fromStdString(block.semester);
+        QString moed = QString::fromStdString(block.moed);
+        
+        if (!availableSemesters.contains(sem)) {
+            availableSemesters.append(sem);
+        }
+        if (!availableMoeds.contains(moed)) {
+            availableMoeds.append(moed);
+        }
+    }
 
-    // Connect signals and slots for communication between the worker and the controller
-    connect(thread, &QThread::started, worker, &SchedulingWorker::run);
-    connect(worker, &SchedulingWorker::finished, this, &AppController::onSchedulingFinished);
-    connect(worker, &SchedulingWorker::failed, this, &AppController::onSchedulingFailed);
-    
-    // Cleanup connections to ensure memory is freed after the task
-    connect(worker, &SchedulingWorker::finished, thread, &QThread::quit);
-    connect(worker, &SchedulingWorker::finished, worker, &SchedulingWorker::deleteLater);
-    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    connect(worker, &SchedulingWorker::failed, thread, &QThread::quit);
-    connect(worker, &SchedulingWorker::failed, worker, &SchedulingWorker::deleteLater); // Added for safety
+    // Expose the available periods to the output manager for UI dropdowns
+    m_outputManager.setAvailablePeriods(availableSemesters, availableMoeds);
 
-    thread->start();
+    // Trigger the algorithm automatically for the first valid block (default view)
+    QString firstSem = QString::fromStdString(m_allBlocks[0].semester);
+    QString firstMoed = QString::fromStdString(m_allBlocks[0].moed);
+    
+    // This function will now handle the Thread and Worker creation!
+    generateForPeriod(firstSem, firstMoed);
 }
 
 void AppController::onSchedulingFinished(const std::vector<std::vector<int>>& solutions) {
+    qDebug() << "--- FINAL ALGORITHM OUTPUT ---";
+    qDebug() << "Total solutions calculated:" << solutions.size();
     setStatus("Scheduling completed!");
 
 
@@ -381,4 +393,47 @@ void AppController::onSchedulingFinished(const std::vector<std::vector<int>>& so
 
 void AppController::onSchedulingFailed(QString message) {
     setError("Scheduling failed: " + message);
+}
+
+void AppController::generateForPeriod(const QString& semester, const QString& moed) {
+    std::string targetSem = semester.toStdString();
+    std::string targetMoed = moed.toStdString();
+
+    SchedulingBlock* selectedBlock = nullptr;
+    
+    // search for the block that matches the selected semester and moed
+    for (auto& block : m_allBlocks) {
+        if (block.semester == targetSem && block.moed == targetMoed) {
+            selectedBlock = &block;
+            break;
+        }
+    }
+
+    if (!selectedBlock) {
+        qDebug() << "No block found for" << semester << moed;
+        m_outputManager.setSchedulingData({}, courses_, examPeriods_);
+        return;
+    }
+
+    setStatus("Generating schedules for " + semester + " " + moed + "...");
+
+    //update the output manager with the current period filter so it can prepare the UI accordingly
+    m_outputManager.setPeriodFilter(semester, moed);
+
+    ScheduleGenerator* generator = new ScheduleGenerator(*selectedBlock);
+    
+    // Thread setup for background execution
+    QThread* thread = new QThread();
+    SchedulingWorker* worker = new SchedulingWorker(generator, 100000); 
+    worker->moveToThread(thread);
+
+    connect(thread, &QThread::started, worker, &SchedulingWorker::run);
+    connect(worker, &SchedulingWorker::finished, this, &AppController::onSchedulingFinished);
+    connect(worker, &SchedulingWorker::failed, this, &AppController::onSchedulingFailed);
+    
+    connect(worker, &SchedulingWorker::finished, thread, &QThread::quit);
+    connect(worker, &SchedulingWorker::finished, worker, &SchedulingWorker::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    
+    thread->start();
 }
