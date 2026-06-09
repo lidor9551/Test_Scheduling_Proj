@@ -1,74 +1,69 @@
-# Test Suite
+# Tests
 
-This folder contains the testing assets for the Exam Scheduling System.
-
-## Structure
-
-- `unit/` - automated tests for isolated classes and logic.
-- `integration/` - automated tests for flows that combine multiple components.
-- `layout/` - UI and layout validation tests or checklists.
-- `manual/` - manual QA scenarios for user-facing flows.
-- `data/` - controlled input datasets used by tests.
-- `reports/` - QA execution reports and regression summaries.
-
-## Test Data Structure
-
-- `data/valid/` - valid input files for successful flows.
-- `data/invalid/` - invalid input files for error-handling tests.
-- `data/overlap/` - datasets for exam conflict and overlap validation.
-- `data/no_solution/` - datasets where no valid schedule should exist.
+This directory contains the automated and manual QA assets for the Exam Scheduler project.
 
 ## Test Types
 
 ### Unit Tests
 
-Unit tests validate individual classes and logic in isolation.
+Unit tests verify isolated core logic.
 
-Examples:
-- Date comparison
-- Excluded range logic
-- Course model behavior
-- Schedule generator constraints
+Current unit/model-related tests:
+
+- `ProgramCourseModelTest`
 
 ### Integration Tests
 
-Integration tests validate complete internal flows without relying on the GUI.
+Integration tests verify that multiple system components work together.
 
-Examples:
-- Parser to preprocessing flow
-- Preprocessing to scheduler flow
-- Scheduler to output writer flow
+Current integration tests:
 
-### Layout / UI Tests
+- `ParserPreprocessorIntegrationTest`
+  - Verifies parser-to-preprocessor flow.
+  - Uses `tests/data/valid/simple`.
 
-Layout tests validate that screens remain readable and usable.
+- `SchedulerIntegrationTest`
+  - Verifies parser-to-preprocessor-to-scheduler flow.
+  - Uses `tests/data/valid/simple`.
 
-Examples:
-- Buttons do not overlap
-- Long course names do not break the UI
-- Calendar layout remains readable
-- Output schedule screen displays information clearly
+- `InvalidInputIntegrationTest`
+  - Verifies malformed input is rejected.
+  - Uses `tests/data/invalid/missing-fields`.
 
-### Manual QA Tests
+- `NoSolutionIntegrationTest`
+  - Verifies the scheduler returns no solutions when scheduling is impossible.
+  - Uses `tests/data/no_solution/impossible-schedule`.
 
-Manual tests validate complete user flows that are difficult to automate at this stage.
+- `OverlapConflictIntegrationTest`
+  - Verifies same-program obligatory exam conflicts are rejected.
+  - Uses `tests/data/overlap/same-program-conflict`.
 
-Examples:
-- Loading input files through the UI
-- Selecting study programs
-- Editing calendar days
-- Generating schedules
-- Navigating generated schedules
-- Saving a selected generated schedule
+## Test Data
 
-## Test Documentation Rule
+Test datasets are located under:
 
-Every test should clearly define:
+```text
+tests/data/
+Available datasets:
+tests/data/valid/simple
+tests/data/invalid/missing-fields
+tests/data/no_solution/impossible-schedule
+tests/data/overlap/same-program-conflict
+Each dataset contains input files and an expected.md file describing the expected behavior.
 
-- Purpose
-- Preconditions
-- Input data
-- Steps
-- Expected result
-- Actual result when executed
-- Status: Pass, Fail, Blocked, or Not Executed
+Running Tests on macOS / Linux
+
+From the project root:
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+
+Running Tests on Windows
+
+Before running tests, make sure Qt DLLs are available in the current PowerShell session:
+$env:PATH = "C:\Qt\6.8.0\msvc2022_64\bin;$env:PATH"
+
+Then run:
+cmake -S . -B build -DCMAKE_PREFIX_PATH="C:\Qt\6.8.0\msvc2022_64"
+cmake --build build --config Debug
+ctest --test-dir build -C Debug --output-on-failure
