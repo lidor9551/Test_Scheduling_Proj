@@ -290,7 +290,13 @@ Item {
                 
                 model: appController.outputManager.currentCalendarData
                 layoutDirection: Qt.RightToLeft
-                interactive: false
+                interactive: true
+                clip: true
+
+                ScrollBar.vertical: ScrollBar {
+                    active: true
+                    policy: ScrollBar.AsNeeded
+                }
 
                 delegate: Rectangle {
                     width: calendarGrid.cellWidth - 10

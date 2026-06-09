@@ -91,6 +91,7 @@ void ScheduleOutputManager::updateCalendarData() {
 
     qDebug() << "[CALENDAR] Trying to draw board for -> Sem:" << m_selectedSemester << "Moed:" << m_selectedMoed;
 
+    // 1. Find the selected ExamPeriod based on the UI dropdowns
     const ExamPeriod* activePeriod = nullptr;
     for (const auto& period : m_periods) {
         if (QString::fromStdString(period.getSemester()) == m_selectedSemester &&
@@ -100,104 +101,114 @@ void ScheduleOutputManager::updateCalendarData() {
         }
     }
 
+    // If no active period is found, return an empty calendar
     if (!activePeriod) {
         qDebug() << "[CALENDAR] ERROR: Could not find matching period in m_periods!";
         emit currentCalendarDataChanged();
         return;
     }
 
+    // 2. Define the exact boundaries of the period
     Date start = activePeriod->getStartDate();
-    qDebug() << "[CALENDAR] Success! Found period starting on month:" << start.getMonth();
     Date end = activePeriod->getEndDate();
-    QDate periodStart(start.getYear(), start.getMonth(), start.getDay());
-    QDate currentMonthStart(periodStart.year(), periodStart.month(), 1);
-    int daysInMonth = currentMonthStart.daysInMonth();
-    int firstDayOfWeek = currentMonthStart.dayOfWeek() % 7; 
+    
+    // Convert to QDate to easily calculate continuous date ranges
+    QDate qStart(start.getYear(), start.getMonth(), start.getDay());
+    QDate qEnd(end.getYear(), end.getMonth(), end.getDay());
 
-    // adding ALL keys to avoid 'undefined'
-    for (int i = 0; i < firstDayOfWeek; ++i) {
-        QVariantMap emptyDay;
-        emptyDay["dayText"] = "";
-        emptyDay["isExcluded"] = false;
-        emptyDay["hasExam"] = false;
-        emptyDay["examName"] = "";
-        emptyDay["courseId"] = "";
-        emptyDay["req"] = "";
-        emptyDay["program"] = "";
-        m_calendarData.append(emptyDay);
-    }
+    // --- Calculate Grid Anchors ---
+    // In Qt: 7 is Sunday, 1 is Monday... 6 is Saturday.
+    // We always want to start the grid on Sunday and end on Saturday.
+    int startDow = qStart.dayOfWeek() % 7; 
+    QDate gridStart = qStart.addDays(-startDow);
+
+    int endDow = qEnd.dayOfWeek() % 7;
+    QDate gridEnd = qEnd.addDays(6 - endDow);
 
     std::vector<Date> allowed = activePeriod->allowedDates();
     const auto& currentSolution = m_solutions[m_currentIndex - 1];
 
-    for (int day = 1; day <= daysInMonth; ++day) {
-        Date currentDate(day, currentMonthStart.month(), currentMonthStart.year());
-
+    // --- Continuous loop from the grid start to the grid end ---
+    for (QDate current = gridStart; current <= gridEnd; current = current.addDays(1)) {
         QVariantMap dayData;
-        dayData["dayText"] = QString::number(day);
-        dayData["isExcluded"] = (currentDate < start || currentDate > end);
-        dayData["hasExam"] = false;
-        dayData["examName"] = "";
-        dayData["courseId"] = "";
-        dayData["req"] = "";
-        dayData["program"] = "";
 
-        bool isOutsidePeriod = (currentDate < start || currentDate > end);
-        bool isAllowed = false;
-        for (const auto& d : allowed) {
-            if (d == currentDate) { isAllowed = true; break; }
-        }
-        dayData["isExcluded"] = isOutsidePeriod || !isAllowed;
+        // Check: Are we in the padding cells (before the period starts or after it ends)?
+        if (current < qStart || current > qEnd) {
+            dayData["dayText"] = ""; // QML will recognize this empty string and make the cell transparent
+            dayData["isExcluded"] = false;
+            dayData["hasExam"] = false;
+            dayData["examName"] = "";
+            dayData["courseId"] = "";
+            dayData["req"] = "";
+            dayData["program"] = "";
+        } 
+        else {
+            // Active day inside the period (convert back to custom Date for checks)
+            Date currentDate(current.day(), current.month(), current.year());
 
-                // 4. Map the scheduling solution to the current date
-        // FIXED: Iterate over m_courses.size() to catch ALL courses
-        for (size_t courseIdx = 0; courseIdx < m_courses.size(); ++courseIdx) {
-            const Course& currentCourse = m_courses[courseIdx];
-            // Check if the course evaluation is exam
-            if (currentCourse.getEvaluationMethod() != Evaluation::EXAM) { 
-                continue; 
+            // UX improvement: On the first day of a month or the first day of the period, show the month (e.g., "1/2")
+            if (current.day() == 1 || current == qStart) {
+                dayData["dayText"] = QString::number(current.day()) + "/" + QString::number(current.month());
+            } else {
+                dayData["dayText"] = QString::number(current.day());
             }
-            int scheduledDateIndex = -1; // Default: not scheduled
 
-            // Check if the solution has an index for this course
-            if (courseIdx < currentSolution.size()) {
-                scheduledDateIndex = currentSolution[courseIdx];
-            } 
+            // Check exclusions (is the day in the allowed dates list?)
+            bool isAllowed = false;
+            for (const auto& d : allowed) {
+                if (d == currentDate) { isAllowed = true; break; }
+            }
+            // Saturday (6) is also considered visually excluded on the calendar
+            dayData["isExcluded"] = !isAllowed || (current.dayOfWeek() == 6);
+            dayData["hasExam"] = false;
+            dayData["examName"] = "";
+            dayData["courseId"] = "";
+            dayData["req"] = "";
+            dayData["program"] = "";
 
-            if (scheduledDateIndex >= 0 && scheduledDateIndex < (int)allowed.size()) {
-                Date examDate = allowed[scheduledDateIndex];
-                
-                if (examDate == currentDate) {
-                    dayData["hasExam"] = true;
-                    dayData["examName"] = QString::fromStdString(currentCourse.getCourseName()); 
-                    dayData["courseId"] = QString::fromStdString(currentCourse.getCourseNumber()); 
+            // --- Original code mapping the scheduled exams to the current date ---
+            for (size_t courseIdx = 0; courseIdx < m_courses.size(); ++courseIdx) {
+                const Course& currentCourse = m_courses[courseIdx];
+                if (currentCourse.getEvaluationMethod() != Evaluation::EXAM) { 
+                    continue; 
+                }
+                int scheduledDateIndex = -1;
+
+                if (courseIdx < currentSolution.size()) {
+                    scheduledDateIndex = currentSolution[courseIdx];
+                } 
+
+                if (scheduledDateIndex >= 0 && scheduledDateIndex < (int)allowed.size()) {
+                    Date examDate = allowed[scheduledDateIndex];
                     
-                    if (!currentCourse.getPrograms().empty()) {
-                        const auto& progDetails = currentCourse.getPrograms().front();
-                        QString progId = QString::fromStdString(progDetails.programID);
+                    if (examDate == currentDate) {
+                        dayData["hasExam"] = true;
+                        dayData["examName"] = QString::fromStdString(currentCourse.getCourseName()); 
+                        dayData["courseId"] = QString::fromStdString(currentCourse.getCourseNumber()); 
+                        
+                        if (!currentCourse.getPrograms().empty()) {
+                            const auto& progDetails = currentCourse.getPrograms().front();
+                            QString progId = QString::fromStdString(progDetails.programID);
 
-                        // using the Map to convert programID to programName for display
-                        if (m_programsMap.contains(progId)) {
-                            dayData["program"] = m_programsMap.value(progId);
+                            if (m_programsMap.contains(progId)) {
+                                dayData["program"] = m_programsMap.value(progId);
+                            } else {
+                                dayData["program"] = progId; 
+                            }
+
+                            dayData["req"] = (progDetails.requirement == Requirement::OBLIGATORY) ? "חובה" : "בחירה";
                         } else {
-                        dayData["program"] = progId; // if no mapping found, show the ID as fallback
+                            dayData["program"] = "כללי";
+                            dayData["req"] = "-";
                         }
-
-                        if (dayData["hasExam"] == true) {
-                            qDebug() << "[DEBUG] Setting program name for:" << dayData["examName"] 
-                            << "Program value is:" << dayData["program"];
-                        }
-
-                        dayData["req"] = (progDetails.requirement == Requirement::OBLIGATORY) ? "חובה" : "בחירה";
-                    } else {
-                        dayData["program"] = "כללי";
-                        dayData["req"] = "-";
                     }
                 }
             }
         }
+        
         m_calendarData.append(dayData);
     }
+    
     emit currentCalendarDataChanged();
 }
 
