@@ -106,6 +106,12 @@ private:
     // output manager instance to be used across the app and exposed to QML
     ScheduleOutputManager m_outputManager;
 
+    //for the QML to get the program names map for display purposes
+    Q_INVOKABLE QVariantMap getProgramNamesMap() const;
+
+    // for the C++
+    QMap<QString, QString> getInternalProgramsMap() const;
+
 private:
     QString coursesFilePath_;
     QString examPeriodsFilePath_;
