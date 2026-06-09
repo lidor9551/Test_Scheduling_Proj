@@ -23,9 +23,12 @@ Window {
     property color textMuted: "#69737a"
     property color danger: "#b91c1c"
     property color success: "#047857"
+
     property string currentProgramView: ""
     property string currentProgramId: ""  
     property string currentProgramName: ""
+    property var mainStackView: stackView
+    
     
     Dialog {
     id: courseDetailsDialog
@@ -592,6 +595,18 @@ Window {
                                     appController.courses
                                 )
                                 stackView.push("CalendarScreen.qml")
+                            }
+                        }
+                        AppButton {
+                            text: "צור מערכות שיבוץ"
+                            outline: false
+                            // check if there's at least one program selected before showing the button
+                            visible: appController.hasData && appController.selectedPrograms.length > 0
+                            onClicked: {
+                                appController.generateSchedules()
+                                
+                                // go to the output screen after generating schedules
+                                stackView.push("OutputScreen.qml")
                             }
                         }
 

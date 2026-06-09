@@ -8,6 +8,8 @@
 #include "gui/ProgramCourseModel.h"
 #include <QVariant>
 #include <QVariantList>
+#include "ScheduleOutputManager.h"
+#include "preprocessing/Preprocessor.h"
 
 class AppController : public QObject {
     Q_OBJECT
@@ -31,6 +33,10 @@ class AppController : public QObject {
     Q_PROPERTY(QStringList selectedPrograms READ selectedPrograms NOTIFY selectedProgramsChanged)
 
     Q_PROPERTY(ProgramCourseModel* programCourseModel READ programCourseModel CONSTANT)
+
+    // the output manager instance to be used across the app and exposed to QML
+    Q_PROPERTY(ScheduleOutputManager* outputManager READ outputManager CONSTANT)
+
 public:
     explicit AppController(QObject* parent = nullptr);
 
@@ -60,14 +66,25 @@ public:
     // to present in the UI the relevant courses for the selected program
     Q_INVOKABLE QVariantList getCoursesForProgram(const QString& programId, int year = -1, int semester = -1);
 
+    Q_INVOKABLE void generateForPeriod(const QString& semester, const QString& moed);
+
     //qml checboxes will call this to toggle program selection
     Q_INVOKABLE void toggleProgram(const QString& programId);
 
-
     ProgramCourseModel* programCourseModel();
+    
+    // getter for the output manager
+    ScheduleOutputManager* outputManager();
+
+    // the function called from QML to start the scheduling algorithm
+    Q_INVOKABLE void generateSchedules();
+
+public slots:
+    // to capture the results from the scheduling algorithm and pass them to the output manager
+    void onSchedulingFinished(const std::vector<std::vector<int>>& solutions);
+    void onSchedulingFailed(QString message);
 
 signals:
-
     void coursesFilePathChanged();
     void examPeriodsFilePathChanged();
 
@@ -85,6 +102,9 @@ private:
     void setError(const QString& message);
     
     ProgramCourseModel programCourseModel_;
+    
+    // output manager instance to be used across the app and exposed to QML
+    ScheduleOutputManager m_outputManager;
 
 private:
     QString coursesFilePath_;
@@ -95,6 +115,7 @@ private:
 
     std::vector<Course> courses_;
     std::vector<ExamPeriod> examPeriods_;
+    std::vector<SchedulingBlock> m_allBlocks;
 
     QStringList m_availablePrograms;
     QStringList m_selectedPrograms;

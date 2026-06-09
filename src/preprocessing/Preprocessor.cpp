@@ -1,5 +1,6 @@
 #include "Preprocessor.h"
 #include <stdexcept>
+#include <QDebug>
 
 SchedulingPreprocessor::SchedulingPreprocessor(
     const std::vector<Course>& courses,
@@ -41,6 +42,12 @@ std::vector<SchedulingBlock> SchedulingPreprocessor::buildBlocks() const {
             allowedDates,
             runtimeCourses
         });
+    }
+    qDebug() << ">>> Number of blocks built:" << blocks.size(); 
+
+    if (blocks.empty()) {
+        qDebug() << ">>> ERROR: Blocks are empty! Stopping generation."; 
+        return{};
     }
 
     return blocks;

@@ -13,7 +13,6 @@ if(COMMAND qt_policy)
     qt_policy(SET QTP0001 NEW)
 endif()
 
-# CHANGEMENT: Ajout de QuickControls2 à la liste des composants requis
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Concurrent)
 
 qt_add_executable(exam_scheduler
@@ -29,6 +28,9 @@ qt_add_executable(exam_scheduler
     src/scheduler/ScheduleGenerator.cpp
     src/scheduler/SchedulingWorker.cpp
     src/exporter/OutputWriter.cpp
+    src/gui/ScheduleOutputManager.cpp
+    src/gui/ScheduleOutputManager.h
+
 )
 
 target_include_directories(exam_scheduler PRIVATE src)
@@ -39,7 +41,6 @@ else()
     target_compile_options(exam_scheduler PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# CHANGEMENT: Ajout de Qt6::QuickControls2 aux bibliothèques liées
 target_link_libraries(exam_scheduler
     PRIVATE
         Qt6::Core
@@ -53,6 +54,7 @@ target_link_libraries(exam_scheduler
 set(QML_FILES
     Main.qml
     CalendarScreen.qml
+    OutputScreen.qml
     PeriodEditorScreen.qml
 )
 
