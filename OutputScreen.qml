@@ -2,8 +2,27 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+
 Item {
     id: outputRoot
+
+    // dialog for choosing where to save the exported schedule
+    FileDialog {
+        id: saveDialog
+        title: "בחר היכן לשמור את המערכת"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Text files (*.txt)"]
+        
+        onAccepted: {
+            let path = saveDialog.selectedFile.toString().replace("file:///", "")
+            
+            if (appController.outputManager.saveCurrentScheduleToFile(path)) {
+                console.log("File saved successfully to: " + path)
+            } else {
+                console.log("Failed to save!")
+            }
+        }
+    }
 
 
     ColumnLayout {
@@ -56,7 +75,7 @@ Item {
                 
                 onClicked: {
                     console.log("Exporting schedule " + outputRoot.currentScheduleIndex)
-                    // future implementation: call C++ function to export the current schedule as an image or PDF
+                    saveDialog.open()
                 }
             }
         }

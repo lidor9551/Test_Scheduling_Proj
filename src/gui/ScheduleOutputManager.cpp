@@ -2,6 +2,8 @@
 #include <QDebug>
 #include <QDate>
 #include <set>
+#include <QFile>
+#include <QTextStream>
 
 ScheduleOutputManager::ScheduleOutputManager(QObject* parent) 
     : QObject(parent), m_currentIndex(1) {}
@@ -172,16 +174,26 @@ void ScheduleOutputManager::updateCalendarData() {
                     
                     if (!currentCourse.getPrograms().empty()) {
                         const auto& progDetails = currentCourse.getPrograms().front();
-                        dayData["program"] = QString::fromStdString(progDetails.programID);
+                        QString progId = QString::fromStdString(progDetails.programID);
+
+                        // using the Map to convert programID to programName for display
+                        if (m_programsMap.contains(progId)) {
+                            dayData["program"] = m_programsMap.value(progId);
+                        } else {
+                        dayData["program"] = progId; // if no mapping found, show the ID as fallback
+                        }
+
+                        if (dayData["hasExam"] == true) {
+                            qDebug() << "[DEBUG] Setting program name for:" << dayData["examName"] 
+                            << "Program value is:" << dayData["program"];
+                        }
+
                         dayData["req"] = (progDetails.requirement == Requirement::OBLIGATORY) ? "חובה" : "בחירה";
                     } else {
                         dayData["program"] = "כללי";
                         dayData["req"] = "-";
                     }
                 }
-            } else {
-                // Here you can handle the case where the course is NOT scheduled
-                // For example: log it or show it in a special "unscheduled" list
             }
         }
         m_calendarData.append(dayData);
@@ -215,4 +227,48 @@ void ScheduleOutputManager::clearData() {
     emit currentCalendarDataChanged();
     
     qDebug() << "[MANAGER] Data cleared successfully.";
+}
+
+
+bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+
+    QTextStream out(&file);
+    out << "Schedule Export - " << m_selectedSemester << " " << m_selectedMoed << "\n";
+    out << "------------------------------------------\n";
+
+    // currently showing schedule at m_currentIndex, get the corresponding solution
+    const auto& currentSolution = m_solutions[m_currentIndex - 1];
+    
+    const ExamPeriod* activePeriod = nullptr;
+    for (const auto& period : m_periods) {
+        if (QString::fromStdString(period.getSemester()) == m_selectedSemester &&
+            QString::fromStdString(period.getMoed()) == m_selectedMoed) {
+            activePeriod = &period;
+            break;
+        }
+    }
+
+    if (!activePeriod) return false;
+    const auto& allowed = activePeriod->allowedDates();
+
+    // list all courses with their scheduled dates
+    for (size_t i = 0; i < m_courses.size(); ++i) {
+        if (m_courses[i].getEvaluationMethod() != Evaluation::EXAM) continue;
+        
+        int dateIdx = currentSolution[i];
+        out << "Course: " << QString::fromStdString(m_courses[i].getCourseName()) 
+            << " | ID: " << QString::fromStdString(m_courses[i].getCourseNumber()) << "\n";
+        
+        if (dateIdx >= 0 && dateIdx < (int)allowed.size()) {
+            out << "Date: " << allowed[dateIdx].toString().c_str() << "\n";
+        } else {
+            out << "Date: Not Scheduled\n";
+        }
+        out << "------------------------------------------\n";
+    }
+
+    file.close();
+    return true;
 }

@@ -1,4 +1,4 @@
-#include "gui/AppController.h"
+﻿#include "gui/AppController.h"
 #include "parser/InputParser.h"
 #include "scheduler/ScheduleGenerator.h" 
 #include "scheduler/SchedulingWorker.h"
@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 #include <QThread>
+#include <QVariant>
 
 
 AppController::AppController(QObject* parent)
@@ -78,6 +79,8 @@ void AppController::replaceData() {
         examPeriods_ = std::move(loadedPeriods);
         programCourseModel_.setCourses(courses_);
         m_outputManager.setCourses(courses_);
+
+        m_outputManager.setProgramsMap(getInternalProgramsMap());
 
         emit dataChanged();
 
@@ -149,6 +152,8 @@ void AppController::appendData() {
         }
         programCourseModel_.setCourses(courses_);
         m_outputManager.setCourses(courses_);
+
+        m_outputManager.setProgramsMap(getInternalProgramsMap()); 
         
         emit dataChanged();
 
@@ -437,3 +442,32 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
     
     thread->start();
 }
+
+// C++ function to create the internal map of program IDs to names
+QMap<QString, QString> AppController::getInternalProgramsMap() const {
+    QMap<QString, QString> map;
+    map["83101"] = QStringLiteral("הנדסת מחשבים");
+    map["83102"] = QStringLiteral("הנדסת חשמל");
+    map["83104"] = QStringLiteral("הנדסת תעשיה ומערכות מידע");
+    map["83107"] = QStringLiteral("הנדסת נתונים");
+    map["83108"] = QStringLiteral("הנדסת תוכנה");
+    map["83109"] = QStringLiteral("הנדסת חומרים");
+    map["83105"] = QStringLiteral("הנדסת מחשבים – מגמת חומרת מחשבים");
+    map["83182"] = QStringLiteral("הנדסת חשמל – מגמת הנדסה קוונטית");
+    map["83103"] = QStringLiteral("הנדסת חשמל – מגמת נוירו הנדסה");
+    map["83115"] = QStringLiteral("הנדסת חשמל – מגמת הנדסה ביו-רפואית");
+    return map;
+}
+
+// QML function to expose the program names map for display purposes (calls the C++ function and converts it to QVariantMap)
+QVariantMap AppController::getProgramNamesMap() const {
+    QVariantMap vMap;
+    QMap<QString, QString> cppMap = getInternalProgramsMap();
+    
+    for (auto it = cppMap.constBegin(); it != cppMap.constEnd(); ++it) {
+        vMap.insert(it.key(), it.value());
+    }
+    return vMap;
+}
+
+

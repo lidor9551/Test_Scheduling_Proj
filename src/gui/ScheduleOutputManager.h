@@ -6,6 +6,7 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include <vector>
+#include <QMap>
 
 #include "../model/Course.h"
 #include "../model/ExamPeriod.h"
@@ -39,6 +40,10 @@ public:
     }
     void setAvailablePeriods(const QStringList& semesters, const QStringList& moeds);
 
+    void setProgramsMap(const QMap<QString, QString>& map) {
+        m_programsMap = map;
+    }
+
 
     // Actions triggered by the user from the QML interface
     Q_INVOKABLE void nextSchedule();
@@ -46,6 +51,8 @@ public:
     Q_INVOKABLE void setPeriodFilter(const QString& semester, const QString& moed);
     Q_INVOKABLE void exportCurrentSchedule();
     Q_INVOKABLE void clearData();
+    //to save and export the current schedule as txt file
+    Q_INVOKABLE bool saveCurrentScheduleToFile(const QString& filePath);
 
 signals:
     void currentScheduleIndexChanged();
@@ -59,6 +66,9 @@ private:
     void updateCalendarData(); 
     // Extracts unique semesters and moeds from the ExamPeriod data
     void extractAvailableFilters(); 
+
+    // Map to convert programID to programName for display purposes
+    QMap<QString, QString> m_programsMap;
 
     // Raw data from the algorithm and model
     std::vector<std::vector<int>> m_solutions;
