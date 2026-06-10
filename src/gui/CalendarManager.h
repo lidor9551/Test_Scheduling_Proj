@@ -40,6 +40,9 @@ class CalendarManager : public QObject {
     Q_PROPERTY(QVariantList semesterList READ getSemesterList NOTIFY semesterChanged)
 
 public:
+
+    std::vector<ExamPeriod> getPeriods() const { return periods_; }
+    
     explicit CalendarManager(QObject* parent = nullptr);
 
     /** @brief Load exam periods and courses into the manager. */

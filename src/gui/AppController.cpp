@@ -317,6 +317,15 @@ void AppController::generateSchedules() {
     qDebug() << "Selected programs count:" << m_selectedPrograms.size();
     setStatus("Generating schedules...");
 
+    // override original output with new instance to reset previous state
+    if (m_calendarManager && !m_calendarManager->getPeriods().empty()) {
+        m_calendarManager->saveChanges(); 
+        this->examPeriods_ = m_calendarManager->getPeriods(); 
+        qDebug() << "[SYNC] Successfully synced updated periods from CalendarManager.";
+    } else {
+        qDebug() << "[SYNC] CalendarManager is empty or not ready. Using original parsed periods.";
+    }
+
     // Keep a reference to the full course list for preprocessing
     std::vector<Course>& allCourses = this->courses_; 
     
