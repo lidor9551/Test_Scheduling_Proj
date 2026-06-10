@@ -10,6 +10,7 @@
 #include <QVariantList>
 #include "ScheduleOutputManager.h"
 #include "preprocessing/Preprocessor.h"
+#include "CalendarManager.h"
 
 class AppController : public QObject {
     Q_OBJECT
@@ -79,6 +80,9 @@ public:
     // the function called from QML to start the scheduling algorithm
     Q_INVOKABLE void generateSchedules();
 
+    // to set the calendar manager instance for the output manager to use
+    void setCalendarManager(CalendarManager* cm) { m_calendarManager = cm; }
+
 public slots:
     // to capture the results from the scheduling algorithm and pass them to the output manager
     void onSchedulingFinished(const std::vector<std::vector<int>>& solutions);
@@ -125,4 +129,6 @@ private:
 
     QStringList m_availablePrograms;
     QStringList m_selectedPrograms;
+
+    CalendarManager* m_calendarManager = nullptr;
 };

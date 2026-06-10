@@ -249,34 +249,6 @@ Item {
                 }
             }
 
-            // demo model
-            ListModel {
-                id: mockCalendarModel
-                ListElement { dayText: ""; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: ""; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: ""; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "1"; isExcluded: false; hasExam: true; examName: "פיזיקה 1"; courseId: "83101"; req: "חובה"; program: "הנדסת מחשבים" }
-                ListElement { dayText: "2"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "3"; isExcluded: true; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "4"; isExcluded: true; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                
-                ListElement { dayText: "5"; isExcluded: false; hasExam: true; examName: "פרויקט תוכנה"; courseId: "83108"; req: "בחירה"; program: "הנדסת תוכנה" }
-                ListElement { dayText: "6"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "7"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "8"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "9"; isExcluded: false; hasExam: true; examName: "אינפי 1"; courseId: "83102"; req: "חובה"; program: "הנדסת חשמל" }
-                ListElement { dayText: "10"; isExcluded: true; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "11"; isExcluded: true; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-
-                ListElement { dayText: "12"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "13"; isExcluded: false; hasExam: true; examName: "מבני נתונים"; courseId: "83107"; req: "חובה"; program: "הנדסת נתונים" }
-                ListElement { dayText: "14"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "15"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "16"; isExcluded: false; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "17"; isExcluded: true; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-                ListElement { dayText: "18"; isExcluded: true; hasExam: false; examName: ""; courseId: ""; req: ""; program: "" }
-            }
-
             GridView {
                 id: calendarGrid
                 anchors.top: weekDaysHeader.bottom
@@ -352,6 +324,27 @@ Item {
                             horizontalAlignment: Text.AlignRight
                         }
                     }
+                }
+            }
+
+            // no solutions message
+            Rectangle {
+                anchors.centerIn: parent
+                width: 350
+                height: 80
+                radius: 8
+                color: "#fef2f2"
+                border.color: "#f87171"
+                border.width: 1
+                // only visible when there is no solutions
+                visible: appController.outputManager.totalSchedulesCount === 0
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "לא נמצאו מערכות שיבוץ תקינות לנתונים אלו."
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: "#991b1b"
                 }
             }
         }

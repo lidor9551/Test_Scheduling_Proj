@@ -19,6 +19,8 @@ int main(int argc, char *argv[]) {
     AppController appController;
     CalendarManager calendarManager;
 
+    appController.setCalendarManager(&calendarManager);
+
     QQmlApplicationEngine engine;
 
     engine.rootContext()->setContextProperty("appController", &appController);
