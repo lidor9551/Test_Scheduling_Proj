@@ -22,11 +22,25 @@ void ScheduleOutputManager::setSchedulingData(const std::vector<std::vector<int>
     emit currentScheduleIndexChanged();
 }
 
-int ScheduleOutputManager::getCurrentScheduleIndex() const { return m_currentIndex; }
-int ScheduleOutputManager::getTotalSchedulesCount() const { return m_solutions.size(); }
-QStringList ScheduleOutputManager::getAvailableSemesters() const { return m_semesters; }
-QStringList ScheduleOutputManager::getAvailableMoeds() const { return m_moeds; }
-QVariantList ScheduleOutputManager::getCurrentCalendarData() const { return m_calendarData; }
+int ScheduleOutputManager::getCurrentScheduleIndex() const {
+    return m_currentIndex;
+}
+
+int ScheduleOutputManager::getTotalSchedulesCount() const {
+    return static_cast<int>(m_solutions.size());
+}
+
+QStringList ScheduleOutputManager::getAvailableSemesters() const {
+    return m_semesters;
+}
+
+QStringList ScheduleOutputManager::getAvailableMoeds() const {
+    return m_moeds;
+}
+
+QVariantList ScheduleOutputManager::getCurrentCalendarData() const {
+    return m_calendarData;
+}
 
 void ScheduleOutputManager::nextSchedule() {
     if (m_currentIndex < m_solutions.size()) {
@@ -62,8 +76,8 @@ void ScheduleOutputManager::extractAvailableFilters() {
     std::set<QString> uniqueMoeds;
 
     for (const auto& period : m_periods) {
-        uniqueSemesters.insert(QString::fromStdString(period.getSemester()));
-        uniqueMoeds.insert(QString::fromStdString(period.getMoed()));
+        uniqueSemesters.insert(QString::fromStdString(semesterToString(period.getSemester())));
+        uniqueMoeds.insert(QString::fromStdString(moedToString(period.getMoed())));
     }
 
     m_semesters = QStringList(uniqueSemesters.begin(), uniqueSemesters.end());
@@ -94,8 +108,13 @@ void ScheduleOutputManager::updateCalendarData() {
     // 1. Find the selected ExamPeriod based on the UI dropdowns
     const ExamPeriod* activePeriod = nullptr;
     for (const auto& period : m_periods) {
-        if (QString::fromStdString(period.getSemester()) == m_selectedSemester &&
-            QString::fromStdString(period.getMoed()) == m_selectedMoed) {
+        const QString periodSemester =
+            QString::fromStdString(semesterToString(period.getSemester()));
+        const QString periodMoed =
+            QString::fromStdString(moedToString(period.getMoed()));
+
+        if (periodSemester == m_selectedSemester &&
+            periodMoed == m_selectedMoed) {
             activePeriod = &period;
             break;
         }
@@ -254,8 +273,13 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     
     const ExamPeriod* activePeriod = nullptr;
     for (const auto& period : m_periods) {
-        if (QString::fromStdString(period.getSemester()) == m_selectedSemester &&
-            QString::fromStdString(period.getMoed()) == m_selectedMoed) {
+        const QString periodSemester =
+            QString::fromStdString(semesterToString(period.getSemester()));
+        const QString periodMoed =
+            QString::fromStdString(moedToString(period.getMoed()));
+
+        if (periodSemester == m_selectedSemester &&
+            periodMoed == m_selectedMoed) {
             activePeriod = &period;
             break;
         }

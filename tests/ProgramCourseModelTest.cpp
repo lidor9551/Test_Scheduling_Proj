@@ -25,13 +25,13 @@ int main(int argc, char* argv[]) {
     );
     algorithms.addProgram(
         "83108",
-        2,
+        Year::SECOND,
         Semester::FALL,
         Requirement::OBLIGATORY
     );
     algorithms.addProgram(
         "83102",
-        2,
+        Year::SECOND,
         Semester::FALL,
         Requirement::ELECTIVE
     );
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     );
     softwareProject.addProgram(
         "83108",
-        2,
+        Year::SECOND,
         Semester::SPRI,
         Requirement::ELECTIVE
     );
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     );
     databases.addProgram(
         "83108",
-        3,
+        Year::THIRD,
         Semester::FALL,
         Requirement::OBLIGATORY
     );

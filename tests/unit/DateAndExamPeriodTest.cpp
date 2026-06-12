@@ -70,15 +70,17 @@ int main() {
     std::vector<ExcludedRange> exclusions = { range };
 
     ExamPeriod period(
-        "FALL",
-        "Aleph",
+        Semester::FALL,
+        Moed::ALEPH,
         Date(1, 2, 2026),
         Date(7, 2, 2026),
         exclusions
     );
 
-    EXPECT_EQ(period.getSemester(), std::string("FALL"));
-    EXPECT_EQ(period.getMoed(), std::string("Aleph"));
+    EXPECT_TRUE(period.getSemester() == Semester::FALL);
+    EXPECT_TRUE(period.getMoed() == Moed::ALEPH);
+    EXPECT_EQ(semesterToString(period.getSemester()), std::string("FALL"));
+    EXPECT_EQ(moedToString(period.getMoed()), std::string("Aleph"));
     EXPECT_EQ(period.getStartDate(), Date(1, 2, 2026));
     EXPECT_EQ(period.getEndDate(), Date(7, 2, 2026));
     EXPECT_EQ(period.getExcludedRanges().size(), static_cast<std::size_t>(1));

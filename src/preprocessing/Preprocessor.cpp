@@ -10,15 +10,6 @@ SchedulingPreprocessor::SchedulingPreprocessor(
     periods_(periods),
     selectedPrograms_(selectedPrograms.begin(), selectedPrograms.end()) {}
 
-std::string SchedulingPreprocessor::semesterToString(Semester sem) const {
-    switch (sem) {
-        case Semester::FALL: return "FALL";
-        case Semester::SPRI: return "SPRI";
-        case Semester::SUMM: return "SUMM";
-        default: return "";
-    }
-}
-
 std::vector<SchedulingBlock> SchedulingPreprocessor::buildBlocks() const {
     std::vector<SchedulingBlock> blocks;
 
@@ -32,13 +23,16 @@ std::vector<SchedulingBlock> SchedulingPreprocessor::buildBlocks() const {
         std::vector<Date> allowedDates = period.allowedDates();
         if (allowedDates.empty()) {
             throw std::runtime_error(
-                "No allowed dates remain for period " + period.getSemester() + "/" + period.getMoed()
+                "No allowed dates remain for period "
+                + semesterToString(period.getSemester())
+                + "/"
+                + moedToString(period.getMoed())
             );
         }
 
         blocks.push_back(SchedulingBlock{
-            period.getSemester(),
-            period.getMoed(),
+            semesterToString(period.getSemester()),
+            moedToString(period.getMoed()),
             allowedDates,
             runtimeCourses
         });
@@ -55,7 +49,7 @@ std::vector<SchedulingBlock> SchedulingPreprocessor::buildBlocks() const {
 
 std::vector<RuntimeCourse> SchedulingPreprocessor::selectRuntimeCoursesForPeriod(const ExamPeriod& period) const {
     std::vector<RuntimeCourse> runtimeCourses;
-    std::map<std::pair<std::string, int>, int> groupIndex;
+    std::map<std::pair<std::string, Year>, int> groupIndex;
 
     for (const Course& course : courses_) {
         // This is where your OOP Model shines: instantly filter non-exam courses
@@ -69,13 +63,13 @@ std::vector<RuntimeCourse> SchedulingPreprocessor::selectRuntimeCoursesForPeriod
             if (selectedPrograms_.count(offering.programID) == 0) {
                 continue;
             }
-            // Filter by semester
-            if (semesterToString(offering.semester) != period.getSemester()) {
+            // Filter by semester using the strongly typed enum value.
+            if (offering.semester != period.getSemester()) {
                 continue;
             }
 
-            // Map (ProgramID, Year) to a unique integer ID to optimize collision checks later
-            std::pair<std::string, int> key = {offering.programID, offering.year};
+            // Map (ProgramID, Year) to a unique integer ID to optimize collision checks later.
+            std::pair<std::string, Year> key = {offering.programID, offering.year};
             auto inserted = groupIndex.emplace(key, static_cast<int>(groupIndex.size()));
             
             memberships.push_back(CourseMembership{inserted.first->second, offering.requirement});

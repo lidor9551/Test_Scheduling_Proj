@@ -129,7 +129,7 @@ void AppController::appendData() {
             }
         }
 
-        std::set<std::pair<std::string, std::string>> existingPeriods;
+        std::set<std::pair<Semester, Moed>> existingPeriods;
         for (const ExamPeriod& period : examPeriods_) {
             existingPeriods.insert({period.getSemester(), period.getMoed()});
         }
@@ -138,7 +138,7 @@ void AppController::appendData() {
         int skippedPeriods = 0;
 
         for (const ExamPeriod& period : loadedPeriods) {
-            std::pair<std::string, std::string> key = {
+            std::pair<Semester, Moed> key = {
                 period.getSemester(),
                 period.getMoed()
             };
@@ -281,7 +281,7 @@ QVariantList AppController::getCoursesForProgram(const QString& programId, int y
             bool match = (p.programID == pid);
             
             // if year or semester are specified (not -1), also filter by them
-            if (year != -1) match &= (p.year == year);
+            if (year != -1) match &= (yearToInt(p.year) == year);
             if (semester != -1) match &= (static_cast<int>(p.semester) == semester);
 
             if (match) {

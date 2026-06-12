@@ -38,9 +38,13 @@ QVariantList CalendarManager::getDays() const {
 
 QString CalendarManager::getCurrentSemester() const {
     if (periods_.empty()) return "";
+
+    const ExamPeriod& period = periods_[currentPeriodIndex_];
+
     return QString::fromStdString(
-        periods_[currentPeriodIndex_].getSemester()
-        + " - " + periods_[currentPeriodIndex_].getMoed()
+        semesterToString(period.getSemester())
+        + " - "
+        + moedToString(period.getMoed())
     );
 }
 
@@ -59,7 +63,11 @@ QString CalendarManager::getCurrentEndDate() const {
 QVariantList CalendarManager::getSemesterList() const {
     QVariantList list;
     for (const ExamPeriod& p : periods_) {
-        list.append(QString::fromStdString(p.getSemester() + " - " + p.getMoed()));
+        list.append(QString::fromStdString(
+            semesterToString(p.getSemester())
+            + " - "
+            + moedToString(p.getMoed())
+        ));
     }
     return list;
 }
@@ -70,8 +78,8 @@ QVariantList CalendarManager::getPeriodTree() const {
         const ExamPeriod& p = periods_[i];
         QVariantMap entry;
         entry["year"]     = p.getStartDate().getYear();
-        entry["semester"] = QString::fromStdString(p.getSemester());
-        entry["moed"]     = QString::fromStdString(p.getMoed());
+        entry["semester"] = QString::fromStdString(semesterToString(p.getSemester()));
+        entry["moed"]     = QString::fromStdString(moedToString(p.getMoed()));
         entry["index"]    = i;
         tree.append(entry);
     }

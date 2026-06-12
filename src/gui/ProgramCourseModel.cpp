@@ -164,7 +164,7 @@ void ProgramCourseModel::rebuild() {
                 continue;
             }
 
-            if (year_ != 0 && program.year != year_) {
+            if (year_ != 0 && yearToInt(program.year) != year_) {
                 continue;
             }
 
@@ -177,7 +177,7 @@ void ProgramCourseModel::rebuild() {
                 QString::fromStdString(course.getCourseName()),
                 QString::fromStdString(course.getInstructorName()),
                 rowProgramId,
-                program.year,
+                yearToInt(program.year),
                 rowSemester,
                 requirementToString(program.requirement),
                 evaluationToString(course.getEvaluationMethod())
@@ -193,43 +193,13 @@ void ProgramCourseModel::rebuild() {
 }
 
 QString ProgramCourseModel::semesterToString(Semester semester) {
-    switch (semester) {
-        case Semester::FALL:
-            return "FALL";
-
-        case Semester::SPRI:
-            return "SPRI";
-
-        case Semester::SUMM:
-            return "SUMM";
-    }
-
-    return "UNKNOWN";
+    return QString::fromStdString(::semesterToString(semester));
 }
 
 QString ProgramCourseModel::requirementToString(Requirement requirement) {
-    switch (requirement) {
-        case Requirement::OBLIGATORY:
-            return "Obligatory";
-
-        case Requirement::ELECTIVE:
-            return "Elective";
-    }
-
-    return "Unknown";
+    return QString::fromStdString(::requirementToString(requirement));
 }
 
 QString ProgramCourseModel::evaluationToString(Evaluation evaluation) {
-    switch (evaluation) {
-        case Evaluation::EXAM:
-            return "Exam";
-
-        case Evaluation::PROJECT:
-            return "Project";
-
-        case Evaluation::ATTENDANCE:
-            return "Attendance";
-    }
-
-    return "Unknown";
+    return QString::fromStdString(::evaluationToString(evaluation));
 }

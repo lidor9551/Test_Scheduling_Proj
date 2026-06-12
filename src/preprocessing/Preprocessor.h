@@ -33,9 +33,6 @@ private:
     const std::vector<ExamPeriod>& periods_;
     std::set<std::string> selectedPrograms_;
 
-    // Helper to map Semester Enum to String for comparison
-    std::string semesterToString(Semester sem) const;
-
     // Filters and prepares the courses specific to a given exam period
     std::vector<RuntimeCourse> selectRuntimeCoursesForPeriod(const ExamPeriod& period) const;
 
