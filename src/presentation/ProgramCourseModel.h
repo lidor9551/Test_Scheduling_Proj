@@ -3,7 +3,7 @@
 #include <QAbstractListModel>
 #include <QString>
 #include <vector>
-#include "model/Course.h"
+#include "domain/Course.h"
 
 class ProgramCourseModel : public QAbstractListModel {
     Q_OBJECT

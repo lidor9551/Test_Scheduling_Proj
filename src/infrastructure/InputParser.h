@@ -2,8 +2,8 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-#include "../model/Course.h"
-#include "../model/ExamPeriod.h"
+#include "domain/Course.h"
+#include "domain/ExamPeriod.h"
 
 // Exception class for any parsing errors
 class ParseException : public std::runtime_error {

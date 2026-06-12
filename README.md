@@ -30,35 +30,46 @@ The project is implemented in **C++17** with a **Qt6/QML** graphical interface.
 
 ---
 
-## Project Structure
+## Project structure:
 
-```text
-ExamScheduler/
-│
-├── CMakeLists.txt
-├── Main.qml
-├── CalendarScreen.qml
-├── PeriodEditorScreen.qml
-├── OutputScreen.qml
+├── qml/
+│   ├── Main.qml
+│   ├── CalendarScreen.qml
+│   ├── PeriodEditorScreen.qml
+│   └── OutputScreen.qml
 │
 ├── src/
 │   ├── main.cpp
-│   ├── dates/
-│   ├── model/
-│   ├── parser/
-│   ├── preprocessing/
-│   ├── scheduler/
-│   ├── exporter/
-│   └── gui/
+│   │
+│   ├── domain/
+│   │   ├── Course.h / Course.cpp
+│   │   ├── ExamPeriod.h / ExamPeriod.cpp
+│   │   └── Date.h / Date.cpp
+│   │
+│   ├── application/
+│   │   └── reserved for application services and session state
+│   │
+│   ├── scheduling/
+│   │   ├── Preprocessor.h / Preprocessor.cpp
+│   │   ├── ScheduleGenerator.h / ScheduleGenerator.cpp
+│   │   └── SchedulingWorker.h / SchedulingWorker.cpp
+│   │
+│   ├── presentation/
+│   │   ├── AppController.h / AppController.cpp
+│   │   ├── CalendarManager.h / CalendarManager.cpp
+│   │   ├── ProgramCourseModel.h / ProgramCourseModel.cpp
+│   │   └── ScheduleOutputManager.h / ScheduleOutputManager.cpp
+│   │
+│   ├── infrastructure/
+│   │   ├── InputParser.h / InputParser.cpp
+│   │   └── OutputWriter.h / OutputWriter.cpp
+│   │
+│   └── utils/
+│       └── Utils.h
 │
-├── tests/
-│   ├── CMakeLists.txt
-│   ├── integration/
-│   ├── data/
-│   └── manual/
-│
-└── README.md
-```
+└── tests/
+    ├── unit/
+    └── integration/
 
 ---
 

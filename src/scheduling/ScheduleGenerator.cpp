@@ -1,5 +1,5 @@
 #include "ScheduleGenerator.h"
-#include "scheduler/SchedulingWorker.h"
+#include "scheduling/SchedulingWorker.h"
 #include <QDebug>
 #include <QMetaType>
 #include <QThread>

@@ -3,8 +3,8 @@
 #include <string>
 #include <set>
 #include <map>
-#include "../model/Course.h"
-#include "../model/ExamPeriod.h"
+#include "domain/Course.h"
+#include "domain/ExamPeriod.h"
 
 // Represents a specific group of students (Program + Year) taking the course
 struct CourseMembership {

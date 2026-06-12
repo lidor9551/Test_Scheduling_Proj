@@ -1,5 +1,5 @@
-#include "scheduler/SchedulingWorker.h"
-#include "scheduler/ScheduleGenerator.h"
+#include "scheduling/SchedulingWorker.h"
+#include "scheduling/ScheduleGenerator.h"
 
 #include <exception>
 

@@ -1,7 +1,7 @@
 add_executable(program_course_model_test
-    ProgramCourseModelTest.cpp
-    ../src/gui/ProgramCourseModel.cpp
-    ../src/model/Course.cpp
+    unit/ProgramCourseModelTest.cpp
+    ../src/presentation/ProgramCourseModel.cpp
+    ../src/domain/Course.cpp
 )
 
 target_include_directories(program_course_model_test PRIVATE ../src)
@@ -18,11 +18,11 @@ add_test(
 
 add_executable(parser_preprocessor_integration_test
     integration/ParserPreprocessorIntegrationTest.cpp
-    ../src/parser/InputParser.cpp
-    ../src/preprocessing/Preprocessor.cpp
-    ../src/dates/Date.cpp
-    ../src/model/Course.cpp
-    ../src/model/ExamPeriod.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
 )
 
 target_include_directories(parser_preprocessor_integration_test PRIVATE ../src)
@@ -44,13 +44,13 @@ set_tests_properties(ParserPreprocessorIntegrationTest
 
 add_executable(scheduler_integration_test
     integration/SchedulerIntegrationTest.cpp
-    ../src/parser/InputParser.cpp
-    ../src/preprocessing/Preprocessor.cpp
-    ../src/scheduler/ScheduleGenerator.cpp
-    ../src/scheduler/SchedulingWorker.cpp
-    ../src/dates/Date.cpp
-    ../src/model/Course.cpp
-    ../src/model/ExamPeriod.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
 )
 
 target_include_directories(scheduler_integration_test PRIVATE ../src)
@@ -72,10 +72,10 @@ set_tests_properties(SchedulerIntegrationTest
 
 add_executable(invalid_input_integration_test
     integration/InvalidInputIntegrationTest.cpp
-    ../src/parser/InputParser.cpp
-    ../src/dates/Date.cpp
-    ../src/model/Course.cpp
-    ../src/model/ExamPeriod.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
 )
 
 target_include_directories(invalid_input_integration_test PRIVATE ../src)
@@ -97,13 +97,13 @@ set_tests_properties(InvalidInputIntegrationTest
 
 add_executable(no_solution_integration_test
     integration/NoSolutionIntegrationTest.cpp
-    ../src/parser/InputParser.cpp
-    ../src/preprocessing/Preprocessor.cpp
-    ../src/scheduler/ScheduleGenerator.cpp
-    ../src/scheduler/SchedulingWorker.cpp
-    ../src/dates/Date.cpp
-    ../src/model/Course.cpp
-    ../src/model/ExamPeriod.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
 )
 
 target_include_directories(no_solution_integration_test PRIVATE ../src)
@@ -122,15 +122,16 @@ set_tests_properties(NoSolutionIntegrationTest
     PROPERTIES
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
 add_executable(overlap_conflict_integration_test
     integration/OverlapConflictIntegrationTest.cpp
-    ../src/parser/InputParser.cpp
-    ../src/preprocessing/Preprocessor.cpp
-    ../src/scheduler/ScheduleGenerator.cpp
-    ../src/scheduler/SchedulingWorker.cpp
-    ../src/dates/Date.cpp
-    ../src/model/Course.cpp
-    ../src/model/ExamPeriod.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
 )
 
 target_include_directories(overlap_conflict_integration_test PRIVATE ../src)
