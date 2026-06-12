@@ -35,6 +35,21 @@ namespace {
         throw ParseException("Unknown semester type: " + value);
     }
 
+        Year parseYearType(const std::string& value) {
+        if (value == "1") return Year::FIRST;
+        if (value == "2") return Year::SECOND;
+        if (value == "3") return Year::THIRD;
+        if (value == "4") return Year::FOURTH;
+        throw ParseException("Invalid year: " + value);
+    }
+
+    Moed parseMoedType(const std::string& value) {
+        if (value == "Aleph") return Moed::ALEPH;
+        if (value == "Bet") return Moed::BET;
+        if (value == "Gimel") return Moed::GIMEL;
+        throw ParseException("Unknown moed: " + value);
+    }
+
     // Splits a line into a CSV part and a comment part (used for date exclusions)
     std::pair<std::string, std::string> splitComment(const std::string& line) {
         std::stringstream ss(line);
@@ -154,21 +169,19 @@ std::vector<Course> InputParser::parseCourses(const std::string& filePath) const
                 throw ParseException("Unknown program id: " + programId);
             }
 
-            int year = std::stoi(yearText);
-            if (year < 1 || year > 4) {
-                throw ParseException("Invalid year: " + yearText);
-            }
-
+            Year year;
             Requirement requirement;
             Semester semester;
+
             try {
+                year = parseYearType(yearText);
                 requirement = parseRequirementType(requirementText);
                 semester = parseSemesterType(semesterTxt);
             } catch (const std::exception& ex) {
                 throw ParseException(ex.what());
             }
 
-            // Populate the course offerings
+            // Populate the course offerings using strongly typed domain enums.
             course.addProgram(programId, year, semester, requirement);
         }
 
@@ -206,14 +219,24 @@ std::vector<ExamPeriod> InputParser::parseExamPeriods(const std::string& filePat
             throw ParseException("Invalid exam period header: " + lines[0]);
         }
 
-        std::string semester = Utils::trim(headerParts[0]);
-        std::string moed = Utils::trim(headerParts[1]);
+        std::string semesterText = Utils::trim(headerParts[0]);
+        std::string moedText = Utils::trim(headerParts[1]);
 
-        if (!Validator::isValidSemester(semester)) {
-            throw ParseException("Invalid semester in exam period: " + semester);
+        if (!Validator::isValidSemester(semesterText)) {
+            throw ParseException("Invalid semester in exam period: " + semesterText);
         }
-        if (!Validator::isValidMoed(moed)) {
-            throw ParseException("Invalid moed: " + moed);
+        if (!Validator::isValidMoed(moedText)) {
+            throw ParseException("Invalid moed: " + moedText);
+        }
+
+        Semester semester;
+        Moed moed;
+
+        try {
+            semester = parseSemesterType(semesterText);
+            moed = parseMoedType(moedText);
+        } catch (const std::exception& ex) {
+            throw ParseException(ex.what());
         }
 
         std::vector<std::string> dateParts = Utils::split(lines[1], ',');
