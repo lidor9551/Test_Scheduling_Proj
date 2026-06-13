@@ -104,10 +104,8 @@ void CalendarManager::toggleDay(const QString& dateStr) {
     emit daysChanged();
 }
 
-void CalendarManager::shiftPeriod(const QString& semester,
-                                   const QString& newStartStr,
-                                   const QString& newEndStr)
-{
+void CalendarManager::shiftPeriod(const QString& semester, const QString& newStartStr,const QString& newEndStr){
+
     Q_UNUSED(semester);
     if (periods_.empty()) return;
 

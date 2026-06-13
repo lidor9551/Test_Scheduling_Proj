@@ -594,7 +594,7 @@ Window {
                                     appController.examPeriods,
                                     appController.courses
                                 )
-                                stackView.push("CalendarScreen.qml")
+                                stackView.push(Qt.resolvedUrl("CalendarScreen.qml"))
                             }
                         }
                         AppButton {
@@ -606,7 +606,7 @@ Window {
                                 appController.generateSchedules()
                                 
                                 // go to the output screen after generating schedules
-                                stackView.push("OutputScreen.qml")
+                                stackView.push(Qt.resolvedUrl("OutputScreen.qml"))
                             }
                         }
 
