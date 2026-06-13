@@ -30,6 +30,8 @@ qt_add_executable(
     src/domain/Course.cpp
     src/domain/ExamPeriod.cpp
 
+    src/application/SchedulingSession.cpp
+
     src/infrastructure/InputParser.cpp
     src/infrastructure/OutputWriter.cpp
 
