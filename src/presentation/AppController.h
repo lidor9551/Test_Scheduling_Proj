@@ -11,6 +11,7 @@
 #include "presentation/ScheduleOutputManager.h"
 #include "scheduling/Preprocessor.h"
 #include "presentation/CalendarManager.h"
+#include "application/SchedulingSession.h"
 
 class AppController : public QObject {
     Q_OBJECT
@@ -106,7 +107,8 @@ private:
     void setError(const QString& message);
     
     ProgramCourseModel programCourseModel_;
-    
+    SchedulingSession session_;
+
     // output manager instance to be used across the app and exposed to QML
     ScheduleOutputManager m_outputManager;
 
@@ -128,7 +130,6 @@ private:
     std::vector<SchedulingBlock> m_allBlocks;
 
     QStringList m_availablePrograms;
-    QStringList m_selectedPrograms;
 
     CalendarManager* m_calendarManager = nullptr;
 };
