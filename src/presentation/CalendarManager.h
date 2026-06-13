@@ -7,8 +7,8 @@
 #include <vector>
 #include <string>
 
-#include "../model/ExamPeriod.h"
-#include "../model/Course.h"
+#include "domain/ExamPeriod.h"
+#include "domain/Course.h"
 
 /**
  * @brief Describes the display state of a single calendar day.

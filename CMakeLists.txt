@@ -15,22 +15,27 @@ endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Concurrent)
 
-qt_add_executable(exam_scheduler
+qt_add_executable(
+    
+    exam_scheduler
     src/main.cpp
-    src/gui/AppController.cpp
-    src/gui/ProgramCourseModel.cpp
-    src/gui/CalendarManager.cpp
-    src/dates/Date.cpp
-    src/model/Course.cpp
-    src/model/ExamPeriod.cpp
-    src/parser/InputParser.cpp
-    src/preprocessing/Preprocessor.cpp
-    src/scheduler/ScheduleGenerator.cpp
-    src/scheduler/SchedulingWorker.cpp
-    src/exporter/OutputWriter.cpp
-    src/gui/ScheduleOutputManager.cpp
-    src/gui/ScheduleOutputManager.h
 
+    src/presentation/AppController.cpp
+    src/presentation/ProgramCourseModel.cpp
+    src/presentation/CalendarManager.cpp
+    src/presentation/ScheduleOutputManager.cpp
+    src/presentation/ScheduleOutputManager.h
+
+    src/domain/Date.cpp
+    src/domain/Course.cpp
+    src/domain/ExamPeriod.cpp
+
+    src/infrastructure/InputParser.cpp
+    src/infrastructure/OutputWriter.cpp
+
+    src/scheduling/Preprocessor.cpp
+    src/scheduling/ScheduleGenerator.cpp
+    src/scheduling/SchedulingWorker.cpp
 )
 
 target_include_directories(exam_scheduler PRIVATE src)
@@ -52,16 +57,20 @@ target_link_libraries(exam_scheduler
 )
 
 set(QML_FILES
-    Main.qml
-    CalendarScreen.qml
-    OutputScreen.qml
-    PeriodEditorScreen.qml
+    qml/Main.qml
+    qml/CalendarScreen.qml
+    qml/OutputScreen.qml
+    qml/PeriodEditorScreen.qml
 )
 
 install(FILES ${QML_FILES} DESTINATION .)
 
 foreach(QML_FILE ${QML_FILES})
+    get_filename_component(QML_DIR "${QML_FILE}" DIRECTORY)
+
     add_custom_command(TARGET exam_scheduler POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:exam_scheduler>/${QML_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/${QML_FILE}"
             "$<TARGET_FILE_DIR:exam_scheduler>/${QML_FILE}"

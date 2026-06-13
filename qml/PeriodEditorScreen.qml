@@ -26,7 +26,13 @@ Page {
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle { color: "transparent" }
-                onClicked: stackView.pop()
+                onClicked: {
+                    if (editorScreen.StackView.view) {
+                        editorScreen.StackView.view.pop()
+                    } else {
+                        console.log("PeriodEditorScreen: StackView view was not found")
+                    }
+                }
             }
 
             Text {
@@ -137,18 +143,25 @@ Page {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        var start = new Date(startDateField.text)
-                        var end   = new Date(endDateField.text)
-                        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+                        var isoDateRegex = /^\d{4}-\d{2}-\d{2}$/
+
+                        if (!isoDateRegex.test(startDateField.text) ||
+                            !isoDateRegex.test(endDateField.text) ||
+                            startDateField.text > endDateField.text) {
                             shiftErrorMsg.visible = true
                             shiftErrorTimer.restart()
                             return
                         }
+
                         calendarManager.shiftPeriod(
                             calendarManager.currentSemester,
                             startDateField.text,
                             endDateField.text
                         )
+
+                        saveConfirm.text = "✅ Shift applied"
+                        saveConfirm.visible = true
+                        saveTimer.restart()
                     }
                 }
 

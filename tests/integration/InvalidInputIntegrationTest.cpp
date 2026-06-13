@@ -1,5 +1,4 @@
-#include "parser/InputParser.h"
-
+#include "infrastructure/InputParser.h"
 #include <cstdlib>
 #include <iostream>
 #include <string>

@@ -8,8 +8,8 @@
 #include <vector>
 #include <QMap>
 
-#include "../model/Course.h"
-#include "../model/ExamPeriod.h"
+#include "domain/Course.h"
+#include "domain/ExamPeriod.h"
 
 class ScheduleOutputManager : public QObject {
     Q_OBJECT

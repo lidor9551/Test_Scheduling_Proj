@@ -28,7 +28,13 @@ Page {
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle { color: "transparent" }
-                onClicked: stackView.pop()
+                onClicked: {
+                    if (calendarScreen.StackView.view) {
+                        calendarScreen.StackView.view.pop()
+                    } else {
+                        console.log("CalendarScreen: StackView view was not found")
+                    }
+                }
             }
 
             Text {
@@ -92,7 +98,13 @@ Page {
                     border.color: "white"
                     border.width: 1
                 }
-                onClicked: stackView.push("PeriodEditorScreen.qml")
+                onClicked: {
+                    if (calendarScreen.StackView.view) {
+                        calendarScreen.StackView.view.push(Qt.resolvedUrl("PeriodEditorScreen.qml"))
+                    } else {
+                        console.log("CalendarScreen: StackView view was not found")
+                    }
+                }
             }
         }
     }

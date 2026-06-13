@@ -1,6 +1,6 @@
-#include "parser/InputParser.h"
-#include "preprocessing/Preprocessor.h"
-#include "scheduler/ScheduleGenerator.h"
+#include "infrastructure/InputParser.h"
+#include "scheduling/Preprocessor.h"
+#include "scheduling/ScheduleGenerator.h"
 
 #include <cstdlib>
 #include <iostream>

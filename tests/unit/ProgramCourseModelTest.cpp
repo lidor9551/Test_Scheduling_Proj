@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#include "gui/ProgramCourseModel.h"
+#include "presentation/ProgramCourseModel.h"
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);

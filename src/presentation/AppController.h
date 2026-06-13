@@ -3,14 +3,14 @@
 #include <QObject>
 #include <QString>
 #include <vector>
-#include "model/Course.h"
-#include "model/ExamPeriod.h"
-#include "gui/ProgramCourseModel.h"
+#include "domain/Course.h"
+#include "domain/ExamPeriod.h"
+#include "presentation/ProgramCourseModel.h"
 #include <QVariant>
 #include <QVariantList>
-#include "ScheduleOutputManager.h"
-#include "preprocessing/Preprocessor.h"
-#include "CalendarManager.h"
+#include "presentation/ScheduleOutputManager.h"
+#include "scheduling/Preprocessor.h"
+#include "presentation/CalendarManager.h"
 
 class AppController : public QObject {
     Q_OBJECT

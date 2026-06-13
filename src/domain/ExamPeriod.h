@@ -5,7 +5,7 @@
 #include <QMetaType>
 
 #include "Course.h"
-#include "../dates/Date.h"
+#include "Date.h"
 
 struct ExcludedRange {
     Date start;

@@ -1,4 +1,4 @@
-#include "gui/ProgramCourseModel.h"
+#include "presentation/ProgramCourseModel.h"
 
 namespace {
 

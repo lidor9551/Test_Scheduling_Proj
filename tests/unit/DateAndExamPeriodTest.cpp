@@ -1,5 +1,5 @@
-#include "dates/Date.h"
-#include "model/ExamPeriod.h"
+#include "domain/Date.h"
+#include "domain/ExamPeriod.h"
 
 #include <cstdlib>
 #include <iostream>

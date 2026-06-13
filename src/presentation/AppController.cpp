@@ -1,8 +1,8 @@
-﻿#include "gui/AppController.h"
-#include "parser/InputParser.h"
-#include "scheduler/ScheduleGenerator.h" 
-#include "scheduler/SchedulingWorker.h"
-#include "preprocessing/Preprocessor.h"
+﻿#include "presentation/AppController.h"
+#include "infrastructure/InputParser.h"
+#include "scheduling/ScheduleGenerator.h" 
+#include "scheduling/SchedulingWorker.h"
+#include "scheduling/Preprocessor.h"
 #include <QFileInfo>
 #include <QUrl>
 #include <QDir>

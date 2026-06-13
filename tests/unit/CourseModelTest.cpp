@@ -1,4 +1,4 @@
-#include "model/Course.h"
+#include "domain/Course.h"
 
 #include <cstdlib>
 #include <iostream>

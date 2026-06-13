@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-
+import QtQuick.Dialogs
 
 Item {
     id: outputRoot
@@ -44,8 +44,12 @@ Item {
                     radius: 8
                 }
                 onClicked: {
-                    appController.outputManager.clearData()
-                    root.mainStackView.pop()
+                    if (outputRoot.StackView.view) {
+                        outputRoot.StackView.view.pop()
+                        appController.outputManager.clearData()
+                    } else {
+                        console.log("OutputScreen: StackView view was not found")
+                    }
                 }
             }
 
@@ -275,8 +279,8 @@ Item {
                     height: calendarGrid.cellHeight - 10
                     radius: 8
                     
-                    color: model.dayText === "" ? "transparent" : (model.isExcluded ? "#fef2f2" : (model.hasExam ? "#f8fafc" : "#f1f5f9"))
-                    border.color: model.dayText === "" ? "transparent" : (model.isExcluded ? "#fecaca" : (model.hasExam ? (model.req === "חובה" ? "#fca5a5" : "#86efac") : "#e2e8f0"))
+                    color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fef2f2" : (modelData.hasExam ? "#f8fafc" : "#f1f5f9"))
+                    border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fecaca" : (modelData.hasExam ? (modelData.req === "חובה" ? "#fca5a5" : "#86efac") : "#e2e8f0"))
                     border.width: 1
 
                     Text {
@@ -311,7 +315,7 @@ Item {
                             Layout.fillWidth: true
                             text: (modelData.courseId || "") + " | " + (modelData.req || "")
                             font.pixelSize: 11
-                            color: model.req === "חובה" ? "#b91c1c" : "#047857"
+                            color: modelData.req === "חובה" ? "#b91c1c" : "#047857"
                             horizontalAlignment: Text.AlignRight
                         }
 
