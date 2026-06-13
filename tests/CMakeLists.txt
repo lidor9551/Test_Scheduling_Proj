@@ -1,3 +1,23 @@
+add_executable(scheduling_session_test
+    unit/SchedulingSessionTest.cpp
+    ../src/application/SchedulingSession.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+)
+
+target_include_directories(scheduling_session_test PRIVATE ../src)
+
+target_link_libraries(scheduling_session_test
+    PRIVATE
+        Qt6::Core
+)
+
+add_test(
+    NAME SchedulingSessionTest
+    COMMAND scheduling_session_test
+)
+
 add_executable(program_course_model_test
     unit/ProgramCourseModelTest.cpp
     ../src/presentation/ProgramCourseModel.cpp

@@ -251,21 +251,34 @@ QStringList AppController::availablePrograms() const {
 }
 
 QStringList AppController::selectedPrograms() const {
-    return m_selectedPrograms;
+    QStringList result;
+
+    for (const std::string& programId : session_.selectedPrograms()) {
+        result.append(QString::fromStdString(programId));
+    }
+
+    return result;
 }
 
 void AppController::toggleProgram(const QString& programId) {
-    if (m_selectedPrograms.contains(programId)) {
-        m_selectedPrograms.removeAll(programId);
-        emit selectedProgramsChanged();
-    } 
-    else {
-        if (m_selectedPrograms.size() < 5) {
-            m_selectedPrograms.append(programId);
-            emit selectedProgramsChanged();
-        } else {
-            qDebug() << "Cannot select more than 5 programs.";
+    const std::string id = programId.toStdString();
+
+    bool changed = false;
+
+    if (session_.isProgramSelected(id)) {
+        changed = session_.deselectProgram(id);
+    } else {
+        changed = session_.selectProgram(id);
+
+        if (!changed) {
+            qDebug() << "Cannot select more than"
+                     << static_cast<int>(SchedulingSession::MaxSelectedPrograms)
+                     << "programs.";
         }
+    }
+
+    if (changed) {
+        emit selectedProgramsChanged();
     }
 }
 
@@ -314,8 +327,8 @@ ScheduleOutputManager* AppController::outputManager() {
 void AppController::generateSchedules() {
     qDebug() << "=========================================";
     qDebug() << ">>> generateSchedules STARTED! <<<";
-    qDebug() << "Selected programs count:" << m_selectedPrograms.size();
-    setStatus("Generating schedules...");
+    qDebug() << "Selected programs count:" << session_.selectedProgramCount();
+        setStatus("Generating schedules...");
 
     // override original output with new instance to reset previous state
     if (m_calendarManager && !m_calendarManager->getPeriods().empty()) {
@@ -347,8 +360,8 @@ void AppController::generateSchedules() {
 
     // Build the scheduling blocks based on the selected programs
     std::vector<std::string> selectedProgs;
-    for (const auto& prog : m_selectedPrograms) {
-        selectedProgs.push_back(prog.toStdString());
+    for (const std::string& prog : session_.selectedPrograms()) {
+        selectedProgs.push_back(prog);
     }
 
     // Build all blocks and save them to the class member (m_allBlocks)
