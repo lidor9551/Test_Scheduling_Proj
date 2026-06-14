@@ -125,8 +125,6 @@ private:
     QString statusMessage_;
     QString errorMessage_;
 
-    std::vector<Course> courses_;
-    std::vector<ExamPeriod> examPeriods_;
     std::vector<SchedulingBlock> m_allBlocks;
 
     QStringList m_availablePrograms;
