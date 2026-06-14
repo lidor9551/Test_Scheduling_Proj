@@ -440,3 +440,6 @@ CompilerIdCXX.exe
 CompilerIdCXX.vcxproj
 *.vcxproj
 *.yaml
+
+build_integrated_tests
+*.c
