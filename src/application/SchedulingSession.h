@@ -34,6 +34,8 @@ public:
     void replaceData(std::vector<Course> courses,
                      std::vector<ExamPeriod> examPeriods);
 
+    void replaceExamPeriods(std::vector<ExamPeriod> examPeriods);
+    
     AppendResult appendData(const std::vector<Course>& courses,
                             const std::vector<ExamPeriod>& examPeriods);
 
