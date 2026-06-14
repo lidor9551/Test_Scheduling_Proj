@@ -1,6 +1,7 @@
 #include "infrastructure/InputParser.h"
 #include "scheduling/Preprocessor.h"
 #include "scheduling/ScheduleGenerator.h"
+#include "domain/ScheduleGenerationResult.h" 
 
 #include <cstdlib>
 #include <iostream>
@@ -51,7 +52,7 @@ int main() {
 
     ScheduleGenerator generator(block, 5.0);
 
-    std::vector<std::vector<int>> solutions = generator.runBacktracking(1);
+    std::vector<ScheduleGenerationResult> solutions = generator.runBacktracking(1);
 
     EXPECT_TRUE(solutions.empty());
 

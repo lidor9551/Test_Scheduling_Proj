@@ -23,9 +23,11 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
 
+    // Expose the AppController and CalendarManager to QML with appController.(methods/properties) and calendarManager.(methods/properties)
     engine.rootContext()->setContextProperty("appController", &appController);
     engine.rootContext()->setContextProperty("calendarManager", &calendarManager);
  
+    // Register the ExamPeriod and Course types with the Qt meta-object system for use in signals/slots and QML
     qRegisterMetaType<ExamPeriod>("ExamPeriod");
     qRegisterMetaType<Course>("Course");
 

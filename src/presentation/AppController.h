@@ -12,6 +12,8 @@
 #include "scheduling/Preprocessor.h"
 #include "presentation/CalendarManager.h"
 #include "application/SchedulingSession.h"
+#include "domain/ScheduleGenerationResult.h"
+#include "scheduling/SchedulingService.h"
 
 class AppController : public QObject {
     Q_OBJECT
@@ -85,8 +87,7 @@ public:
     void setCalendarManager(CalendarManager* cm) { m_calendarManager = cm; }
 
 public slots:
-    // to capture the results from the scheduling algorithm and pass them to the output manager
-    void onSchedulingFinished(const std::vector<std::vector<int>>& solutions);
+    void onSchedulingFinished(const std::vector<ScheduleGenerationResult>& solutions);
     void onSchedulingFailed(QString message);
 
 signals:
@@ -111,6 +112,8 @@ private:
 
     // output manager instance to be used across the app and exposed to QML
     ScheduleOutputManager m_outputManager;
+    
+    SchedulingService m_schedulingService;
 
     //for the QML to get the program names map for display purposes
     Q_INVOKABLE QVariantMap getProgramNamesMap() const;

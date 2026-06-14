@@ -1,19 +1,23 @@
 ﻿#include "presentation/AppController.h"
 #include "infrastructure/InputParser.h"
-#include "scheduling/ScheduleGenerator.h" 
-#include "scheduling/SchedulingWorker.h"
 #include "scheduling/Preprocessor.h"
 #include <QFileInfo>
 #include <QUrl>
 #include <QDir>
 #include <string>
 #include <utility>
-#include <QThread>
 #include <QVariant>
-
+#include <QDebug>
 
 AppController::AppController(QObject* parent)
     : QObject(parent) {
+    
+    // Connect the signals from the scheduling service to the appropriate slots in the controller
+    connect(&m_schedulingService, &SchedulingService::generationFinished,
+            this, &AppController::onSchedulingFinished);
+            
+    connect(&m_schedulingService, &SchedulingService::generationFailed,
+            this, &AppController::onSchedulingFailed);
 }
 
 QString AppController::coursesFilePath() const {
@@ -363,15 +367,15 @@ void AppController::generateSchedules() {
     QString firstSem = QString::fromStdString(m_allBlocks[0].semester);
     QString firstMoed = QString::fromStdString(m_allBlocks[0].moed);
     
-    // This function will now handle the Thread and Worker creation!
+    // This function will now handle the Thread and Worker creation via the Service!
     generateForPeriod(firstSem, firstMoed);
 }
 
-void AppController::onSchedulingFinished(const std::vector<std::vector<int>>& solutions) {
+// This slot will be called when the scheduling service emits the generationFinished signal with the results
+void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationResult>& solutions) {
     qDebug() << "--- FINAL ALGORITHM OUTPUT ---";
     qDebug() << "Total solutions calculated:" << solutions.size();
     setStatus("Scheduling completed!");
-
 
     // Filter the courses to only those that require exams, as the scheduling is based on exam periods
     std::vector<Course> examOnlyCourses;
@@ -414,22 +418,8 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
     //update the output manager with the current period filter so it can prepare the UI accordingly
     m_outputManager.setPeriodFilter(semester, moed);
 
-    ScheduleGenerator* generator = new ScheduleGenerator(*selectedBlock);
-    
-    // Thread setup for background execution
-    QThread* thread = new QThread();
-    SchedulingWorker* worker = new SchedulingWorker(generator, 100000); 
-    worker->moveToThread(thread);
-
-    connect(thread, &QThread::started, worker, &SchedulingWorker::run);
-    connect(worker, &SchedulingWorker::finished, this, &AppController::onSchedulingFinished);
-    connect(worker, &SchedulingWorker::failed, this, &AppController::onSchedulingFailed);
-    
-    connect(worker, &SchedulingWorker::finished, thread, &QThread::quit);
-    connect(worker, &SchedulingWorker::finished, worker, &SchedulingWorker::deleteLater);
-    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    
-    thread->start();
+    // Now we call the scheduling service to start the generation process for the selected block
+    m_schedulingService.startAsyncGeneration(*selectedBlock, 100000); 
 }
 
 // C++ function to create the internal map of program IDs to names
@@ -458,5 +448,3 @@ QVariantMap AppController::getProgramNamesMap() const {
     }
     return vMap;
 }
-
-

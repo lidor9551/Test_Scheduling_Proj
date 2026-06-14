@@ -30,14 +30,9 @@ int main() {
 
     InputParser parser;
 
-    std::vector<Course> courses =
-        parser.parseCourses(basePath + "courses.txt");
-
-    std::vector<ExamPeriod> periods =
-        parser.parseExamPeriods(basePath + "periods.txt");
-
-    std::vector<std::string> selectedPrograms =
-        parser.parseSelectedPrograms(basePath + "selected_programs.txt");
+    std::vector<Course> courses = parser.parseCourses(basePath + "courses.txt");
+    std::vector<ExamPeriod> periods = parser.parseExamPeriods(basePath + "periods.txt");
+    std::vector<std::string> selectedPrograms = parser.parseSelectedPrograms(basePath + "selected_programs.txt");
 
     SchedulingPreprocessor preprocessor(courses, periods, selectedPrograms);
     std::vector<SchedulingBlock> blocks = preprocessor.buildBlocks();
@@ -51,17 +46,25 @@ int main() {
 
     ScheduleGenerator generator(block, 5.0);
 
-    std::vector<std::vector<int>> solutions = generator.runBacktracking(1);
+    std::vector<ScheduleGenerationResult> solutions = generator.runBacktracking(1);
 
     EXPECT_EQ(solutions.size(), static_cast<std::size_t>(1));
 
-    const std::vector<int>& firstSolution = solutions[0];
+    const auto& assignments = solutions[0].getAssignments();
+    
+    EXPECT_EQ(assignments.size(), block.runtimeCourses.size());
 
-    EXPECT_EQ(firstSolution.size(), block.runtimeCourses.size());
-
-    for (int dateIndex : firstSolution) {
-        EXPECT_TRUE(dateIndex >= 0);
-        EXPECT_TRUE(dateIndex < static_cast<int>(block.allowedDates.size()));
+    for (const auto& assignment : assignments) {
+        EXPECT_TRUE(assignment.course != nullptr);
+        
+        bool found = false;
+        for (const auto& allowedDate : block.allowedDates) {
+            if (assignment.examDate == allowedDate) {
+                found = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(found);
     }
 
     std::cout << "SchedulerIntegrationTest passed." << std::endl;
