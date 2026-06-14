@@ -2,6 +2,13 @@
 
 #include <stdexcept>
 
+/*
+ * Creates a Course object with its basic identity.
+ *
+ * Program membership is intentionally not passed here.
+ * A course can belong to several academic programs, so memberships are added
+ * separately using addProgram().
+ */
 Course::Course(const std::string& name,
                const std::string& number,
                const std::string& instructor,
@@ -12,6 +19,12 @@ Course::Course(const std::string& name,
       evaluationMethod(eval) {
 }
 
+/*
+ * Adds one academic program membership to the course.
+ *
+ * Example:
+ * The same course can be obligatory for one program and elective for another.
+ */
 void Course::addProgram(const std::string& progID,
                         Year year,
                         Semester sem,
@@ -22,6 +35,10 @@ void Course::addProgram(const std::string& progID,
 
 // === Domain enum conversion helpers ===
 
+/*
+ * Converts Semester into the string format used by the UI,
+ * preprocessing layer, output screen, and logs.
+ */
 std::string semesterToString(Semester semester) {
     switch (semester) {
         case Semester::FALL:
@@ -35,6 +52,9 @@ std::string semesterToString(Semester semester) {
     return "UNKNOWN";
 }
 
+/*
+ * Converts Moed into the string format used by filters and display logic.
+ */
 std::string moedToString(Moed moed) {
     switch (moed) {
         case Moed::ALEPH:
@@ -48,6 +68,9 @@ std::string moedToString(Moed moed) {
     return "Unknown";
 }
 
+/*
+ * Converts Requirement into a readable string.
+ */
 std::string requirementToString(Requirement requirement) {
     switch (requirement) {
         case Requirement::OBLIGATORY:
@@ -59,6 +82,9 @@ std::string requirementToString(Requirement requirement) {
     return "Unknown";
 }
 
+/*
+ * Converts Evaluation into a readable string.
+ */
 std::string evaluationToString(Evaluation evaluation) {
     switch (evaluation) {
         case Evaluation::EXAM:
@@ -72,10 +98,20 @@ std::string evaluationToString(Evaluation evaluation) {
     return "Unknown";
 }
 
+/*
+ * Converts a Year enum into its integer value.
+ *
+ * This is useful when the UI needs to compare or display academic years.
+ */
 int yearToInt(Year year) {
     return static_cast<int>(year);
 }
 
+/*
+ * Converts an integer into a Year enum.
+ *
+ * This protects the domain model from invalid academic years.
+ */
 Year yearFromInt(int year) {
     switch (year) {
         case 1:
@@ -93,26 +129,46 @@ Year yearFromInt(int year) {
 
 // === Getters ===
 
+/*
+ * Returns the course name exactly as loaded from the input data.
+ */
 const std::string& Course::getCourseName() const {
     return courseName;
 }
 
+/*
+ * Returns the unique course number.
+ */
 const std::string& Course::getCourseNumber() const {
     return courseNumber;
 }
 
+/*
+ * Returns the instructor name.
+ */
 const std::string& Course::getInstructorName() const {
     return instructorName;
 }
 
+/*
+ * Returns all program memberships connected to this course.
+ */
 const std::vector<ProgramDetails>& Course::getPrograms() const {
     return programs;
 }
 
+/*
+ * Returns the evaluation method.
+ */
 Evaluation Course::getEvaluationMethod() const {
     return evaluationMethod;
 }
 
+/*
+ * Returns whether the course requires an exam date.
+ *
+ * Courses evaluated by project or attendance are ignored by the scheduler.
+ */
 bool Course::requiresExam() const {
     return evaluationMethod == Evaluation::EXAM;
 }

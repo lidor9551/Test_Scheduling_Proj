@@ -7,27 +7,64 @@
 #include <functional>
 #include <limits>
 
+/*
+ * Creates a timeout exception.
+ *
+ * This exception is used to stop the recursive solver when it runs longer
+ * than the configured time limit.
+ */
 SolverTimeoutException::SolverTimeoutException(const std::string& message)
     : std::runtime_error(message) {}
 
+/*
+ * Creates a ScheduleGenerator for one scheduling block.
+ *
+ * The generator stores:
+ * - the block to solve
+ * - the number of academic groups
+ * - the maximum runtime
+ * - the default conflict rules
+ */
 ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, double maxRuntimeSeconds)
     : block_(std::move(block)),
       groupCount_(computeGroupCount()),
       maxRuntimeSeconds_(maxRuntimeSeconds),
       conflictRules_(createDefaultConflictRules()) {
+    /*
+     * Registers the result vector type with Qt.
+     *
+     * This allows vectors of ScheduleGenerationResult to pass safely through
+     * Qt signal/slot connections when used by worker objects.
+     */
     qRegisterMetaType<std::vector<ScheduleGenerationResult>>("std::vector<ScheduleGenerationResult>");
 }
 
+/*
+ * Public entry point for generating schedules.
+ *
+ * The actual recursive implementation is kept inside generateAll().
+ */
 std::vector<ScheduleGenerationResult> ScheduleGenerator::runBacktracking(int limitPerBlock) const {
     return generateAll(limitPerBlock);
 }
 
+/*
+ * Creates the default conflict rule list.
+ *
+ * Currently the solver uses the same-group rule, which protects students
+ * from illegal exam conflicts within the same academic program/year group.
+ */
 std::vector<std::shared_ptr<IConflictRule>> ScheduleGenerator::createDefaultConflictRules() {
     return {
         std::make_shared<SameGroupConflictRule>()
     };
 }
 
+/*
+ * Finds the number of academic groups used in this scheduling block.
+ *
+ * Group IDs are zero-based, so the total count is maxGroup + 1.
+ */
 int ScheduleGenerator::computeGroupCount() const {
     int maxGroup = -1;
     for (const RuntimeCourse& course : block_.runtimeCourses) {
@@ -38,6 +75,12 @@ int ScheduleGenerator::computeGroupCount() const {
     return maxGroup + 1;
 }
 
+/*
+ * Checks whether assigning a course to a date satisfies all conflict rules.
+ *
+ * The generator itself does not hardcode the conflict logic here.
+ * It simply asks every rule whether the assignment is legal.
+ */
 bool ScheduleGenerator::canAssign(const SchedulingState& state,
                                   const RuntimeCourse& course,
                                   int dateIndex) const {
@@ -50,6 +93,14 @@ bool ScheduleGenerator::canAssign(const SchedulingState& state,
     return true;
 }
 
+/*
+ * Assigns a runtime course to a date inside the current state.
+ *
+ * This method updates:
+ * - assignedDate for the course
+ * - obligatory counters for obligatory memberships
+ * - elective counters for elective memberships
+ */
 void ScheduleGenerator::assign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = dateIndex;
     for (const CourseMembership& membership : course.memberships) {
@@ -61,6 +112,11 @@ void ScheduleGenerator::assign(SchedulingState& state, const RuntimeCourse& cour
     }
 }
 
+/*
+ * Removes a previous assignment from the current state.
+ *
+ * This is the "undo" operation used by the backtracking algorithm.
+ */
 void ScheduleGenerator::unassign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = -1;
     for (const CourseMembership& membership : course.memberships) {
@@ -72,6 +128,12 @@ void ScheduleGenerator::unassign(SchedulingState& state, const RuntimeCourse& co
     }
 }
 
+/*
+ * Calculates how much activity already exists on a candidate date
+ * for all groups that take this course.
+ *
+ * Lower pressure means the date is less crowded for the relevant groups.
+ */
 int ScheduleGenerator::datePressure(const SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     int pressure = 0;
     for (const CourseMembership& membership : course.memberships) {
@@ -81,6 +143,13 @@ int ScheduleGenerator::datePressure(const SchedulingState& state, const RuntimeC
     return pressure;
 }
 
+/*
+ * Builds and orders the list of legal date candidates for one course.
+ *
+ * First, the method filters out dates that violate conflict rules.
+ * Then it sorts the remaining dates by pressure, so the solver tries
+ * less crowded dates before more crowded dates.
+ */
 std::vector<int> ScheduleGenerator::orderedCandidateDates(const SchedulingState& state, const RuntimeCourse& course) const {
     std::vector<int> candidates;
     for (int dateIndex = 0; dateIndex < static_cast<int>(block_.allowedDates.size()); ++dateIndex) {
@@ -89,6 +158,11 @@ std::vector<int> ScheduleGenerator::orderedCandidateDates(const SchedulingState&
         }
     }
 
+    /*
+     * Sort candidates by least pressure first.
+     *
+     * If two dates have the same pressure, the earlier date is tried first.
+     */
     std::sort(candidates.begin(), candidates.end(), [&](int left, int right) {
         int leftPressure = datePressure(state, course, left);
         int rightPressure = datePressure(state, course, right);
@@ -101,6 +175,17 @@ std::vector<int> ScheduleGenerator::orderedCandidateDates(const SchedulingState&
     return candidates;
 }
 
+/*
+ * Selects the next course to assign during backtracking.
+ *
+ * The method uses a heuristic similar to MRV:
+ * choose the course with the fewest currently legal dates.
+ *
+ * Tie breakers:
+ * - obligatory courses before elective-only courses
+ * - courses with more memberships before courses with fewer memberships
+ * - lower course number for stable deterministic behavior
+ */
 int ScheduleGenerator::selectNextCourse(const SchedulingState& state, const std::vector<bool>& remaining) const {
     int bestIndex = -1;
     int bestDomainSize = std::numeric_limits<int>::max();
@@ -114,6 +199,10 @@ int ScheduleGenerator::selectNextCourse(const SchedulingState& state, const std:
         }
 
         const RuntimeCourse& course = block_.runtimeCourses[i];
+
+        /*
+         * Count how many legal dates are still available for this course.
+         */
         int domainSize = 0;
         for (int dateIndex = 0; dateIndex < static_cast<int>(block_.allowedDates.size()); ++dateIndex) {
             if (canAssign(state, course, dateIndex)) {
@@ -121,6 +210,9 @@ int ScheduleGenerator::selectNextCourse(const SchedulingState& state, const std:
             }
         }
 
+        /*
+         * Check whether this course is obligatory in at least one membership.
+         */
         bool hasObligatory = false;
         for (const CourseMembership& membership : course.memberships) {
             if (membership.requirement == Requirement::OBLIGATORY) {
@@ -135,6 +227,10 @@ int ScheduleGenerator::selectNextCourse(const SchedulingState& state, const std:
         // Using the new getter from the OOP Model
         const std::string& number = course.course->getCourseNumber();
 
+        /*
+         * Decide whether the current course is a better next choice
+         * than the best course found so far.
+         */
         bool better = false;
         if (domainSize < bestDomainSize) {
             better = true;
@@ -163,24 +259,54 @@ int ScheduleGenerator::selectNextCourse(const SchedulingState& state, const std:
     return bestIndex;
 }
 
+/*
+ * Generates all valid schedules for the current block.
+ *
+ * This method creates the initial solver state and defines the recursive
+ * backtracking function that explores all legal assignments.
+ */
 std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPerBlock) const {
+    /*
+     * Initial scheduling state:
+     * - every course starts unassigned with date index -1
+     * - all group/date counters start at zero
+     */
     SchedulingState state{
         std::vector<int>(block_.runtimeCourses.size(), -1),
         std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0)),
         std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0))
     };
 
+    /*
+     * remaining[i] tells whether runtimeCourses[i] still needs an assigned date.
+     */
     std::vector<bool> remaining(block_.runtimeCourses.size(), true);
+
+    /*
+     * All valid solutions found by the recursive search.
+     */
     std::vector<ScheduleGenerationResult> solutions;
 
+    /*
+     * The start time is used to enforce the runtime timeout.
+     */
     const auto startTime = std::chrono::steady_clock::now();
 
     // Define the internal recursive backtracking function
+    /*
+     * Recursive backtracking function.
+     *
+     * It assigns one course at a time, continues recursively,
+     * and then undoes the assignment before trying the next option.
+     */
     std::function<void()> backtrack = [&]() {
         auto now = std::chrono::steady_clock::now();
         double elapsed = std::chrono::duration<double>(now - startTime).count();
         
         // Stop if we exceeded the time limit (e.g., 30 seconds)
+        /*
+         * Stop the solver if it passed the maximum allowed runtime.
+         */
         if (elapsed > maxRuntimeSeconds_) {
             throw SolverTimeoutException(
                 "Solver exceeded " + std::to_string(maxRuntimeSeconds_) +
@@ -188,10 +314,16 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
             );
         }
 
+        /*
+         * Stop exploring if the requested solution limit was already reached.
+         */
         if (limitPerBlock >= 0 && static_cast<int>(solutions.size()) >= limitPerBlock) {
             return;
         }
 
+        /*
+         * Check whether all courses have already been assigned.
+         */
         bool done = true;
         for (bool flag : remaining) {
             if (flag) {
@@ -200,8 +332,14 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
             }
         }
 
+        /*
+         * When no courses remain, the current state is a complete solution.
+         */
         if (done) {
             // We've found a complete solution. Let's convert it to the new ScheduleGenerationResult format.
+            /*
+             * Convert the internal date-index representation into domain assignments.
+             */
             std::vector<ExamAssignment> assignments;
             
             for (size_t i = 0; i < state.assignedDate.size(); ++i) {
@@ -211,6 +349,10 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
                 const RuntimeCourse& runtimeCourse = block_.runtimeCourses[i];
                 
                 // Determine if the course is obligatory or elective based on its memberships
+                /*
+                 * A course is considered obligatory in the result if any of its
+                 * relevant memberships is obligatory.
+                 */
                 bool isObligatory = false;
                 for (const CourseMembership& membership : runtimeCourse.memberships) {
                     if (membership.requirement == Requirement::OBLIGATORY) {
@@ -220,6 +362,9 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
                 }
 
                 // Create an ExamAssignment for this course and add it to the list of assignments for this solution
+                /*
+                 * Store the original course pointer together with the selected exam date.
+                 */
                 assignments.push_back({
                     runtimeCourse.course,                // Pointer to the original Course object
                     block_.allowedDates[dateIndex],      // The exact date
@@ -228,27 +373,49 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
             }
 
             // Save the final cleaned result
+            /*
+             * Save this complete schedule as a ScheduleGenerationResult.
+             */
             solutions.emplace_back(ScheduleGenerationResult(assignments));
             return;
         }
 
+        /*
+         * Pick the next course using the selection heuristic.
+         */
         int nextCourseIndex = selectNextCourse(state, remaining);
         remaining[nextCourseIndex] = false;
 
+        /*
+         * Try every legal date candidate for the selected course.
+         */
         std::vector<int> candidates = orderedCandidateDates(state, block_.runtimeCourses[nextCourseIndex]);
         for (int dateIndex : candidates) {
             assign(state, block_.runtimeCourses[nextCourseIndex], dateIndex);
             backtrack();
             unassign(state, block_.runtimeCourses[nextCourseIndex], dateIndex);
 
+            /*
+             * Stop the loop early if the solution limit was reached during recursion.
+             */
             if (limitPerBlock >= 0 && static_cast<int>(solutions.size()) >= limitPerBlock) {
                 break;
             }
         }
 
+        /*
+         * Mark the course as remaining again before returning to the previous level.
+         */
         remaining[nextCourseIndex] = true;
     };
 
+    /*
+     * Start the recursive search.
+     */
     backtrack();
+
+    /*
+     * Return all solutions found for this block.
+     */
     return solutions;
 }
