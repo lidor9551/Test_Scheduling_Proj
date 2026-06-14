@@ -22,6 +22,7 @@ add_executable(program_course_model_test
     unit/ProgramCourseModelTest.cpp
     ../src/presentation/ProgramCourseModel.cpp
     ../src/domain/Course.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
 )
 
 target_include_directories(program_course_model_test PRIVATE ../src)
@@ -71,6 +72,7 @@ add_executable(scheduler_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
 )
 
 target_include_directories(scheduler_integration_test PRIVATE ../src)
@@ -124,6 +126,7 @@ add_executable(no_solution_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
 )
 
 target_include_directories(no_solution_integration_test PRIVATE ../src)
@@ -152,6 +155,7 @@ add_executable(overlap_conflict_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
 )
 
 target_include_directories(overlap_conflict_integration_test PRIVATE ../src)

@@ -10,7 +10,7 @@ SchedulingWorker::SchedulingWorker(const ScheduleGenerator* generator, int limit
 
 void SchedulingWorker::run() {
     try {
-        std::vector<std::vector<int>> solutions =
+        std::vector<ScheduleGenerationResult> solutions =
             generator_->runBacktracking(limitPerBlock_);
 
         emit finished(solutions);

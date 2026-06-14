@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QString>
 #include <vector>
+#include "domain/ScheduleGenerationResult.h"
 
 class ScheduleGenerator;
 
@@ -16,7 +17,7 @@ public slots:
     void run();
 
 signals:
-    void finished(const std::vector<std::vector<int>>& solutions);
+    void finished(const std::vector<ScheduleGenerationResult>& solutions);
     void failed(QString message);
 
 private:

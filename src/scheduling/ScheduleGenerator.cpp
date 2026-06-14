@@ -1,8 +1,5 @@
 #include "ScheduleGenerator.h"
 #include "scheduling/SchedulingWorker.h"
-#include <QDebug>
-#include <QMetaType>
-#include <QThread>
 #include <algorithm>
 #include <chrono>
 #include <functional>
@@ -15,17 +12,10 @@ ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, double maxRuntimeSec
     : block_(std::move(block)),
       groupCount_(computeGroupCount()),
       maxRuntimeSeconds_(maxRuntimeSeconds) {
-    qRegisterMetaType<std::vector<std::vector<int>>>("std::vector<std::vector<int>>");
+    qRegisterMetaType<std::vector<ScheduleGenerationResult>>("std::vector<ScheduleGenerationResult>");
 }
 
-ScheduleGenerator::~ScheduleGenerator() {
-    if (workerThread_ != nullptr && workerThread_->isRunning()) {
-        workerThread_->quit();
-        workerThread_->wait();
-    }
-}
-
-std::vector<std::vector<int>> ScheduleGenerator::runBacktracking(int limitPerBlock) const {
+std::vector<ScheduleGenerationResult> ScheduleGenerator::runBacktracking(int limitPerBlock) const {
     return generateAll(limitPerBlock);
 }
 
@@ -173,7 +163,7 @@ int ScheduleGenerator::selectNextCourse(const SchedulerState& state, const std::
     return bestIndex;
 }
 
-std::vector<std::vector<int>> ScheduleGenerator::generateAll(int limitPerBlock) const {
+std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPerBlock) const {
     SchedulerState state{
         std::vector<int>(block_.runtimeCourses.size(), -1),
         std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0)),
@@ -181,7 +171,7 @@ std::vector<std::vector<int>> ScheduleGenerator::generateAll(int limitPerBlock) 
     };
 
     std::vector<bool> remaining(block_.runtimeCourses.size(), true);
-    std::vector<std::vector<int>> solutions;
+    std::vector<ScheduleGenerationResult> solutions;
 
     const auto startTime = std::chrono::steady_clock::now();
 
@@ -211,7 +201,34 @@ std::vector<std::vector<int>> ScheduleGenerator::generateAll(int limitPerBlock) 
         }
 
         if (done) {
-            solutions.push_back(state.assignedDate);
+            // We've found a complete solution. Let's convert it to the new ScheduleGenerationResult format.
+            std::vector<ExamAssignment> assignments;
+            
+            for (size_t i = 0; i < state.assignedDate.size(); ++i) {
+                int dateIndex = state.assignedDate[i];
+                if (dateIndex == -1) continue; 
+
+                const RuntimeCourse& runtimeCourse = block_.runtimeCourses[i];
+                
+                // Determine if the course is obligatory or elective based on its memberships
+                bool isObligatory = false;
+                for (const CourseMembership& membership : runtimeCourse.memberships) {
+                    if (membership.requirement == Requirement::OBLIGATORY) {
+                        isObligatory = true;
+                        break;
+                    }
+                }
+
+                // Create an ExamAssignment for this course and add it to the list of assignments for this solution
+                assignments.push_back({
+                    runtimeCourse.course,                // Pointer to the original Course object
+                    block_.allowedDates[dateIndex],      // The exact date
+                    isObligatory                         // Obligatory or elective
+                });
+            }
+
+            // Save the final cleaned result
+            solutions.emplace_back(ScheduleGenerationResult(assignments));
             return;
         }
 
@@ -235,57 +252,3 @@ std::vector<std::vector<int>> ScheduleGenerator::generateAll(int limitPerBlock) 
     backtrack();
     return solutions;
 }
-
-void ScheduleGenerator::startScheduling(int limitPerBlock) {
-    if (hasCachedResult_) {
-        qDebug() << ">>> Returning cached results! <<<";
-        emit schedulingFinished(cachedSolutions_);
-        return;
-    }
-
-    if (workerThread_ != nullptr && workerThread_->isRunning()) {
-        emit errorOccurred("Scheduling is already running.");
-        return;
-    }
-
-    auto* thread = new QThread();
-    auto* worker = new SchedulingWorker(this, limitPerBlock);
-
-    worker->moveToThread(thread);
-    workerThread_ = thread;
-
-    connect(thread, &QThread::started,
-            worker, &SchedulingWorker::run);
-
-    connect(worker, &SchedulingWorker::finished,
-            this, [this](const std::vector<std::vector<int>>& solutions) {
-                cachedSolutions_ = solutions;
-                hasCachedResult_ = true;
-                emit schedulingFinished(cachedSolutions_);
-            });
-
-    connect(worker, &SchedulingWorker::failed,
-            this, [this](const QString& message) {
-                emit errorOccurred(message);
-            });
-
-    connect(worker, &SchedulingWorker::finished,
-            thread, &QThread::quit);
-
-    connect(worker, &SchedulingWorker::failed,
-            thread, &QThread::quit);
-
-    connect(thread, &QThread::finished,
-            worker, &QObject::deleteLater);
-
-    connect(thread, &QThread::finished,
-            this, [this, thread]() {
-                if (workerThread_ == thread) {
-                    workerThread_ = nullptr;
-                }
-                thread->deleteLater();
-            });
-
-    thread->start();
-}
-

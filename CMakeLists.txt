@@ -29,6 +29,8 @@ qt_add_executable(
     src/domain/Date.cpp
     src/domain/Course.cpp
     src/domain/ExamPeriod.cpp
+    src/domain/ScheduleGenerationResult.cpp
+    
 
     src/application/SchedulingSession.cpp
 
@@ -38,6 +40,7 @@ qt_add_executable(
     src/scheduling/Preprocessor.cpp
     src/scheduling/ScheduleGenerator.cpp
     src/scheduling/SchedulingWorker.cpp
+    src/scheduling/SchedulingService.cpp
 )
 
 target_include_directories(exam_scheduler PRIVATE src)

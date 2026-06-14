@@ -8,8 +8,6 @@ ScheduleGenerationResult::ScheduleGenerationResult(std::vector<ExamAssignment> a
     : m_assignments(std::move(assignments)), 
       m_electiveConflicts(0), 
       m_minDaysBetweenObligatory(0) {
-    // Note for V3.0: In the future, we might calculate the metrics right here 
-    // in the constructor by iterating over m_assignments, or receive them as parameters.
 }
 
 // Retrieves the read-only list of all exam assignments in this schedule
