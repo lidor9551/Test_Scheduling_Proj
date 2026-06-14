@@ -2,6 +2,16 @@
 
 #include "scheduling/IConflictRule.h"
 
+/*
+ * SameGroupConflictRule implements the main V1/V2 same-day conflict logic.
+ *
+ * The rule checks whether students from the same academic group would receive
+ * conflicting exams on the same date.
+ *
+ * An academic group is usually defined by a pair such as:
+ * program ID + study year.
+ */
+
 /**
  * @brief Prevents invalid same-group exam conflicts.
  *
@@ -13,6 +23,10 @@
  */
 class SameGroupConflictRule : public IConflictRule {
 public:
+    /*
+     * Returns true if placing the given course on the given date does not
+     * violate same-group exam conflict rules.
+     */
     bool isSatisfied(const SchedulingState& state,
                      const RuntimeCourse& course,
                      int dateIndex) const override;
