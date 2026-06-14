@@ -1,5 +1,14 @@
 #include "domain/DateAvailabilityPolicy.h"
 
+/*
+ * Checks whether a Date falls on Saturday.
+ *
+ * This uses Sakamoto's algorithm to calculate the day of week
+ * without depending on Qt types such as QDate.
+ *
+ * The returned day index is:
+ * 0 = Sunday, 1 = Monday, ..., 6 = Saturday.
+ */
 bool DateAvailabilityPolicy::isSaturday(const Date& date) {
     int year = date.getYear();
     const int month = date.getMonth();
@@ -22,6 +31,11 @@ bool DateAvailabilityPolicy::isSaturday(const Date& date) {
     return dayOfWeek == 6;
 }
 
+/*
+ * Checks whether the given date appears inside any excluded range.
+ *
+ * The range check itself is delegated to ExcludedRange::contains().
+ */
 bool DateAvailabilityPolicy::isInExcludedRanges(
     const Date& date,
     const std::vector<ExcludedRange>& excludedRanges) {
@@ -34,6 +48,12 @@ bool DateAvailabilityPolicy::isInExcludedRanges(
     return false;
 }
 
+/*
+ * Applies the complete date availability rule for one date.
+ *
+ * This is the main method that other layers should use when they need to know
+ * whether an exam can be placed on a specific date.
+ */
 bool DateAvailabilityPolicy::isAllowedExamDate(
     const Date& date,
     const std::vector<ExcludedRange>& excludedRanges) {
@@ -48,6 +68,12 @@ bool DateAvailabilityPolicy::isAllowedExamDate(
     return true;
 }
 
+/*
+ * Builds all allowed exam dates inside a date range.
+ *
+ * The loop checks every date from startDate to endDate, including both ends.
+ * Each date is accepted only if it passes isAllowedExamDate().
+ */
 std::vector<Date> DateAvailabilityPolicy::allowedDates(
     const Date& startDate,
     const Date& endDate,

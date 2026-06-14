@@ -4,6 +4,15 @@
 #include "Course.h"
 #include "Date.h"
 
+/*
+ * This file defines the result model produced by the scheduling algorithm.
+ *
+ * Instead of returning raw date indexes, the scheduler now returns meaningful
+ * domain objects: each assignment connects a real Course to a real Date.
+ *
+ * This makes the output easier to display, export, test, and extend.
+ */
+
 /**
  * @class ScheduleGenerationResult
  * @brief Domain model representing a single, complete, and valid exam schedule.
@@ -17,29 +26,90 @@
  */
 
 // Helper structure: Represents a single scheduled exam slot
+/*
+ * ExamAssignment represents one exam placed on one date.
+ *
+ * It does not own the Course object.
+ * It only keeps a pointer to the original course so the UI/export layer can still
+ * access the full course details without copying the entire course.
+ */
 struct ExamAssignment {
     const Course* course;  // Pointer to the original course object with all its details
     Date examDate;         // The exact assigned date for the exam
     bool isObligatory;     // Indicates if the course is obligatory 
 };
 
+/*
+ * ScheduleGenerationResult represents one complete schedule solution.
+ *
+ * A single result contains all exam assignments for one valid schedule.
+ * The application may generate many ScheduleGenerationResult objects,
+ * and the output screen lets the user browse between them.
+ */
 class ScheduleGenerationResult {
 private:
+    /*
+     * Stores all course-date assignments that belong to this schedule.
+     *
+     * Each item says:
+     * - which course was scheduled
+     * - on which date
+     * - whether it is obligatory
+     */
     std::vector<ExamAssignment> m_assignments; // The list of all exams in this specific schedule
 
     // V3.0 Preparation: Pre-calculated metrics for sorting optimal schedules
+    /*
+     * Stores the number of elective conflicts calculated for this schedule.
+     *
+     * This value is prepared for future sorting/filtering requirements.
+     */
     int m_electiveConflicts = 0;
+
+    /*
+     * Stores the minimum number of days between obligatory exams.
+     *
+     * This value is also prepared for future optimization requirements.
+     */
     int m_minDaysBetweenObligatory = 0;
 
 public:
     // Constructors
+    /*
+     * Creates an empty schedule result.
+     *
+     * This is useful for containers, tests, and default initialization.
+     */
     ScheduleGenerationResult() = default;
+
+    /*
+     * Creates a schedule result from a ready list of exam assignments.
+     *
+     * The implementation moves the assignment vector into the object.
+     */
     explicit ScheduleGenerationResult(std::vector<ExamAssignment> assignments);
 
     // Getters
+    /*
+     * Returns the assignments that make up this schedule.
+     *
+     * The returned reference is const so callers can read the schedule
+     * without modifying its internal state.
+     */
     const std::vector<ExamAssignment>& getAssignments() const;
     
     // Metrics accessors (to be calculated and utilized per V3.0 requirements)
+    /*
+     * Returns the elective conflict metric for this schedule.
+     *
+     * Currently this is initialized to zero and reserved for future ranking logic.
+     */
     int getElectiveConflicts() const;
+
+    /*
+     * Returns the minimum gap between obligatory exams.
+     *
+     * Currently this is initialized to zero and reserved for future ranking logic.
+     */
     int getMinDaysBetweenObligatory() const;
 };

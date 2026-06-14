@@ -1,0 +1,7 @@
+ProgramCourseModelTest 1 0.0457857
+ParserPreprocessorIntegrationTest 1 0.029625
+SchedulerIntegrationTest 1 0.0556691
+InvalidInputIntegrationTest 1 0.0530334
+NoSolutionIntegrationTest 1 0.0367151
+OverlapConflictIntegrationTest 1 0.0337973
+---
