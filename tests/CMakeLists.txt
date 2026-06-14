@@ -40,7 +40,6 @@ add_executable(date_availability_policy_test
     unit/DateAvailabilityPolicyTest.cpp
     ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/ExamPeriod.cpp
-    ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
 )
@@ -55,6 +54,25 @@ target_link_libraries(date_availability_policy_test
 add_test(
     NAME DateAvailabilityPolicyTest
     COMMAND date_availability_policy_test
+)
+
+add_executable(schedule_generation_result_test
+    unit/ScheduleGenerationResultTest.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/Date.cpp
+)
+
+target_include_directories(schedule_generation_result_test PRIVATE ../src)
+
+target_link_libraries(schedule_generation_result_test
+    PRIVATE
+        Qt6::Core
+)
+
+add_test(
+    NAME ScheduleGenerationResultTest
+    COMMAND schedule_generation_result_test
 )
 
 add_executable(program_course_model_test
