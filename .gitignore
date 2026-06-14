@@ -441,5 +441,8 @@ CompilerIdCXX.vcxproj
 *.vcxproj
 *.yaml
 
-build_integrated_tests
-*.c
+# Local integration test build output
+build_integrated_tests/
+
+# Local/generated C files
+c
