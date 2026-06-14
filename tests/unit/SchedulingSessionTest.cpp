@@ -6,6 +6,11 @@
 int main() {
     SchedulingSession session;
 
+    SchedulingSession::ValidationResult emptyValidation = session.validateBeforeGeneration();
+
+    assert(!emptyValidation.isValid());
+    assert(emptyValidation.errors.size() == 3);
+
     assert(session.selectedProgramCount() == 0);
     assert(session.selectedPrograms().empty());
 
@@ -75,6 +80,19 @@ int main() {
     assert(dataSession.courseCount() == 1);
     assert(dataSession.examPeriodCount() == 1);
     assert(dataSession.hasData());
+
+    SchedulingSession::ValidationResult missingProgramValidation = dataSession.validateBeforeGeneration();
+
+    assert(!missingProgramValidation.isValid());
+    assert(missingProgramValidation.errors.size() == 1);
+
+    assert(dataSession.selectProgram("83108"));
+
+    SchedulingSession::ValidationResult validGenerationValidation =
+        dataSession.validateBeforeGeneration();
+
+    assert(validGenerationValidation.isValid());
+    assert(validGenerationValidation.errors.empty());
 
     SchedulingSession::AppendResult appendResult =
         dataSession.appendData({course1Duplicate, course2}, {period1Duplicate, period2});

@@ -295,10 +295,10 @@ ScheduleOutputManager* AppController::outputManager() {
 }
 
 void AppController::generateSchedules() {
+    clearMessages();
     qDebug() << "=========================================";
     qDebug() << ">>> generateSchedules STARTED! <<<";
     qDebug() << "Selected programs count:" << session_.selectedProgramCount();
-        setStatus("Generating schedules...");
 
     // override original output with new instance to reset previous state
     if (m_calendarManager && !m_calendarManager->getPeriods().empty()) {
@@ -308,6 +308,18 @@ void AppController::generateSchedules() {
     } else {
         qDebug() << "[SYNC] CalendarManager is empty or not ready. Using original parsed periods.";
     }
+
+    SchedulingSession::ValidationResult validation =
+        session_.validateBeforeGeneration();
+
+    if (!validation.isValid()) {
+        setError(QString::fromStdString(validation.message()));
+        qDebug() << "[VALIDATION] Schedule generation blocked:"
+                << QString::fromStdString(validation.message());
+        return;
+    }
+
+    setStatus("Generating schedules...");
 
     // Keep a reference to the full course list for preprocessing
     const std::vector<Course>& allCourses = session_.courses();
@@ -340,7 +352,8 @@ void AppController::generateSchedules() {
     m_allBlocks = preprocessor.buildBlocks();
 
     if (m_allBlocks.empty()) {
-        setError("No valid scheduling blocks found.");
+        setError("No scheduling blocks were created for the selected programs and exam periods.");
+        qDebug() << "[VALIDATION] Schedule generation blocked: no scheduling blocks were created.";
         return;
     }
 

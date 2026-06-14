@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <utility>
+#include <sstream>
 
 void SchedulingSession::replaceData(std::vector<Course> courses,
                                     std::vector<ExamPeriod> examPeriods) {
@@ -39,6 +40,28 @@ SchedulingSession::AppendResult SchedulingSession::appendData(
     }
 
     return result;
+}
+
+bool SchedulingSession::ValidationResult::isValid() const {
+    return errors.empty();
+}
+
+std::string SchedulingSession::ValidationResult::message() const {
+    if (errors.empty()) {
+        return "";
+    }
+
+    std::ostringstream stream;
+
+    for (std::size_t i = 0; i < errors.size(); ++i) {
+        if (i > 0) {
+            stream << " ";
+        }
+
+        stream << errors[i];
+    }
+
+    return stream.str();
 }
 
 void SchedulingSession::clear() {
@@ -105,6 +128,24 @@ int SchedulingSession::selectedProgramCount() const {
 
 bool SchedulingSession::hasData() const {
     return !courses_.empty() || !examPeriods_.empty();
+}
+
+SchedulingSession::ValidationResult SchedulingSession::validateBeforeGeneration() const {
+    ValidationResult result;
+
+    if (courses_.empty()) {
+        result.errors.push_back("No courses were loaded.");
+    }
+
+    if (examPeriods_.empty()) {
+        result.errors.push_back("No exam periods were loaded.");
+    }
+
+    if (selectedPrograms_.empty()) {
+        result.errors.push_back("At least one academic program must be selected.");
+    }
+
+    return result;
 }
 
 bool SchedulingSession::hasCourse(const std::string& courseNumber) const {
