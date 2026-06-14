@@ -187,6 +187,28 @@ add_test(
     COMMAND no_solution_integration_test
 )
 
+add_executable(schedule_output_manager_export_safety_test
+    unit/ScheduleOutputManagerExportSafetyTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+target_include_directories(schedule_output_manager_export_safety_test PRIVATE ../src)
+
+target_link_libraries(schedule_output_manager_export_safety_test
+    PRIVATE
+        Qt6::Core
+)
+
+add_test(
+    NAME ScheduleOutputManagerExportSafetyTest
+    COMMAND schedule_output_manager_export_safety_test
+)
+
 set_tests_properties(NoSolutionIntegrationTest
     PROPERTIES
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

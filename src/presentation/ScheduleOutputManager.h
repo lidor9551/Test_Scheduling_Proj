@@ -64,6 +64,10 @@ signals:
     void currentCalendarDataChanged();
 
 private:
+    bool canExportCurrentSchedule(QString* errorMessage = nullptr) const;
+    bool isCurrentScheduleIndexValid() const;
+    bool isOutputPathValid(const QString& filePath, QString* errorMessage = nullptr) const;
+    
     // Builds the calendar UI data for the specific month/period    
     void updateCalendarData(); 
     // Extracts unique semesters and moeds from the ExamPeriod data

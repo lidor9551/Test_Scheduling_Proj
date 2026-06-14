@@ -1,5 +1,7 @@
 #include "presentation/ScheduleOutputManager.h"
 #include "domain/DateAvailabilityPolicy.h"
+#include <QFileInfo>
+#include <QDir>
 #include <QDebug>
 #include <QDate>
 #include <set>
@@ -243,10 +245,79 @@ void ScheduleOutputManager::clearData() {
     qDebug() << "[MANAGER] Data cleared successfully.";
 }
 
+bool ScheduleOutputManager::isCurrentScheduleIndexValid() const {
+    return !m_solutions.empty() &&
+           m_currentIndex >= 1 &&
+           m_currentIndex <= static_cast<int>(m_solutions.size());
+}
+
+bool ScheduleOutputManager::isOutputPathValid(const QString& filePath,
+                                              QString* errorMessage) const {
+    const QString trimmedPath = filePath.trimmed();
+
+    if (trimmedPath.isEmpty()) {
+        if (errorMessage) {
+            *errorMessage = "Export path is empty.";
+        }
+        return false;
+    }
+
+    const QFileInfo fileInfo(trimmedPath);
+
+    if (fileInfo.exists() && fileInfo.isDir()) {
+        if (errorMessage) {
+            *errorMessage = "Export path points to a directory, not a file.";
+        }
+        return false;
+    }
+
+    const QDir parentDir = fileInfo.absoluteDir();
+    if (!parentDir.exists()) {
+        if (errorMessage) {
+            *errorMessage = "Export directory does not exist.";
+        }
+        return false;
+    }
+
+    return true;
+}
+
+bool ScheduleOutputManager::canExportCurrentSchedule(QString* errorMessage) const {
+    if (m_solutions.empty()) {
+        if (errorMessage) {
+            *errorMessage = "Cannot export because no generated schedules are available.";
+        }
+        return false;
+    }
+
+    if (!isCurrentScheduleIndexValid()) {
+        if (errorMessage) {
+            *errorMessage = "Cannot export because the current schedule index is invalid.";
+        }
+        return false;
+    }
+
+    return true;
+}
 
 bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
-    QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+    QString errorMessage;
+
+    if (!canExportCurrentSchedule(&errorMessage)) {
+        qWarning() << "[EXPORT] Export blocked:" << errorMessage;
+        return false;
+    }
+
+    if (!isOutputPathValid(filePath, &errorMessage)) {
+        qWarning() << "[EXPORT] Export blocked:" << errorMessage;
+        return false;
+    }
+
+    QFile file(filePath.trimmed());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "[EXPORT] Failed to open file for writing:" << filePath;
+        return false;
+    }
 
     QTextStream out(&file);
     out << "Schedule Export - " << m_selectedSemester << " " << m_selectedMoed << "\n";
@@ -256,9 +327,14 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     const auto& assignments = currentSolution.getAssignments();
 
     for (const ExamAssignment& assignment : assignments) {
-        out << "Course: " << QString::fromStdString(assignment.course->getCourseName()) 
+        if (!assignment.course) {
+            qWarning() << "[EXPORT] Skipping assignment with null course pointer.";
+            continue;
+        }
+
+        out << "Course: " << QString::fromStdString(assignment.course->getCourseName())
             << " | ID: " << QString::fromStdString(assignment.course->getCourseNumber()) << "\n";
-        
+
         out << "Date: " << assignment.examDate.toString().c_str() << "\n";
         out << "Requirement: " << (assignment.isObligatory ? "Obligatory" : "Elective") << "\n";
         out << "------------------------------------------\n";

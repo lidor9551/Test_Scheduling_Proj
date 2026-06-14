@@ -62,9 +62,11 @@ Item {
                 font.bold: true
                 Layout.preferredWidth: 150
                 Layout.preferredHeight: 40
-                
+                enabled: appController.outputManager.totalSchedulesCount > 0 &&
+                appController.outputManager.currentScheduleIndex >= 1
+
                 background: Rectangle {
-                    color: parent.down ? "#0f3f30" : (parent.hovered ? "#1b664f" : "#14533f")
+                    color: !parent.enabled ? "#94a3b8" : (parent.down ? "#0f3f30" : (parent.hovered ? "#1b664f" : "#14533f"))
                     radius: 8
                 }
                 
