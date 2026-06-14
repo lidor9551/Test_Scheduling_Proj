@@ -30,6 +30,7 @@ qt_add_executable(
     src/domain/Course.cpp
     src/domain/ExamPeriod.cpp
     src/domain/ScheduleGenerationResult.cpp
+    src/domain/DateAvailabilityPolicy.cpp
     
 
     src/application/SchedulingSession.cpp

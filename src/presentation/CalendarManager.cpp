@@ -1,5 +1,6 @@
 #include "CalendarManager.h"
 #include <QDebug>
+#include "domain/DateAvailabilityPolicy.h"
 
 CalendarManager::CalendarManager(QObject* parent)
     : QObject(parent), currentPeriodIndex_(0) {}
@@ -197,12 +198,13 @@ void CalendarManager::rebuildDays() {
         info.date  = QDate(current.getYear(), current.getMonth(), current.getDay());
         info.label = "";
 
-        bool excluded = false;
-        for (const ExcludedRange& r : period.getExcludedRanges()) {
-            if (r.contains(current)) { excluded = true; break; }
-        }
-        bool isSaturday = (info.date.dayOfWeek() == 6);
-        info.status = (excluded || isSaturday) ? 2 : 1;
+        const bool isAllowed =
+            DateAvailabilityPolicy::isAllowedExamDate(
+                current,
+                period.getExcludedRanges()
+            );
+
+        info.status = isAllowed ? 1 : 2;
         days_.push_back(info);
     }
 }

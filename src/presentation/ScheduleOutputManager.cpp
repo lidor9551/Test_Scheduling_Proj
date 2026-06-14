@@ -1,4 +1,5 @@
 #include "presentation/ScheduleOutputManager.h"
+#include "domain/DateAvailabilityPolicy.h"
 #include <QDebug>
 #include <QDate>
 #include <set>
@@ -170,12 +171,14 @@ void ScheduleOutputManager::updateCalendarData() {
                 dayData["dayText"] = QString::number(current.day());
             }
 
-            // Check exclusions
-            bool isAllowed = false;
-            for (const auto& d : allowed) {
-                if (d == currentDate) { isAllowed = true; break; }
-            }
-            dayData["isExcluded"] = !isAllowed || (current.dayOfWeek() == 6);
+            // Check date availability using the shared policy.
+            const bool isAllowed =
+                DateAvailabilityPolicy::isAllowedExamDate(
+                    currentDate,
+                    activePeriod->getExcludedRanges()
+                );
+
+            dayData["isExcluded"] = !isAllowed;
             dayData["hasExam"] = false;
             dayData["examName"] = "";
             dayData["courseId"] = "";
