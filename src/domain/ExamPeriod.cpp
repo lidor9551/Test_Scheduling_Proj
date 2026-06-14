@@ -1,4 +1,5 @@
 #include "ExamPeriod.h"
+#include "domain/DateAvailabilityPolicy.h"
 
 bool ExcludedRange::contains(const Date& date) const {
     return start <= date && date <= end;
@@ -41,23 +42,9 @@ const std::vector<ExcludedRange>& ExamPeriod::getExcludedRanges() const {
 // === Logic ===
 
 std::vector<Date> ExamPeriod::allowedDates() const {
-    std::vector<Date> result;
-
-    // Collect all dates from startDate to endDate, excluding explicit excluded ranges.
-    for (Date current = startDate; current <= endDate; current = current.nextDay()) {
-        bool excluded = false;
-
-        for (const ExcludedRange& range : excludedRanges) {
-            if (range.contains(current)) {
-                excluded = true;
-                break;
-            }
-        }
-
-        if (!excluded) {
-            result.push_back(current);
-        }
-    }
-
-    return result;
+    return DateAvailabilityPolicy::allowedDates(
+        startDate,
+        endDate,
+        excludedRanges
+    );
 }

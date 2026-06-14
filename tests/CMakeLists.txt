@@ -3,6 +3,7 @@ add_executable(scheduling_session_test
     ../src/application/SchedulingSession.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/Date.cpp
 )
 
@@ -35,6 +36,27 @@ add_test(
     COMMAND same_group_conflict_rule_test
 )
 
+add_executable(date_availability_policy_test
+    unit/DateAvailabilityPolicyTest.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+)
+
+target_include_directories(date_availability_policy_test PRIVATE ../src)
+
+target_link_libraries(date_availability_policy_test
+    PRIVATE
+        Qt6::Core
+)
+
+add_test(
+    NAME DateAvailabilityPolicyTest
+    COMMAND date_availability_policy_test
+)
+
 add_executable(program_course_model_test
     unit/ProgramCourseModelTest.cpp
     ../src/presentation/ProgramCourseModel.cpp
@@ -61,6 +83,7 @@ add_executable(parser_preprocessor_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
 )
 
 target_include_directories(parser_preprocessor_integration_test PRIVATE ../src)
@@ -90,6 +113,7 @@ add_executable(scheduler_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/ScheduleGenerationResult.cpp
     
 )
@@ -117,6 +141,7 @@ add_executable(invalid_input_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
 )
 
 target_include_directories(invalid_input_integration_test PRIVATE ../src)
@@ -146,6 +171,7 @@ add_executable(no_solution_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
@@ -176,6 +202,7 @@ add_executable(overlap_conflict_integration_test
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
