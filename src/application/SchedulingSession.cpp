@@ -9,6 +9,10 @@ void SchedulingSession::replaceData(std::vector<Course> courses,
     examPeriods_ = std::move(examPeriods);
 }
 
+void SchedulingSession::replaceExamPeriods(std::vector<ExamPeriod> examPeriods) {
+    examPeriods_ = std::move(examPeriods);
+}
+
 SchedulingSession::AppendResult SchedulingSession::appendData(
     const std::vector<Course>& courses,
     const std::vector<ExamPeriod>& examPeriods) {

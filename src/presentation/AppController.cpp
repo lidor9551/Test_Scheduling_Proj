@@ -6,7 +6,6 @@
 #include <QFileInfo>
 #include <QUrl>
 #include <QDir>
-#include <set>
 #include <string>
 #include <utility>
 #include <QThread>
@@ -34,15 +33,15 @@ QString AppController::errorMessage() const {
 }
 
 int AppController::courseCount() const {
-    return static_cast<int>(courses_.size());
+    return session_.courseCount();
 }
 
 int AppController::examPeriodCount() const {
-    return static_cast<int>(examPeriods_.size());
+    return session_.examPeriodCount();
 }
 
 bool AppController::hasData() const {
-    return !courses_.empty() || !examPeriods_.empty();
+    return session_.hasData();
 }
 
 void AppController::setCoursesFilePath(const QString& path) {
@@ -75,11 +74,10 @@ void AppController::replaceData() {
         std::vector<ExamPeriod> loadedPeriods =
             parser.parseExamPeriods(examPeriodsFilePath_.toStdString());
 
-        courses_ = std::move(loadedCourses);
-        examPeriods_ = std::move(loadedPeriods);
-        programCourseModel_.setCourses(courses_);
-        m_outputManager.setCourses(courses_);
+        session_.replaceData(std::move(loadedCourses), std::move(loadedPeriods));
 
+        programCourseModel_.setCourses(session_.courses());
+        m_outputManager.setCourses(session_.courses());
         m_outputManager.setProgramsMap(getInternalProgramsMap());
 
         emit dataChanged();
@@ -110,59 +108,21 @@ void AppController::appendData() {
         std::vector<ExamPeriod> loadedPeriods =
             parser.parseExamPeriods(examPeriodsFilePath_.toStdString());
 
-        std::set<std::string> existingCourseNumbers;
-        for (const Course& course : courses_) {
-            existingCourseNumbers.insert(course.getCourseNumber());
-        }
+        SchedulingSession::AppendResult result =
+            session_.appendData(loadedCourses, loadedPeriods);
 
-        int addedCourses = 0;
-        int skippedCourses = 0;
+        programCourseModel_.setCourses(session_.courses());
+        m_outputManager.setCourses(session_.courses());
+        m_outputManager.setProgramsMap(getInternalProgramsMap());
 
-        for (const Course& course : loadedCourses) {
-            const std::string& courseNumber = course.getCourseNumber();
-
-            if (existingCourseNumbers.insert(courseNumber).second) {
-                courses_.push_back(course);
-                addedCourses++;
-            } else {
-                skippedCourses++;
-            }
-        }
-
-        std::set<std::pair<Semester, Moed>> existingPeriods;
-        for (const ExamPeriod& period : examPeriods_) {
-            existingPeriods.insert({period.getSemester(), period.getMoed()});
-        }
-
-        int addedPeriods = 0;
-        int skippedPeriods = 0;
-
-        for (const ExamPeriod& period : loadedPeriods) {
-            std::pair<Semester, Moed> key = {
-                period.getSemester(),
-                period.getMoed()
-            };
-
-            if (existingPeriods.insert(key).second) {
-                examPeriods_.push_back(period);
-                addedPeriods++;
-            } else {
-                skippedPeriods++;
-            }
-        }
-        programCourseModel_.setCourses(courses_);
-        m_outputManager.setCourses(courses_);
-
-        m_outputManager.setProgramsMap(getInternalProgramsMap()); 
-        
         emit dataChanged();
 
         setStatus(
             QString("Append completed. Added %1 courses, skipped %2 duplicate courses. Added %3 periods, skipped %4 duplicate periods.")
-                .arg(addedCourses)
-                .arg(skippedCourses)
-                .arg(addedPeriods)
-                .arg(skippedPeriods)
+                .arg(result.addedCourses)
+                .arg(result.skippedDuplicateCourses)
+                .arg(result.addedExamPeriods)
+                .arg(result.skippedDuplicateExamPeriods)
         );
     } catch (const std::exception& ex) {
         setError(QString("Failed to append data: %1").arg(ex.what()));
@@ -231,15 +191,21 @@ void AppController::setError(const QString& message) {
 
 QVariantList AppController::getCoursesVariant() const {
     QVariantList list;
-    for (const Course& c : courses_)
+
+    for (const Course& c : session_.courses()) {
         list.append(QVariant::fromValue(c));
+    }
+
     return list;
 }
 
 QVariantList AppController::getExamPeriodsVariant() const {
     QVariantList list;
-    for (const ExamPeriod& p : examPeriods_)
+
+    for (const ExamPeriod& p : session_.examPeriods()) {
         list.append(QVariant::fromValue(p));
+    }
+
     return list;
 }
 
@@ -286,7 +252,7 @@ QVariantList AppController::getCoursesForProgram(const QString& programId, int y
     QVariantList courseList;
     std::string pid = programId.toStdString();
 
-    for (const auto& course : courses_) { 
+    for (const auto& course : session_.courses()) {
         const auto& programs = course.getPrograms();
         
         for (const auto& p : programs) {
@@ -332,16 +298,17 @@ void AppController::generateSchedules() {
 
     // override original output with new instance to reset previous state
     if (m_calendarManager && !m_calendarManager->getPeriods().empty()) {
-        m_calendarManager->saveChanges(); 
-        this->examPeriods_ = m_calendarManager->getPeriods(); 
+        m_calendarManager->saveChanges();
+        session_.replaceExamPeriods(m_calendarManager->getPeriods());
         qDebug() << "[SYNC] Successfully synced updated periods from CalendarManager.";
     } else {
         qDebug() << "[SYNC] CalendarManager is empty or not ready. Using original parsed periods.";
     }
 
     // Keep a reference to the full course list for preprocessing
-    std::vector<Course>& allCourses = this->courses_; 
-    
+    const std::vector<Course>& allCourses = session_.courses();
+    const std::vector<ExamPeriod>& examPeriods = session_.examPeriods();
+
     // Create a filtered list of courses that require exams
     std::vector<Course> examOnlyCourses;
     for (const auto& course : allCourses) {
@@ -365,7 +332,7 @@ void AppController::generateSchedules() {
     }
 
     // Build all blocks and save them to the class member (m_allBlocks)
-    SchedulingPreprocessor preprocessor(allCourses, this->examPeriods_, selectedProgs);
+    SchedulingPreprocessor preprocessor(allCourses, examPeriods, selectedProgs);
     m_allBlocks = preprocessor.buildBlocks();
 
     if (m_allBlocks.empty()) {
@@ -408,14 +375,14 @@ void AppController::onSchedulingFinished(const std::vector<std::vector<int>>& so
 
     // Filter the courses to only those that require exams, as the scheduling is based on exam periods
     std::vector<Course> examOnlyCourses;
-    for (const auto& course : this->courses_) {
+    for (const auto& course : session_.courses()) {
         if (course.getEvaluationMethod() == Evaluation::EXAM) {
             examOnlyCourses.push_back(course);
         }
     }
 
     // Expose the solutions to the output manager so it can prepare the data for the UI
-    m_outputManager.setSchedulingData(solutions, examOnlyCourses, this->examPeriods_);
+    m_outputManager.setSchedulingData(solutions, examOnlyCourses, session_.examPeriods());
 }
 
 void AppController::onSchedulingFailed(QString message) {
@@ -438,7 +405,7 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
 
     if (!selectedBlock) {
         qDebug() << "No block found for" << semester << moed;
-        m_outputManager.setSchedulingData({}, courses_, examPeriods_);
+        m_outputManager.setSchedulingData({}, session_.courses(), session_.examPeriods());
         return;
     }
 
