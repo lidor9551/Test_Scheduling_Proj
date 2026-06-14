@@ -1,5 +1,7 @@
 #include "ScheduleGenerator.h"
 #include "scheduling/SchedulingWorker.h"
+#include "scheduling/SameGroupConflictRule.h"
+#include <memory>
 #include <algorithm>
 #include <chrono>
 #include <functional>
@@ -11,12 +13,19 @@ SolverTimeoutException::SolverTimeoutException(const std::string& message)
 ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, double maxRuntimeSeconds)
     : block_(std::move(block)),
       groupCount_(computeGroupCount()),
-      maxRuntimeSeconds_(maxRuntimeSeconds) {
+      maxRuntimeSeconds_(maxRuntimeSeconds),
+      conflictRules_(createDefaultConflictRules()) {
     qRegisterMetaType<std::vector<ScheduleGenerationResult>>("std::vector<ScheduleGenerationResult>");
 }
 
 std::vector<ScheduleGenerationResult> ScheduleGenerator::runBacktracking(int limitPerBlock) const {
     return generateAll(limitPerBlock);
+}
+
+std::vector<std::shared_ptr<IConflictRule>> ScheduleGenerator::createDefaultConflictRules() {
+    return {
+        std::make_shared<SameGroupConflictRule>()
+    };
 }
 
 int ScheduleGenerator::computeGroupCount() const {
@@ -29,28 +38,19 @@ int ScheduleGenerator::computeGroupCount() const {
     return maxGroup + 1;
 }
 
-bool ScheduleGenerator::canAssign(const SchedulerState& state, const RuntimeCourse& course, int dateIndex) const {
-    for (const CourseMembership& membership : course.memberships) {
-        int groupId = membership.groupId;
-        
-        // Using the strict Requirement enum from the OOP Model
-        if (membership.requirement == Requirement::OBLIGATORY) {
-            if (state.obligatoryCount[groupId][dateIndex] > 0) {
-                return false;
-            }
-            if (state.electiveCount[groupId][dateIndex] > 0) {
-                return false;
-            }
-        } else {
-            if (state.obligatoryCount[groupId][dateIndex] > 0) {
-                return false;
-            }
+bool ScheduleGenerator::canAssign(const SchedulingState& state,
+                                  const RuntimeCourse& course,
+                                  int dateIndex) const {
+    for (const std::shared_ptr<IConflictRule>& rule : conflictRules_) {
+        if (!rule->isSatisfied(state, course, dateIndex)) {
+            return false;
         }
     }
+
     return true;
 }
 
-void ScheduleGenerator::assign(SchedulerState& state, const RuntimeCourse& course, int dateIndex) const {
+void ScheduleGenerator::assign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = dateIndex;
     for (const CourseMembership& membership : course.memberships) {
         if (membership.requirement == Requirement::OBLIGATORY) {
@@ -61,7 +61,7 @@ void ScheduleGenerator::assign(SchedulerState& state, const RuntimeCourse& cours
     }
 }
 
-void ScheduleGenerator::unassign(SchedulerState& state, const RuntimeCourse& course, int dateIndex) const {
+void ScheduleGenerator::unassign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = -1;
     for (const CourseMembership& membership : course.memberships) {
         if (membership.requirement == Requirement::OBLIGATORY) {
@@ -72,7 +72,7 @@ void ScheduleGenerator::unassign(SchedulerState& state, const RuntimeCourse& cou
     }
 }
 
-int ScheduleGenerator::datePressure(const SchedulerState& state, const RuntimeCourse& course, int dateIndex) const {
+int ScheduleGenerator::datePressure(const SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     int pressure = 0;
     for (const CourseMembership& membership : course.memberships) {
         pressure += state.obligatoryCount[membership.groupId][dateIndex];
@@ -81,7 +81,7 @@ int ScheduleGenerator::datePressure(const SchedulerState& state, const RuntimeCo
     return pressure;
 }
 
-std::vector<int> ScheduleGenerator::orderedCandidateDates(const SchedulerState& state, const RuntimeCourse& course) const {
+std::vector<int> ScheduleGenerator::orderedCandidateDates(const SchedulingState& state, const RuntimeCourse& course) const {
     std::vector<int> candidates;
     for (int dateIndex = 0; dateIndex < static_cast<int>(block_.allowedDates.size()); ++dateIndex) {
         if (canAssign(state, course, dateIndex)) {
@@ -101,7 +101,7 @@ std::vector<int> ScheduleGenerator::orderedCandidateDates(const SchedulerState& 
     return candidates;
 }
 
-int ScheduleGenerator::selectNextCourse(const SchedulerState& state, const std::vector<bool>& remaining) const {
+int ScheduleGenerator::selectNextCourse(const SchedulingState& state, const std::vector<bool>& remaining) const {
     int bestIndex = -1;
     int bestDomainSize = std::numeric_limits<int>::max();
     int bestHasOnlyElective = std::numeric_limits<int>::max();
@@ -164,7 +164,7 @@ int ScheduleGenerator::selectNextCourse(const SchedulerState& state, const std::
 }
 
 std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPerBlock) const {
-    SchedulerState state{
+    SchedulingState state{
         std::vector<int>(block_.runtimeCourses.size(), -1),
         std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0)),
         std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0))

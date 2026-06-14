@@ -41,6 +41,7 @@ qt_add_executable(
     src/scheduling/ScheduleGenerator.cpp
     src/scheduling/SchedulingWorker.cpp
     src/scheduling/SchedulingService.cpp
+    src/scheduling/SameGroupConflictRule.cpp
 )
 
 target_include_directories(exam_scheduler PRIVATE src)
