@@ -27,6 +27,13 @@ public:
         int skippedDuplicateExamPeriods = 0;
     };
 
+    struct ValidationResult {
+        std::vector<std::string> errors;
+
+        bool isValid() const;
+        std::string message() const;
+    };
+
     static constexpr std::size_t MaxSelectedPrograms = 5;
 
     SchedulingSession() = default;
@@ -54,6 +61,8 @@ public:
     int selectedProgramCount() const;
 
     bool hasData() const;
+    
+    ValidationResult validateBeforeGeneration() const;
 
 private:
     std::vector<Course> courses_;
