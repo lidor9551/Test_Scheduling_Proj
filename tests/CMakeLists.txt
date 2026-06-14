@@ -18,6 +18,23 @@ add_test(
     COMMAND scheduling_session_test
 )
 
+add_executable(same_group_conflict_rule_test
+    unit/SameGroupConflictRuleTest.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+)
+
+target_include_directories(same_group_conflict_rule_test PRIVATE ../src)
+
+target_link_libraries(same_group_conflict_rule_test
+    PRIVATE
+        Qt6::Core
+)
+
+add_test(
+    NAME SameGroupConflictRuleTest
+    COMMAND same_group_conflict_rule_test
+)
+
 add_executable(program_course_model_test
     unit/ProgramCourseModelTest.cpp
     ../src/presentation/ProgramCourseModel.cpp
@@ -69,10 +86,12 @@ add_executable(scheduler_integration_test
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/ScheduleGenerator.cpp
     ../src/scheduling/SchedulingWorker.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
     ../src/domain/ScheduleGenerationResult.cpp
+    
 )
 
 target_include_directories(scheduler_integration_test PRIVATE ../src)
@@ -122,6 +141,7 @@ add_executable(no_solution_integration_test
     ../src/infrastructure/InputParser.cpp
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
     ../src/scheduling/SchedulingWorker.cpp
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
@@ -151,6 +171,7 @@ add_executable(overlap_conflict_integration_test
     ../src/infrastructure/InputParser.cpp
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
     ../src/scheduling/SchedulingWorker.cpp
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
