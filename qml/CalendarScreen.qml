@@ -2,11 +2,27 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+/*
+ * CalendarScreen.qml displays the exam-period calendar review screen.
+ *
+ * The user can navigate between exam periods, review active/excluded days,
+ * toggle available exam days, save changes, and open the period editor screen.
+ */
 Page {
     id: calendarScreen
+
+    /*
+     * Main background color for the calendar screen.
+     */
     background: Rectangle { color: "#FAF8F3" }
 
     // ── Header ──────────────────────────────────────────────────────────────
+    /*
+     * Top header bar.
+     *
+     * Contains back navigation, current period title, save action,
+     * save confirmation, and navigation to the period editor.
+     */
     header: Rectangle {
         width: parent.width
         height: 64
@@ -17,6 +33,11 @@ Page {
             anchors.margins: 16
             spacing: 12
 
+            /*
+             * Back button.
+             *
+             * Returns the user to the previous screen in the StackView.
+             */
             Button {
                 text: "←"
                 flat: true
@@ -37,6 +58,11 @@ Page {
                 }
             }
 
+            /*
+             * Displays the currently selected semester and moed.
+             *
+             * The value comes from CalendarManager.
+             */
             Text {
                 text: calendarManager.currentSemester
                 color: "white"
@@ -47,6 +73,9 @@ Page {
             }
 
             // Save button in header
+            /*
+             * Saves the current calendar changes into CalendarManager.
+             */
             Button {
                 text: "💾 Save"
                 contentItem: Text {
@@ -67,6 +96,9 @@ Page {
                 }
             }
 
+            /*
+             * Temporary save confirmation message.
+             */
             Text {
                 id: saveConfirm
                 text: "✅ Saved"
@@ -76,12 +108,18 @@ Page {
                 visible: false
             }
 
+            /*
+             * Hides the save confirmation after two seconds.
+             */
             Timer {
                 id: saveTimer
                 interval: 2000
                 onTriggered: saveConfirm.visible = false
             }
 
+            /*
+             * Opens the period editor screen.
+             */
             Button {
                 text: "✏️ Edit Period"
                 font.pixelSize: 14
@@ -110,6 +148,11 @@ Page {
     }
 
     // ── Helper functions ─────────────────────────────────────────────────────
+    /*
+     * Adds empty padding days before the first real day.
+     *
+     * This ensures the calendar grid starts on the correct weekday.
+     */
     function buildPaddedModel(rawDays) {
         if (!rawDays || rawDays.length === 0) return []
         var firstDate = rawDays[0].date
@@ -122,18 +165,30 @@ Page {
         return padded
     }
 
+    /*
+     * Builds the month label shown above the calendar grid.
+     */
     function monthLabel(rawDays) {
         if (!rawDays || rawDays.length === 0) return ""
         return Qt.formatDate(rawDays[0].date, "MMMM yyyy")
     }
 
     // ── Body: sidebar + calendar ─────────────────────────────────────────────
+    /*
+     * Main screen layout.
+     *
+     * Left side: exam period navigation tree.
+     * Right side: KPI cards and calendar grid.
+     */
     RowLayout {
         anchors.fill: parent
         anchors.margins: 0
         spacing: 0
 
         // ── Left sidebar ─────────────────────────────────────────────────────
+        /*
+         * Sidebar used to navigate between exam periods.
+         */
         Rectangle {
             width: 200
             Layout.fillHeight: true
@@ -144,6 +199,9 @@ Page {
                 anchors.margins: 12
                 spacing: 4
 
+                /*
+                 * Sidebar title.
+                 */
                 Text {
                     text: "Periods"
                     color: "#A8D5B5"
@@ -154,6 +212,9 @@ Page {
                 }
 
                 // Tree built from getPeriodTree()
+                /*
+                 * Tree view that groups exam periods by year, semester, and moed.
+                 */
                 ListView {
                     id: treeView
                     Layout.fillWidth: true
@@ -162,13 +223,24 @@ Page {
                     spacing: 2
 
                     // Group periods by year then semester
+                    /*
+                     * Tree data generated from CalendarManager.getPeriodTree().
+                     */
                     property var tree: buildTree(calendarManager.getPeriodTree())
                     model: tree
 
                     // Expanded state: track which years and semesters are open
+                    /*
+                     * Local expansion state for year and semester nodes.
+                     */
                     property var expandedYears: ({})
                     property var expandedSemesters: ({})
 
+                    /*
+                     * Converts the flat period list into a nested tree structure.
+                     *
+                     * The result contains year nodes, semester nodes, and moed leaves.
+                     */
                     function buildTree(flat) {
                         // Returns array of year-nodes, each with semester-nodes,
                         // each with moed-leaves
@@ -197,11 +269,19 @@ Page {
                         return result
                     }
 
+                    /*
+                     * Delegate for each year node in the tree.
+                     */
                     delegate: ColumnLayout {
                         width: treeView.width
                         spacing: 2
 
                         // Year row
+                        /*
+                         * Clickable year row.
+                         *
+                         * Expands or collapses the semesters under this year.
+                         */
                         Rectangle {
                             Layout.fillWidth: true
                             height: 36
@@ -214,12 +294,19 @@ Page {
                                 anchors.leftMargin: 8
                                 anchors.rightMargin: 8
 
+                                /*
+                                 * Expand/collapse indicator for the year node.
+                                 */
                                 Text {
                                     text: treeView.expandedYears[modelData.year]
                                           ? "▾" : "▸"
                                     color: "#A8D5B5"
                                     font.pixelSize: 12
                                 }
+
+                                /*
+                                 * Year label.
+                                 */
                                 Text {
                                     text: modelData.year
                                     color: "white"
@@ -229,6 +316,9 @@ Page {
                                 }
                             }
 
+                            /*
+                             * Toggles year expansion.
+                             */
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
@@ -241,6 +331,9 @@ Page {
                         }
 
                         // Semester rows (visible only if year expanded)
+                        /*
+                         * Semester rows displayed only when the parent year is expanded.
+                         */
                         Repeater {
                             model: treeView.expandedYears[modelData.year]
                                    ? modelData.semesters : []
@@ -250,6 +343,11 @@ Page {
                                 spacing: 2
 
                                 // Semester row
+                                /*
+                                 * Clickable semester row.
+                                 *
+                                 * Expands or collapses the moed rows under this semester.
+                                 */
                                 Rectangle {
                                     Layout.fillWidth: true
                                     height: 32
@@ -262,12 +360,19 @@ Page {
                                         anchors.leftMargin: 20
                                         anchors.rightMargin: 8
 
+                                        /*
+                                         * Expand/collapse indicator for the semester node.
+                                         */
                                         Text {
                                             text: treeView.expandedSemesters[modelData.semester]
                                                   ? "▾" : "▸"
                                             color: "#A8D5B5"
                                             font.pixelSize: 11
                                         }
+
+                                        /*
+                                         * Semester label.
+                                         */
                                         Text {
                                             text: modelData.semester
                                             color: "#D4EDD9"
@@ -276,6 +381,9 @@ Page {
                                         }
                                     }
 
+                                    /*
+                                     * Toggles semester expansion.
+                                     */
                                     MouseArea {
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
@@ -288,6 +396,9 @@ Page {
                                 }
 
                                 // Moed leaves (visible only if semester expanded)
+                                /*
+                                 * Moed leaf rows displayed only when the semester is expanded.
+                                 */
                                 Repeater {
                                     model: treeView.expandedSemesters[modelData.semester]
                                            ? modelData.moeds : []
@@ -297,12 +408,19 @@ Page {
                                         width: treeView.width
                                         height: 30
                                         radius: 8
+
+                                        /*
+                                         * Highlights the currently selected exam period.
+                                         */
                                         color: calendarManager.getPeriodTree().length > modelData.index
                                                && calendarManager.currentSemester ===
                                                (calendarManager.getPeriodTree()[modelData.index].semester
                                                 + " - " + calendarManager.getPeriodTree()[modelData.index].moed)
                                                ? "#52B788" : "transparent"
 
+                                        /*
+                                         * Moed name.
+                                         */
                                         Text {
                                             anchors.verticalCenter: parent.verticalCenter
                                             anchors.left: parent.left
@@ -312,6 +430,9 @@ Page {
                                             font.pixelSize: 13
                                         }
 
+                                        /*
+                                         * Selecting a moed changes the active period in CalendarManager.
+                                         */
                                         MouseArea {
                                             anchors.fill: parent
                                             cursorShape: Qt.PointingHandCursor
@@ -327,6 +448,9 @@ Page {
         }
 
         // ── Right: KPI + calendar ─────────────────────────────────────────────
+        /*
+         * Right content area containing KPI cards and the editable calendar grid.
+         */
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -336,12 +460,20 @@ Page {
             Item { height: 24 }
 
             // KPI cards
+            /*
+             * Summary cards for total, active, and excluded days.
+             */
             RowLayout {
                 Layout.fillWidth: true
                 Layout.leftMargin: 24
                 Layout.rightMargin: 24
                 spacing: 12
 
+                /*
+                 * Repeated card data.
+                 *
+                 * Values are calculated directly from calendarManager.days.
+                 */
                 Repeater {
                     model: [
                         { label: "Total Days",
@@ -355,6 +487,9 @@ Page {
                           color: "#C0392B" }
                     ]
 
+                    /*
+                     * KPI card delegate.
+                     */
                     delegate: Rectangle {
                         Layout.fillWidth: true
                         height: 80
@@ -367,6 +502,9 @@ Page {
                             anchors.centerIn: parent
                             spacing: 4
 
+                            /*
+                             * KPI numeric value.
+                             */
                             Text {
                                 text: modelData.value
                                 font.pixelSize: 28
@@ -374,6 +512,10 @@ Page {
                                 color: modelData.color
                                 Layout.alignment: Qt.AlignHCenter
                             }
+
+                            /*
+                             * KPI label.
+                             */
                             Text {
                                 text: modelData.label
                                 font.pixelSize: 12
@@ -386,6 +528,11 @@ Page {
             }
 
             // ── Calendar grid ─────────────────────────────────────────────────
+            /*
+             * Calendar container.
+             *
+             * Shows the selected period as a grid of days.
+             */
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -402,6 +549,9 @@ Page {
                     anchors.margins: 16
                     spacing: 8
 
+                    /*
+                     * Month title above the grid.
+                     */
                     Text {
                         id: monthTitle
                         text: calendarScreen.monthLabel(calendarManager.days)
@@ -411,21 +561,30 @@ Page {
                         Layout.alignment: Qt.AlignHCenter
                     }
 
+                    /*
+                     * Weekday header row.
+                     */
                     Row {
-    Layout.fillWidth: true
-    Repeater {
-        model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-        delegate: Text {
-            width: Math.floor(calGrid.width / 7)
-            text: modelData
-            font.pixelSize: 12
-            font.bold: true
-            color: index === 6 ? "#C0392B" : "#6C757D"
-            horizontalAlignment: Text.AlignHCenter
-        }
-    }
-}
+                        Layout.fillWidth: true
+                        Repeater {
+                            model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                            delegate: Text {
+                                width: Math.floor(calGrid.width / 7)
+                                text: modelData
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: index === 6 ? "#C0392B" : "#6C757D"
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+                    }
 
+                    /*
+                     * Calendar grid.
+                     *
+                     * The model is a padded list so the first day appears under
+                     * the correct weekday column.
+                     */
                     GridView {
                         id: calGrid
                         Layout.fillWidth: true
@@ -433,9 +592,16 @@ Page {
                         cellWidth:  Math.floor(width / 7)
                         cellHeight: 52
 
+                        /*
+                         * Padded calendar days prepared for grid display.
+                         */
                         property var paddedDays: calendarScreen.buildPaddedModel(calendarManager.days)
                         model: paddedDays
 
+                        /*
+                         * Refresh the padded grid whenever CalendarManager reports
+                         * that the days list changed.
+                         */
                         Connections {
                             target: calendarManager
                             function onDaysChanged() {
@@ -444,16 +610,27 @@ Page {
                             }
                         }
 
+                        /*
+                         * Delegate for a single calendar cell.
+                         */
                         delegate: Rectangle {
                             width:  calGrid.cellWidth  - 4
                             height: calGrid.cellHeight - 4
                             radius: 8
                             visible: modelData.status !== -1
+
+                            /*
+                             * Background color depends on the day status.
+                             */
                             color: {
                                 if (modelData.status === 2) return "#FDECEA"
                                 if (modelData.status === 1) return "#EAFAF1"
                                 return "#F8F9FA"
                             }
+
+                            /*
+                             * Border color also reflects the day status.
+                             */
                             border.color: {
                                 if (modelData.status === 2) return "#C0392B"
                                 if (modelData.status === 1) return "#52B788"
@@ -461,6 +638,9 @@ Page {
                             }
                             border.width: 1
 
+                            /*
+                             * Draw diagonal stripes for excluded days.
+                             */
                             Canvas {
                                 anchors.fill: parent
                                 visible: modelData.status === 2
@@ -479,10 +659,16 @@ Page {
                                 }
                             }
 
+                            /*
+                             * Day number and optional label.
+                             */
                             ColumnLayout {
                                 anchors.centerIn: parent
                                 spacing: 2
 
+                                /*
+                                 * Calendar day number.
+                                 */
                                 Text {
                                     text: modelData.date
                                           ? Qt.formatDate(modelData.date, "d") : ""
@@ -492,6 +678,9 @@ Page {
                                     Layout.alignment: Qt.AlignHCenter
                                 }
 
+                                /*
+                                 * Optional day label.
+                                 */
                                 Text {
                                     text: modelData.label
                                     font.pixelSize: 9
@@ -503,6 +692,12 @@ Page {
                                 }
                             }
 
+                            /*
+                             * Clicking an allowed cell toggles the day status.
+                             *
+                             * Saturday is disabled because it should not be used
+                             * as an exam day.
+                             */
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor

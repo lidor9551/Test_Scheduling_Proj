@@ -8,98 +8,204 @@
 #include <QFile>
 #include <QTextStream>
 
+/*
+ * Creates an empty ScheduleOutputManager.
+ *
+ * The current schedule index starts at 1 because the UI presents schedules
+ * to the user using 1-based numbering.
+ */
 ScheduleOutputManager::ScheduleOutputManager(QObject* parent) 
     : QObject(parent), m_currentIndex(1) {}
 
+/*
+ * Stores generated scheduling results and related domain data.
+ *
+ * This method is called after the scheduling service finishes successfully.
+ * After storing the data, the manager rebuilds the calendar view and notifies QML.
+ */
 void ScheduleOutputManager::setSchedulingData(const std::vector<ScheduleGenerationResult>& solutions,
                                               const std::vector<Course>& courses,
                                               const std::vector<ExamPeriod>& periods) {
+    /*
+     * Replace old output data with the newly generated data.
+     */
     m_solutions = solutions;
     m_courses = courses;
     m_periods = periods;
+
+    /*
+     * Reset the UI to the first generated schedule.
+     */
     m_currentIndex = 1;
 
+    /*
+     * Rebuild calendar output for the selected schedule and selected period.
+     */
     updateCalendarData();
 
+    /*
+     * Notify QML that the amount of schedules and current index changed.
+     */
     emit totalSchedulesCountChanged();
     emit currentScheduleIndexChanged();
 }
 
+/*
+ * Returns the current 1-based schedule index.
+ */
 int ScheduleOutputManager::getCurrentScheduleIndex() const {
     return m_currentIndex;
 }
 
+/*
+ * Returns the total number of generated schedules.
+ */
 int ScheduleOutputManager::getTotalSchedulesCount() const {
     return static_cast<int>(m_solutions.size());
 }
 
+/*
+ * Returns all available semesters for the output filter UI.
+ */
 QStringList ScheduleOutputManager::getAvailableSemesters() const {
     return m_semesters;
 }
 
+/*
+ * Returns all available moeds for the output filter UI.
+ */
 QStringList ScheduleOutputManager::getAvailableMoeds() const {
     return m_moeds;
 }
 
+/*
+ * Returns the current calendar data prepared for QML.
+ */
 QVariantList ScheduleOutputManager::getCurrentCalendarData() const {
     return m_calendarData;
 }
 
+/*
+ * Moves the output screen to the next schedule if possible.
+ */
 void ScheduleOutputManager::nextSchedule() {
     if (m_currentIndex < m_solutions.size()) {
         m_currentIndex++;
         emit currentScheduleIndexChanged();
+
+        /*
+         * The visible calendar depends on the selected schedule,
+         * so it must be rebuilt after changing the index.
+         */
         updateCalendarData();
     }
 }
 
+/*
+ * Moves the output screen to the previous schedule if possible.
+ */
 void ScheduleOutputManager::previousSchedule() {
     if (m_currentIndex > 1) {
         m_currentIndex--;
         emit currentScheduleIndexChanged();
+
+        /*
+         * Rebuild the calendar for the newly selected schedule.
+         */
         updateCalendarData();
     }
 }
 
+/*
+ * Updates the active semester and moed filters.
+ *
+ * The calendar output is rebuilt according to the new selected period.
+ */
 void ScheduleOutputManager::setPeriodFilter(const QString& semester, const QString& moed) {
     m_selectedSemester = semester;
     m_selectedMoed = moed;
 
     qDebug() << "[MANAGER] Filter updated to -> Semester:" << m_selectedSemester << "Moed:" << m_selectedMoed;
+
+    /*
+     * Rebuild the calendar after changing the selected period filter.
+     */
     updateCalendarData();
 }
 
+/*
+ * Placeholder method for export action from QML.
+ *
+ * The actual text-file export is implemented in saveCurrentScheduleToFile().
+ */
 void ScheduleOutputManager::exportCurrentSchedule() {
     qDebug() << "Exporting schedule index:" << m_currentIndex;
 }
 
+/*
+ * Extracts unique semester and moed values from loaded exam periods.
+ *
+ * The extracted values are used by QML dropdowns or filters.
+ */
 void ScheduleOutputManager::extractAvailableFilters() {
     std::set<QString> uniqueSemesters;
     std::set<QString> uniqueMoeds;
 
+    /*
+     * Use sets to avoid duplicate filter values.
+     */
     for (const auto& period : m_periods) {
         uniqueSemesters.insert(QString::fromStdString(semesterToString(period.getSemester())));
         uniqueMoeds.insert(QString::fromStdString(moedToString(period.getMoed())));
     }
 
+    /*
+     * Convert the sets into QStringList values for QML.
+     */
     m_semesters = QStringList(uniqueSemesters.begin(), uniqueSemesters.end());
     m_moeds = QStringList(uniqueMoeds.begin(), uniqueMoeds.end());
 
     // Set default selection to the first available option
+    /*
+     * Select default filter values when possible.
+     */
     if (!m_semesters.isEmpty()) m_selectedSemester = m_semesters.first();
     if (!m_moeds.isEmpty()) m_selectedMoed = m_moeds.first();
 
+    /*
+     * Notify QML that available filter options changed.
+     */
     emit availableSemestersChanged();
     emit availableMoedsChanged();
 }
 
+/*
+ * Rebuilds the calendar data shown in the output screen.
+ *
+ * The method creates a full calendar grid for the selected semester/moed period
+ * and marks each day as:
+ * - padding cell
+ * - excluded day
+ * - regular day
+ * - exam day
+ */
 void ScheduleOutputManager::updateCalendarData() {
+    /*
+     * If there are no courses, there is nothing meaningful to render.
+     */
     if (m_courses.empty()) {
         return;
     }
 
+    /*
+     * Clear previous calendar entries before rebuilding the current view.
+     */
     m_calendarData.clear();
 
+    /*
+     * If required scheduling data is missing, notify QML that the calendar
+     * should be refreshed as empty.
+     */
     if (m_solutions.empty() || m_periods.empty() || m_courses.empty()) {
         emit currentCalendarDataChanged();
         return;
@@ -108,6 +214,9 @@ void ScheduleOutputManager::updateCalendarData() {
     qDebug() << "[CALENDAR] Trying to draw board for -> Sem:" << m_selectedSemester << "Moed:" << m_selectedMoed;
 
     // 1. Find the selected ExamPeriod based on the UI dropdowns
+    /*
+     * Locate the exam period that matches the selected semester and moed.
+     */
     const ExamPeriod* activePeriod = nullptr;
     for (const auto& period : m_periods) {
         const QString periodSemester =
@@ -123,6 +232,9 @@ void ScheduleOutputManager::updateCalendarData() {
     }
 
     // If no active period is found, return an empty calendar
+    /*
+     * Without a matching period, the output screen cannot build a calendar.
+     */
     if (!activePeriod) {
         qDebug() << "[CALENDAR] ERROR: Could not find matching period in m_periods!";
         emit currentCalendarDataChanged();
@@ -130,30 +242,62 @@ void ScheduleOutputManager::updateCalendarData() {
     }
 
     // 2. Define the exact boundaries of the period
+    /*
+     * Get the domain-level start and end dates of the active exam period.
+     */
     Date start = activePeriod->getStartDate();
     Date end = activePeriod->getEndDate();
     
     // Convert to QDate to easily calculate continuous date ranges
+    /*
+     * Convert Date objects to QDate so Qt date operations can be used.
+     */
     QDate qStart(start.getYear(), start.getMonth(), start.getDay());
     QDate qEnd(end.getYear(), end.getMonth(), end.getDay());
 
     // --- Calculate Grid Anchors ---
+    /*
+     * Calculate the first visible day in the calendar grid.
+     *
+     * The grid starts on Sunday, so dates before qStart may appear as padding.
+     */
     int startDow = qStart.dayOfWeek() % 7; 
     QDate gridStart = qStart.addDays(-startDow);
 
+    /*
+     * Calculate the last visible day in the calendar grid.
+     *
+     * The grid ends on Saturday, so dates after qEnd may appear as padding.
+     */
     int endDow = qEnd.dayOfWeek() % 7;
     QDate gridEnd = qEnd.addDays(6 - endDow);
 
+    /*
+     * Keep the period's allowed dates available if future output logic needs them.
+     */
     std::vector<Date> allowed = activePeriod->allowedDates();
     
     // 3. Now we have the exact grid range (gridStart to gridEnd) and the list of allowed dates within the period
+    /*
+     * Select the currently displayed schedule solution.
+     *
+     * m_currentIndex is 1-based, while the vector index is 0-based.
+     */
     const auto& currentSolution = m_solutions[m_currentIndex - 1];
     const auto& assignments = currentSolution.getAssignments();
 
+    /*
+     * Build one QVariantMap entry for every day in the calendar grid.
+     */
     for (QDate current = gridStart; current <= gridEnd; current = current.addDays(1)) {
         QVariantMap dayData;
 
         // Check: Are we in the padding cells?
+        /*
+         * Days outside the actual exam period are padding cells.
+         *
+         * They are kept empty so the QML calendar keeps a full weekly grid.
+         */
         if (current < qStart || current > qEnd) {
             dayData["dayText"] = ""; 
             dayData["isExcluded"] = false;
@@ -165,8 +309,15 @@ void ScheduleOutputManager::updateCalendarData() {
         } 
         else {
             // Active day inside the period
+            /*
+             * Convert the current QDate back into the domain Date type.
+             */
             Date currentDate(current.day(), current.month(), current.year());
 
+            /*
+             * Show month information on the first day of the month or on the
+             * first visible day of the exam period.
+             */
             if (current.day() == 1 || current == qStart) {
                 dayData["dayText"] = QString::number(current.day()) + "/" + QString::number(current.month());
             } else {
@@ -174,12 +325,18 @@ void ScheduleOutputManager::updateCalendarData() {
             }
 
             // Check date availability using the shared policy.
+            /*
+             * Use the shared date policy so output display matches scheduling rules.
+             */
             const bool isAllowed =
                 DateAvailabilityPolicy::isAllowedExamDate(
                     currentDate,
                     activePeriod->getExcludedRanges()
                 );
 
+            /*
+             * Initialize the day as a regular day with no exam.
+             */
             dayData["isExcluded"] = !isAllowed;
             dayData["hasExam"] = false;
             dayData["examName"] = "";
@@ -188,12 +345,20 @@ void ScheduleOutputManager::updateCalendarData() {
             dayData["program"] = "";
 
             // Check if there's an exam on this date in the current solution
+            /*
+             * Search the current solution assignments for an exam scheduled
+             * on the current calendar date.
+             */
             for (const ExamAssignment& assignment : assignments) {
                 if (assignment.examDate == currentDate) {
                     dayData["hasExam"] = true;
                     dayData["examName"] = QString::fromStdString(assignment.course->getCourseName()); 
                     dayData["courseId"] = QString::fromStdString(assignment.course->getCourseNumber()); 
                     
+                    /*
+                     * Display the program name when a program mapping exists.
+                     * Otherwise, fall back to the raw program ID.
+                     */
                     if (!assignment.course->getPrograms().empty()) {
                         const auto& progDetails = assignment.course->getPrograms().front();
                         QString progId = QString::fromStdString(progDetails.programID);
@@ -204,22 +369,42 @@ void ScheduleOutputManager::updateCalendarData() {
                             dayData["program"] = progId; 
                         }
                     } else {
+                        /*
+                         * Use a generic label when the course has no program details.
+                         */
                         dayData["program"] = "כללי";
                     }
                     
+                    /*
+                     * Store the requirement text for QML display.
+                     */
                     dayData["req"] = assignment.isObligatory ? "חובה" : "בחירה";
                     
+                    /*
+                     * Only one exam display entry is stored for the day in this view.
+                     */
                     break;
                 }
             }
         }
         
+        /*
+         * Add the completed day entry to the QML calendar data list.
+         */
         m_calendarData.append(dayData);
     }
     
+    /*
+     * Notify QML that the visible calendar data was rebuilt.
+     */
     emit currentCalendarDataChanged();
 }
 
+/*
+ * Sets the available semester and moed filters manually.
+ *
+ * AppController calls this after preprocessing creates scheduling blocks.
+ */
 void ScheduleOutputManager::setAvailablePeriods(const QStringList& semesters, const QStringList& moeds) {
     m_semesters = semesters;
     m_moeds = moeds;
@@ -228,6 +413,11 @@ void ScheduleOutputManager::setAvailablePeriods(const QStringList& semesters, co
     emit availableMoedsChanged();
 }
 
+/*
+ * Clears all output data and resets the output manager state.
+ *
+ * This is useful when the user reloads data or starts a new workflow.
+ */
 void ScheduleOutputManager::clearData() {
     m_solutions.clear();
     m_courses.clear();
@@ -238,6 +428,9 @@ void ScheduleOutputManager::clearData() {
     m_selectedSemester = "";
     m_selectedMoed = "";
 
+    /*
+     * Notify QML that all output-related state changed.
+     */
     emit totalSchedulesCountChanged();
     emit currentScheduleIndexChanged();
     emit currentCalendarDataChanged();
@@ -245,16 +438,30 @@ void ScheduleOutputManager::clearData() {
     qDebug() << "[MANAGER] Data cleared successfully.";
 }
 
+/*
+ * Checks whether the current 1-based schedule index points to a valid solution.
+ */
 bool ScheduleOutputManager::isCurrentScheduleIndexValid() const {
     return !m_solutions.empty() &&
            m_currentIndex >= 1 &&
            m_currentIndex <= static_cast<int>(m_solutions.size());
 }
 
+/*
+ * Validates the export output path before writing the schedule file.
+ *
+ * The path must:
+ * - not be empty
+ * - not point to an existing directory
+ * - have an existing parent directory
+ */
 bool ScheduleOutputManager::isOutputPathValid(const QString& filePath,
                                               QString* errorMessage) const {
     const QString trimmedPath = filePath.trimmed();
 
+    /*
+     * Reject empty export paths.
+     */
     if (trimmedPath.isEmpty()) {
         if (errorMessage) {
             *errorMessage = "Export path is empty.";
@@ -264,6 +471,9 @@ bool ScheduleOutputManager::isOutputPathValid(const QString& filePath,
 
     const QFileInfo fileInfo(trimmedPath);
 
+    /*
+     * Reject paths that point to a directory instead of a file.
+     */
     if (fileInfo.exists() && fileInfo.isDir()) {
         if (errorMessage) {
             *errorMessage = "Export path points to a directory, not a file.";
@@ -271,6 +481,9 @@ bool ScheduleOutputManager::isOutputPathValid(const QString& filePath,
         return false;
     }
 
+    /*
+     * The parent directory must exist before the file can be created.
+     */
     const QDir parentDir = fileInfo.absoluteDir();
     if (!parentDir.exists()) {
         if (errorMessage) {
@@ -282,7 +495,15 @@ bool ScheduleOutputManager::isOutputPathValid(const QString& filePath,
     return true;
 }
 
+/*
+ * Checks whether the current schedule can be exported.
+ *
+ * This validates that solutions exist and that the current index is valid.
+ */
 bool ScheduleOutputManager::canExportCurrentSchedule(QString* errorMessage) const {
+    /*
+     * There must be at least one generated schedule.
+     */
     if (m_solutions.empty()) {
         if (errorMessage) {
             *errorMessage = "Cannot export because no generated schedules are available.";
@@ -290,6 +511,9 @@ bool ScheduleOutputManager::canExportCurrentSchedule(QString* errorMessage) cons
         return false;
     }
 
+    /*
+     * The selected schedule index must point to an existing solution.
+     */
     if (!isCurrentScheduleIndexValid()) {
         if (errorMessage) {
             *errorMessage = "Cannot export because the current schedule index is invalid.";
@@ -300,19 +524,34 @@ bool ScheduleOutputManager::canExportCurrentSchedule(QString* errorMessage) cons
     return true;
 }
 
+/*
+ * Saves the currently selected schedule to a text file.
+ *
+ * The method performs export validation, opens the file, and writes each exam
+ * assignment in a readable text format.
+ */
 bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     QString errorMessage;
 
+    /*
+     * Block export when there is no valid current schedule.
+     */
     if (!canExportCurrentSchedule(&errorMessage)) {
         qWarning() << "[EXPORT] Export blocked:" << errorMessage;
         return false;
     }
 
+    /*
+     * Block export when the path is invalid.
+     */
     if (!isOutputPathValid(filePath, &errorMessage)) {
         qWarning() << "[EXPORT] Export blocked:" << errorMessage;
         return false;
     }
 
+    /*
+     * Open the destination file for writing text.
+     */
     QFile file(filePath.trimmed());
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         qWarning() << "[EXPORT] Failed to open file for writing:" << filePath;
@@ -320,12 +559,22 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     }
 
     QTextStream out(&file);
+
+    /*
+     * Write export header.
+     */
     out << "Schedule Export - " << m_selectedSemester << " " << m_selectedMoed << "\n";
     out << "------------------------------------------\n";
 
+    /*
+     * Select the current generated solution.
+     */
     const auto& currentSolution = m_solutions[m_currentIndex - 1];
     const auto& assignments = currentSolution.getAssignments();
 
+    /*
+     * Write all exam assignments in the current schedule.
+     */
     for (const ExamAssignment& assignment : assignments) {
         if (!assignment.course) {
             qWarning() << "[EXPORT] Skipping assignment with null course pointer.";
@@ -340,6 +589,9 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
         out << "------------------------------------------\n";
     }
 
+    /*
+     * Close the file and report success.
+     */
     file.close();
     return true;
 }
