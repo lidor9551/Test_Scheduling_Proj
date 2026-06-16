@@ -604,10 +604,17 @@ Window {
                             visible: appController.hasData && appController.selectedPrograms.length > 0
                             onClicked: {
                                 appController.generateSchedules()
-                                
+
                                 // go to the output screen after generating schedules
                                 stackView.push(Qt.resolvedUrl("OutputScreen.qml"))
                             }
+                        }
+
+                        /** Settings button — opens the hard constraint configuration screen. */
+                        AppButton {
+                            text: "Settings"
+                            outline: true
+                            onClicked: stackView.push(Qt.resolvedUrl("SettingsScreen.qml"))
                         }
 
                         Item {
