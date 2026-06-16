@@ -213,6 +213,27 @@ public:
      */
     Q_INVOKABLE void generateSchedules();
 
+    /**
+     * Stores the enabled flag and threshold k for each of the five hard constraints.
+     *
+     * Called from SettingsScreen.qml when the user presses "Save".
+     * Pure in-memory storage — no engine logic, no QSettings.
+     * Integration with the scheduler is deferred to a future subtask.
+     */
+    Q_INVOKABLE void saveHardConstraints(bool r21Enabled, int r21K,
+                                         bool r22Enabled, int r22K,
+                                         bool r23Enabled, int r23K,
+                                         bool r24Enabled, int r24K,
+                                         bool r25Enabled, int r25K);
+
+    /**
+     * Returns the stored hard constraint settings as a QVariantMap for QML.
+     *
+     * Keys match the QML property names defined in SettingsScreen.qml exactly,
+     * allowing Component.onCompleted to copy values directly into local properties.
+     */
+    Q_INVOKABLE QVariantMap getHardConstraints() const;
+
     // to set the calendar manager instance for the output manager to use
     /*
      * Stores the CalendarManager instance created in main.cpp.
@@ -356,4 +377,25 @@ private:
      * This pointer is set from main.cpp after both objects are created.
      */
     CalendarManager* m_calendarManager = nullptr;
+
+    /**
+     * Hard constraint storage — five enabled flags and five threshold values.
+     *
+     * Set by saveHardConstraints() when the user saves the Settings screen.
+     * Read by the scheduling engine in a future subtask.
+     */
+    bool m_rule21Enabled = false;
+    int  m_rule21K       = 1;
+
+    bool m_rule22Enabled = false;
+    int  m_rule22K       = 1;
+
+    bool m_rule23Enabled = false;
+    int  m_rule23K       = 1;
+
+    bool m_rule24Enabled = false;
+    int  m_rule24K       = 1;
+
+    bool m_rule25Enabled = false;
+    int  m_rule25K       = 1;
 };

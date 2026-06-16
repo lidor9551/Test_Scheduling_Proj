@@ -90,6 +90,25 @@ Item {
         }
     ]
 
+    /**
+     * Restores constraint state from AppController when the screen opens.
+     * The StackView creates a fresh instance on each push, so values must be
+     * explicitly re-read from C++ to reflect whatever was last saved.
+     */
+    Component.onCompleted: {
+        var data = appController.getHardConstraints()
+        settingsRoot.rule21Enabled = data.rule21Enabled
+        settingsRoot.rule21K       = data.rule21K
+        settingsRoot.rule22Enabled = data.rule22Enabled
+        settingsRoot.rule22K       = data.rule22K
+        settingsRoot.rule23Enabled = data.rule23Enabled
+        settingsRoot.rule23K       = data.rule23K
+        settingsRoot.rule24Enabled = data.rule24Enabled
+        settingsRoot.rule24K       = data.rule24K
+        settingsRoot.rule25Enabled = data.rule25Enabled
+        settingsRoot.rule25K       = data.rule25K
+    }
+
     // Page background fill.
     Rectangle {
         anchors.fill: parent
@@ -106,7 +125,7 @@ Item {
             Layout.fillWidth: true
             spacing: 16
 
-            /** Back button — pops this screen off the StackView. */
+            /** Back button — pops this screen off the StackView without saving. */
             Button {
                 text: "← Back"
                 font.pixelSize: 16
@@ -118,6 +137,44 @@ Item {
                     radius: 8
                 }
                 onClicked: {
+                    if (settingsRoot.StackView.view) {
+                        settingsRoot.StackView.view.pop()
+                    }
+                }
+            }
+
+            /**
+             * Save button — forwards all ten constraint values to AppController
+             * via saveHardConstraints(), then returns to the input screen.
+             */
+            Button {
+                text: "Save"
+                font.pixelSize: 16
+                font.bold: true
+                implicitWidth:  100
+                implicitHeight: 46
+                background: Rectangle {
+                    color: parent.down    ? settingsRoot.primaryDark
+                         : parent.hovered ? "#1b664f"
+                         : settingsRoot.primary
+                    radius: 8
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: "white"
+                    font.pixelSize: 16
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment:   Text.AlignVCenter
+                }
+                onClicked: {
+                    appController.saveHardConstraints(
+                        settingsRoot.rule21Enabled, settingsRoot.rule21K,
+                        settingsRoot.rule22Enabled, settingsRoot.rule22K,
+                        settingsRoot.rule23Enabled, settingsRoot.rule23K,
+                        settingsRoot.rule24Enabled, settingsRoot.rule24K,
+                        settingsRoot.rule25Enabled, settingsRoot.rule25K
+                    )
                     if (settingsRoot.StackView.view) {
                         settingsRoot.StackView.view.pop()
                     }
@@ -240,15 +297,17 @@ Item {
                         /**
                          * Integer threshold input.
                          * Disabled when the rule toggle is off.
-                         * onValueModified fires only on user interaction,
-                         * avoiding a write-back loop with the value binding.
+                         * onValueChanged fires on every change — buttons, keyboard, and
+                         * programmatic updates from Component.onCompleted. No binding loop
+                         * risk: QML skips the property-change notification when the written
+                         * value is identical to the current one.
                          */
                         SpinBox {
                             from:    0
                             to:      99
                             value:   settingsRoot[modelData.kProp]
                             enabled: ruleSwitch.checked
-                            onValueModified: settingsRoot[modelData.kProp] = value
+                            onValueChanged: settingsRoot[modelData.kProp] = value
                         }
                     }
                 }
