@@ -234,6 +234,18 @@ public:
      */
     Q_INVOKABLE QVariantMap getHardConstraints() const;
 
+    /**
+     * Returns the inclusive number of days spanned by the loaded exam periods.
+     *
+     * Computed as the span between the earliest start date and the latest end
+     * date across all exam periods in the session. Used by SettingsScreen.qml
+     * as the upper bound for the threshold k, since a k larger than the whole
+     * exam window is meaningless.
+     *
+     * Returns 0 when no exam periods are loaded, letting QML apply a fallback.
+     */
+    Q_INVOKABLE int getExamPeriodDays() const;
+
     // to set the calendar manager instance for the output manager to use
     /*
      * Stores the CalendarManager instance created in main.cpp.

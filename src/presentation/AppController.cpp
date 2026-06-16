@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <QVariant>
+#include <QDate>
 #include <QDebug>
 
 /*
@@ -891,4 +892,53 @@ QVariantMap AppController::getHardConstraints() const {
     map["rule25K"]       = m_rule25K;
 
     return map;
+}
+
+/**
+ * Returns the inclusive length, in days, of the longest single exam period.
+ *
+ * Each ExamPeriod is measured on its own as getStartDate() to getEndDate()
+ * inclusive (daysTo() + 1), and the maximum across all periods is returned.
+ * Using the longest individual period rather than the global span avoids
+ * counting the gaps between sessions (e.g. holidays between FALL and SPRING),
+ * which would otherwise inflate the bound to a meaningless value.
+ *
+ * Domain Date values are converted to QDate so the difference can be computed
+ * with QDate::daysTo().
+ *
+ * Returns 0 when there are no usable exam periods, so QML can fall back to a
+ * fixed default.
+ */
+int AppController::getExamPeriodDays() const {
+    const std::vector<ExamPeriod>& periods = session_.examPeriods();
+
+    int longestPeriodDays = 0;
+
+    for (const ExamPeriod& period : periods) {
+        const Date& start = period.getStartDate();
+        const Date& end   = period.getEndDate();
+
+        const QDate startDate(start.getYear(), start.getMonth(), start.getDay());
+        const QDate endDate(end.getYear(), end.getMonth(), end.getDay());
+
+        /*
+         * Skip malformed or inverted periods so a single bad entry cannot
+         * corrupt the bound.
+         */
+        if (!startDate.isValid() || !endDate.isValid() || endDate < startDate) {
+            continue;
+        }
+
+        // +1 so the count includes both the first and the last exam day.
+        const int periodDays = static_cast<int>(startDate.daysTo(endDate)) + 1;
+
+        if (periodDays > longestPeriodDays) {
+            longestPeriodDays = periodDays;
+        }
+    }
+
+    /*
+     * Zero means no usable periods were found — let QML apply its fallback.
+     */
+    return longestPeriodDays;
 }
