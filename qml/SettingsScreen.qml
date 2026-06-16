@@ -185,10 +185,6 @@ Item {
 
         var data = appController.getHardConstraints()
 
-        // Temporary diagnostic logging — remove once the fix is confirmed.
-        console.log("[Settings][diag] raw rule21K from getHardConstraints =", data.rule21K)
-        console.log("[Settings][diag] getExamPeriodDays =", days, "-> kMax =", settingsRoot.kMax)
-
         settingsRoot.rule21Enabled = data.rule21Enabled
         settingsRoot.rule21K       = data.rule21K
         settingsRoot.rule22Enabled = data.rule22Enabled
@@ -199,9 +195,6 @@ Item {
         settingsRoot.rule24K       = data.rule24K
         settingsRoot.rule25Enabled = data.rule25Enabled
         settingsRoot.rule25K       = data.rule25K
-
-        // Temporary diagnostic logging — remove once the fix is confirmed.
-        console.log("[Settings][diag] rule21K right after assignment =", settingsRoot.rule21K)
 
         /**
          * Silently clamp any stored k that genuinely exceeds the real kMax.
@@ -219,8 +212,6 @@ Item {
         if (settingsRoot.rule24K > settingsRoot.kMax) settingsRoot.rule24K = settingsRoot.kMax
         if (settingsRoot.rule25K > settingsRoot.kMax) settingsRoot.rule25K = settingsRoot.kMax
 
-        // Temporary diagnostic logging — remove once the fix is confirmed.
-        console.log("[Settings][diag] rule21K final after clamp =", settingsRoot.rule21K)
     }
 
     // Page background fill.
