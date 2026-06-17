@@ -48,6 +48,9 @@ public:
     // Returns true if the current day/month/year combination is a real calendar date.
     bool isValid() const;
 
+    // Returns the absolute number of days between this date and another date
+    int daysTo(const Date& other) const;
+
     // Returns the next calendar day.
     Date nextDay() const;
 
