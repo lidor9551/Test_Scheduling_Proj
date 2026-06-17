@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <QVariant>
+#include <QDate>
 #include <QDebug>
 
 /*
@@ -829,4 +830,115 @@ QVariantMap AppController::getProgramNamesMap() const {
     }
 
     return variantMap;
+}
+
+/**
+ * Stores the enabled state and threshold k for each of the five hard constraints.
+ *
+ * This is pure in-memory storage. No engine logic is triggered and no data is
+ * written to disk. Integration with the scheduling algorithm is deferred to a
+ * future subtask.
+ */
+void AppController::saveHardConstraints(bool r21Enabled, int r21K,
+                                         bool r22Enabled, int r22K,
+                                         bool r23Enabled, int r23K,
+                                         bool r24Enabled, int r24K,
+                                         bool r25Enabled, int r25K) {
+    m_rule21Enabled = r21Enabled;
+    m_rule21K       = r21K;
+
+    m_rule22Enabled = r22Enabled;
+    m_rule22K       = r22K;
+
+    m_rule23Enabled = r23Enabled;
+    m_rule23K       = r23K;
+
+    m_rule24Enabled = r24Enabled;
+    m_rule24K       = r24K;
+
+    m_rule25Enabled = r25Enabled;
+    m_rule25K       = r25K;
+
+    qDebug() << "[HardConstraints] Saved:"
+             << "r21=" << m_rule21Enabled << "k=" << m_rule21K
+             << "r22=" << m_rule22Enabled << "k=" << m_rule22K
+             << "r23=" << m_rule23Enabled << "k=" << m_rule23K
+             << "r24=" << m_rule24Enabled << "k=" << m_rule24K
+             << "r25=" << m_rule25Enabled << "k=" << m_rule25K;
+}
+
+/**
+ * Returns the stored hard constraint settings as a QVariantMap for QML.
+ *
+ * Keys match the QML property names defined in SettingsScreen.qml exactly,
+ * allowing Component.onCompleted to copy values directly into local properties.
+ */
+QVariantMap AppController::getHardConstraints() const {
+    QVariantMap map;
+
+    map["rule21Enabled"] = m_rule21Enabled;
+    map["rule21K"]       = m_rule21K;
+
+    map["rule22Enabled"] = m_rule22Enabled;
+    map["rule22K"]       = m_rule22K;
+
+    map["rule23Enabled"] = m_rule23Enabled;
+    map["rule23K"]       = m_rule23K;
+
+    map["rule24Enabled"] = m_rule24Enabled;
+    map["rule24K"]       = m_rule24K;
+
+    map["rule25Enabled"] = m_rule25Enabled;
+    map["rule25K"]       = m_rule25K;
+
+    return map;
+}
+
+/**
+ * Returns the inclusive length, in days, of the longest single exam period.
+ *
+ * Each ExamPeriod is measured on its own as getStartDate() to getEndDate()
+ * inclusive (daysTo() + 1), and the maximum across all periods is returned.
+ * Using the longest individual period rather than the global span avoids
+ * counting the gaps between sessions (e.g. holidays between FALL and SPRING),
+ * which would otherwise inflate the bound to a meaningless value.
+ *
+ * Domain Date values are converted to QDate so the difference can be computed
+ * with QDate::daysTo().
+ *
+ * Returns 0 when there are no usable exam periods, so QML can fall back to a
+ * fixed default.
+ */
+int AppController::getExamPeriodDays() const {
+    const std::vector<ExamPeriod>& periods = session_.examPeriods();
+
+    int longestPeriodDays = 0;
+
+    for (const ExamPeriod& period : periods) {
+        const Date& start = period.getStartDate();
+        const Date& end   = period.getEndDate();
+
+        const QDate startDate(start.getYear(), start.getMonth(), start.getDay());
+        const QDate endDate(end.getYear(), end.getMonth(), end.getDay());
+
+        /*
+         * Skip malformed or inverted periods so a single bad entry cannot
+         * corrupt the bound.
+         */
+        if (!startDate.isValid() || !endDate.isValid() || endDate < startDate) {
+            continue;
+        }
+
+        // +1 so the count includes both the first and the last exam day.
+        const int periodDays = static_cast<int>(startDate.daysTo(endDate)) + 1;
+
+        if (periodDays > longestPeriodDays) {
+            longestPeriodDays = periodDays;
+        }
+    }
+
+    /*
+     * Zero means no usable periods were found — let QML apply its fallback.
+     */
+    return longestPeriodDays;
 }

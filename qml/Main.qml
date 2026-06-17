@@ -604,10 +604,23 @@ Window {
                             visible: appController.hasData && appController.selectedPrograms.length > 0
                             onClicked: {
                                 appController.generateSchedules()
-                                
+
                                 // go to the output screen after generating schedules
                                 stackView.push(Qt.resolvedUrl("OutputScreen.qml"))
                             }
+                        }
+
+                        /**
+                         * Settings button — opens the hard constraint configuration screen.
+                         * Gated on hasData like the Calendar and Generate buttons: the k upper
+                         * bound (kMax) is derived from the loaded exam periods, so opening this
+                         * screen before any data is loaded would only show the fallback bound.
+                         */
+                        AppButton {
+                            text: "Settings"
+                            outline: true
+                            visible: appController.hasData
+                            onClicked: stackView.push(Qt.resolvedUrl("SettingsScreen.qml"))
                         }
 
                         Item {

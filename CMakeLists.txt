@@ -86,6 +86,7 @@ set(QML_FILES
     qml/CalendarScreen.qml
     qml/OutputScreen.qml
     qml/PeriodEditorScreen.qml
+    qml/SettingsScreen.qml
 )
 
 # Install QML files with the application.
