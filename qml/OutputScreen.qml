@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtQml.Models
 
 /*
  * OutputScreen.qml displays generated exam schedules.
@@ -15,6 +16,133 @@ import QtQuick.Dialogs
  */
 Item {
     id: outputRoot
+
+    /**
+     * Local color palette.
+     *
+     * Components defined in Main.qml (AppButton, FileCard, the root palette) are
+     * out of scope from a screen pushed onto the StackView, so the colors used
+     * here are redeclared locally, exactly as SettingsScreen.qml does.
+     */
+    readonly property color primary:     "#14533f"
+    readonly property color primaryDark: "#0f3f30"
+    readonly property color borderSoft:  "#e1e5df"
+    readonly property color textDark:    "#1f2933"
+    readonly property color textMuted:   "#69737a"
+
+    /**
+     * Whether the left sorting sidebar is expanded.
+     *
+     * Toggled by the "מיון" button in the top action bar. When true the sidebar
+     * animates open and pushes the main content to the right; when false the
+     * sidebar collapses to zero width and the calendar reclaims the full width.
+     */
+    property bool sidebarOpen: false
+
+    /**
+     * Maps every sorting metric identifier to its Hebrew label.
+     *
+     * The identifiers mirror the hard constraint keys ("2.1".."2.5"), so a
+     * sorting metric is only relevant when its matching hard constraint is
+     * enabled. All metrics rank schedules in descending order.
+     */
+    readonly property var metricLabels: ({
+        "2.1": "מספר הימים המינימלי בין 2 בחינות חובה (אותה תוכנית/שנה)",
+        "2.2": "ממוצע הימים בין 2 בחינות (חובה או בחירה)",
+        "2.3": "מספר ההתנגשויות בין קורסי בחירה",
+        "2.4": "הפער בין הבחינה הראשונה לאחרונה (חובה)",
+        "2.5": "מספר הבחינות המקסימלי באותו יום"
+    })
+
+    /**
+     * Maps every metric identifier to the QML key returned by
+     * getHardConstraints(), used to keep only the enabled metrics.
+     */
+    readonly property var metricEnabledKeys: ({
+        "2.1": "rule21Enabled",
+        "2.2": "rule22Enabled",
+        "2.3": "rule23Enabled",
+        "2.4": "rule24Enabled",
+        "2.5": "rule25Enabled"
+    })
+
+    /**
+     * Backing model for the drag & drop priority list.
+     *
+     * Populated once in Component.onCompleted from the enabled hard constraints
+     * and the previously saved order. The visual reordering happens on the
+     * DelegateModel (priorityVisualModel), never on this model directly, so the
+     * drag stays local until the user presses Save.
+     */
+    ListModel {
+        id: priorityModel
+    }
+
+    /**
+     * Builds the priority list shown to the user.
+     *
+     * Keeps only the metrics whose matching hard constraint is enabled, then
+     * applies the saved order from getSortingPriorities() when present. Any
+     * enabled metric missing from the saved order is appended at the end so a
+     * newly enabled constraint still appears. Writes to priorityModel only here,
+     * on load — never from a binding — to avoid binding loops.
+     */
+    function rebuildPriorityModel() {
+        var hc = appController.getHardConstraints()
+
+        var allIds = ["2.1", "2.2", "2.3", "2.4", "2.5"]
+        var enabledIds = []
+        for (var i = 0; i < allIds.length; ++i) {
+            var id = allIds[i]
+            if (hc[outputRoot.metricEnabledKeys[id]] === true) {
+                enabledIds.push(id)
+            }
+        }
+
+        // Apply the previously saved order, keeping only still-enabled metrics.
+        var saved = appController.getSortingPriorities()
+        if (saved && saved.length > 0) {
+            var ordered = []
+            for (var s = 0; s < saved.length; ++s) {
+                if (enabledIds.indexOf(saved[s]) !== -1
+                        && ordered.indexOf(saved[s]) === -1) {
+                    ordered.push(saved[s])
+                }
+            }
+            // Append enabled metrics that were not part of the saved order.
+            for (var e = 0; e < enabledIds.length; ++e) {
+                if (ordered.indexOf(enabledIds[e]) === -1) {
+                    ordered.push(enabledIds[e])
+                }
+            }
+            enabledIds = ordered
+        }
+
+        priorityModel.clear()
+        for (var k = 0; k < enabledIds.length; ++k) {
+            priorityModel.append({
+                metricId: enabledIds[k],
+                label:    outputRoot.metricLabels[enabledIds[k]]
+            })
+        }
+    }
+
+    /**
+     * Collects the current visual order and persists it to the backend.
+     *
+     * Reads the order straight from the DelegateModel (which reflects the drag
+     * reordering) rather than priorityModel, builds a QVariantList of metric
+     * identifiers, and forwards it to AppController.saveSortingPriorities().
+     */
+    function saveCurrentOrder() {
+        var orderedIds = []
+        for (var i = 0; i < priorityVisualModel.items.count; ++i) {
+            orderedIds.push(priorityVisualModel.items.get(i).model.metricId)
+        }
+        appController.saveSortingPriorities(orderedIds)
+    }
+
+    Component.onCompleted: outputRoot.rebuildPriorityModel()
 
     // dialog for choosing where to save the exported schedule
     /*
@@ -45,15 +173,292 @@ Item {
     }
 
 
-    /*
-     * Main vertical layout of the output screen.
+    /**
+     * Root horizontal layout: [ left sorting sidebar ] + [ main content ].
+     *
+     * The sidebar animates its width between 0 and 340 px. Because both children
+     * live in the same RowLayout, growing the sidebar shrinks and shifts the main
+     * content to the right instead of floating over it — the Gemini-style push.
      */
-    ColumnLayout {
+    RowLayout {
         anchors.fill: parent
-        anchors.margins: 34
-        spacing: 16
+        spacing: 0
 
-        // export + back buttons
+        // ---------------------------------------------------------------------
+        // Left sorting sidebar (drag & drop priority panel).
+        // ---------------------------------------------------------------------
+        /**
+         * Collapsible sorting sidebar.
+         *
+         * Holds the full sorting metrics prioritization panel that previously sat
+         * inline under the schedule navigation bar. Its width is animated so the
+         * open/close feels fluid; clip keeps the content hidden while collapsed.
+         */
+        Rectangle {
+            id: sidebar
+            Layout.fillHeight: true
+            Layout.preferredWidth: outputRoot.sidebarOpen ? 340 : 0
+            clip: true
+            color: "white"
+            border.color: outputRoot.borderSoft
+            border.width: outputRoot.sidebarOpen ? 1 : 0
+
+            /** Smooth width animation driving the Gemini-style push effect. */
+            Behavior on Layout.preferredWidth {
+                NumberAnimation { duration: 220; easing.type: Easing.InOutQuad }
+            }
+
+            /**
+             * Scrollable container so a long metric list never overflows the
+             * sidebar; the list scrolls instead of being clipped.
+             */
+            ScrollView {
+                anchors.fill: parent
+                anchors.margins: 16
+                clip: true
+                contentWidth: availableWidth
+
+                ColumnLayout {
+                    id: priorityColumn
+                    width: parent.width
+                    spacing: 12
+
+                    /** Sidebar header row: title + close button. */
+                    RowLayout {
+                        Layout.fillWidth: true
+                        layoutDirection: Qt.RightToLeft
+                        spacing: 8
+
+                        /** Panel title. */
+                        Text {
+                            Layout.fillWidth: true
+                            text: "סדר עדיפויות למיון מערכות"
+                            font.pixelSize: 18
+                            font.bold: true
+                            color: outputRoot.textDark
+                            horizontalAlignment: Text.AlignRight
+                            wrapMode: Text.WordWrap
+                        }
+
+                        /** Close button — collapses the sidebar. */
+                        Button {
+                            text: "✕"
+                            font.pixelSize: 16
+                            implicitWidth: 32
+                            implicitHeight: 32
+                            background: Rectangle {
+                                color: parent.down ? "#e2e8f0"
+                                     : parent.hovered ? "#f1f5f9"
+                                     : "transparent"
+                                radius: 8
+                            }
+                            onClicked: outputRoot.sidebarOpen = false
+                        }
+                    }
+
+                    /** Short instruction line. */
+                    Text {
+                        Layout.fillWidth: true
+                        text: "גרור את הקריטריונים כדי לקבוע את סדר העדיפויות (גבוה לנמוך)"
+                        font.pixelSize: 13
+                        color: outputRoot.textMuted
+                        horizontalAlignment: Text.AlignRight
+                        wrapMode: Text.WordWrap
+                    }
+
+                    /**
+                     * Empty-state message shown when no hard constraint is enabled,
+                     * so there is no sorting metric to prioritize.
+                     */
+                    Text {
+                        Layout.fillWidth: true
+                        visible: priorityModel.count === 0
+                        text: "לא הופעלו קריטריונים למיון"
+                        font.pixelSize: 14
+                        font.bold: true
+                        color: outputRoot.textMuted
+                        horizontalAlignment: Text.AlignRight
+                    }
+
+                    /**
+                     * DelegateModel wrapping priorityModel.
+                     *
+                     * The drag reordering moves items on this visual model only
+                     * (items.move), leaving priorityModel untouched until the user
+                     * saves. The rank shown next to each row is derived from
+                     * DelegateModel.itemsIndex, which updates live during the drag.
+                     */
+                    DelegateModel {
+                        id: priorityVisualModel
+                        model: priorityModel
+
+                        delegate: Item {
+                            id: delegateRoot
+                            width: priorityList.width
+                            height: 72
+
+                            /** True while this row is being dragged by its handle. */
+                            property bool held: false
+
+                            /**
+                             * Reorders the visual model as a dragged row hovers over
+                             * this one. Only the DelegateModel order changes here.
+                             */
+                            DropArea {
+                                anchors.fill: parent
+                                onEntered: function(drag) {
+                                    priorityVisualModel.items.move(
+                                        drag.source.DelegateModel.itemsIndex,
+                                        delegateRoot.DelegateModel.itemsIndex)
+                                }
+                            }
+
+                            Rectangle {
+                                id: rowContent
+                                width: delegateRoot.width
+                                height: delegateRoot.height - 8
+                                radius: 10
+                                color: delegateRoot.held ? "#edf7f2" : "#f8fafc"
+                                border.color: delegateRoot.held ? outputRoot.primary
+                                                                : outputRoot.borderSoft
+                                border.width: delegateRoot.held ? 2 : 1
+
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                // Required so the dragged row floats above its peers.
+                                Drag.active: delegateRoot.held
+                                Drag.source: delegateRoot
+                                Drag.hotSpot.x: width / 2
+                                Drag.hotSpot.y: height / 2
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 10
+                                    anchors.rightMargin: 12
+                                    layoutDirection: Qt.RightToLeft
+                                    spacing: 10
+
+                                    /** Priority rank badge (1 = highest). */
+                                    Rectangle {
+                                        width: 28
+                                        height: 28
+                                        radius: 8
+                                        color: outputRoot.primary
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: delegateRoot.DelegateModel.itemsIndex + 1
+                                            color: "white"
+                                            font.pixelSize: 13
+                                            font.bold: true
+                                        }
+                                    }
+
+                                    /** Metric Hebrew label. */
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: model.label
+                                        font.pixelSize: 13
+                                        color: outputRoot.textDark
+                                        horizontalAlignment: Text.AlignRight
+                                        wrapMode: Text.WordWrap
+                                    }
+
+                                    /**
+                                     * Drag handle on the left side. Pressing it starts
+                                     * the drag; the actual drag target is rowContent.
+                                     */
+                                    Text {
+                                        text: "≡"
+                                        font.pixelSize: 22
+                                        color: outputRoot.textMuted
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.SizeVerCursor
+                                            drag.target: delegateRoot.held ? rowContent : undefined
+                                            drag.axis: Drag.YAxis
+                                            onPressed: delegateRoot.held = true
+                                            onReleased: delegateRoot.held = false
+                                        }
+                                    }
+                                }
+                            }
+
+                            /**
+                             * While held, reparent the row to the ListView so it can
+                             * float freely over the other rows during the drag.
+                             */
+                            states: State {
+                                when: delegateRoot.held
+                                ParentChange {
+                                    target: rowContent
+                                    parent: priorityList
+                                }
+                                AnchorChanges {
+                                    target: rowContent
+                                    anchors.horizontalCenter: undefined
+                                    anchors.verticalCenter: undefined
+                                }
+                            }
+                        }
+                    }
+
+                    /** Draggable, reorderable list of the enabled sorting metrics. */
+                    ListView {
+                        id: priorityList
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: contentHeight
+                        visible: priorityModel.count > 0
+                        interactive: false
+                        spacing: 6
+                        model: priorityVisualModel
+                    }
+
+                    /** Saves the current priority order to the backend. */
+                    Button {
+                        Layout.fillWidth: true
+                        visible: priorityModel.count > 0
+                        text: "שמור סדר עדיפויות"
+                        font.pixelSize: 15
+                        font.bold: true
+                        implicitHeight: 42
+                        padding: 14
+
+                        background: Rectangle {
+                            color: parent.down    ? outputRoot.primaryDark
+                                 : parent.hovered ? "#1b664f"
+                                 : outputRoot.primary
+                            radius: 8
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            font.pixelSize: 15
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: outputRoot.saveCurrentOrder()
+                    }
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // Main content column (action bar, navigation, filters, calendar).
+        // ---------------------------------------------------------------------
+        /*
+         * Main vertical layout of the output screen.
+         */
+        ColumnLayout {
+            id: mainContent
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.margins: 34
+            spacing: 16
+
+            // export + back buttons
         /*
          * Top action bar.
          *
@@ -129,6 +534,42 @@ Item {
                     console.log("Exporting schedule " + outputRoot.currentScheduleIndex)
                     saveDialog.open()
                 }
+            }
+
+            // sorting sidebar toggle
+            /**
+             * Toggle button for the left sorting sidebar.
+             *
+             * Only shown once schedules exist, mirroring the export button rule,
+             * since the priority order only matters for ranking real schedules.
+             */
+            Button {
+                text: "מיון ⚙️"
+                font.pixelSize: 15
+                font.bold: true
+                Layout.preferredWidth: 110
+                Layout.preferredHeight: 40
+                Layout.leftMargin: 12
+                visible: appController.outputManager.totalSchedulesCount > 0
+
+                background: Rectangle {
+                    color: outputRoot.sidebarOpen ? outputRoot.primaryDark
+                         : parent.down            ? "#e2e8f0"
+                         : parent.hovered          ? "#f1f5f9"
+                         : "white"
+                    border.color: "#cbd5e1"
+                    border.width: 1
+                    radius: 8
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: outputRoot.sidebarOpen ? "white" : outputRoot.textDark
+                    font.pixelSize: 15
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: outputRoot.sidebarOpen = !outputRoot.sidebarOpen
             }
         }
 
@@ -215,7 +656,7 @@ Item {
             }
         }
 
-        // choice of semester/moed for filtering the calendar 
+        // choice of semester/moed for filtering the calendar
         /*
          * Semester and moed filter row.
          *
@@ -507,5 +948,6 @@ Item {
                 }
             }
         }
+    }
     }
 }

@@ -246,6 +246,28 @@ public:
      */
     Q_INVOKABLE int getExamPeriodDays() const;
 
+    /**
+     * @brief Stores the user-defined priority order of the sorting metrics.
+     *
+     * Mirror of saveHardConstraints() for the soft constraints (Block 3). Called
+     * from OutputScreen.qml when the user presses "Save priorities". The metric
+     * identifiers reuse the hard constraint keys ("2.1".."2.5"). Pure in-memory
+     * storage — no engine logic, no QSettings. Integration with the ranking of
+     * valid schedules is deferred to a future subtask.
+     *
+     * @param orderedMetricIds Metric identifiers, ordered from highest priority
+     *                         (index 0) to lowest.
+     */
+    Q_INVOKABLE void saveSortingPriorities(const QVariantList& orderedMetricIds);
+
+    /**
+     * @brief Returns the stored sorting metric priority order for QML.
+     *
+     * Returned as a QVariantList of metric identifier strings so QML can restore
+     * the saved order in Component.onCompleted. Empty when nothing was saved yet.
+     */
+    Q_INVOKABLE QVariantList getSortingPriorities() const;
+
     // to set the calendar manager instance for the output manager to use
     /*
      * Stores the CalendarManager instance created in main.cpp.
@@ -410,4 +432,13 @@ private:
 
     bool m_rule25Enabled = false;
     int  m_rule25K       = 1;
+
+    /**
+     * Sorting metric priority order — metric identifiers ("2.1".."2.5") ordered
+     * from highest priority (index 0) to lowest.
+     *
+     * Set by saveSortingPriorities() when the user saves the order in
+     * OutputScreen.qml. Read by the schedule-ranking logic in a future subtask.
+     */
+    QStringList m_sortingPriorities;
 };
