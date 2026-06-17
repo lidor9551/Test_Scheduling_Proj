@@ -1,6 +1,7 @@
 ﻿#include "presentation/AppController.h"
 #include "infrastructure/InputParser.h"
 #include "scheduling/Preprocessor.h"
+
 #include <QFileInfo>
 #include <QUrl>
 #include <QDir>
@@ -574,6 +575,7 @@ void AppController::generateSchedules() {
      */
     const std::vector<Course>& allCourses = session_.courses();
     const std::vector<ExamPeriod>& examPeriods = session_.examPeriods();
+    const std::vector<IConflictRule>& conflictRules = session_.conflictRules();
 
     // Create a filtered list of courses that require exams
     /*

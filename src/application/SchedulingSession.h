@@ -123,6 +123,9 @@ public:
     // Returns all loaded exam periods.
     const std::vector<ExamPeriod>& examPeriods() const;
 
+    // Returns all conflicts rules.
+    const std::vector<IConflictRule>& conflictRules() const;
+
     // Returns all currently selected academic programs.
     const std::vector<std::string>& selectedPrograms() const;
 
@@ -151,6 +154,9 @@ private:
 
     // All exam periods currently loaded or edited in the application.
     std::vector<ExamPeriod> examPeriods_;
+
+    // All conflict rules currently enabled for use in flitering.
+    std::vector<IConflictRule> conflictRules_;
 
     // Program IDs selected by the user for scheduling.
     std::vector<std::string> selectedPrograms_;
