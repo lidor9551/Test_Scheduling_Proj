@@ -169,7 +169,7 @@ void AppController::replaceData() {
          * Show a success message with the amount of loaded data.
          */
         setStatus(
-            QString("Data replaced successfully. Loaded %1 courses and %2 exam periods.")
+            QString("הנתונים הוחלפו בהצלחה. נטענו %1 קורסים ו-%2 תקופות בחינה.")
                 .arg(courseCount())
                 .arg(examPeriodCount())
         );
@@ -177,7 +177,7 @@ void AppController::replaceData() {
         /*
          * Convert parsing or validation errors into a user-facing message.
          */
-        setError(QString("Failed to replace data: %1").arg(ex.what()));
+        setError(QString("החלפת הנתונים נכשלה: %1").arg(ex.what()));
     }
 }
 
@@ -235,7 +235,7 @@ void AppController::appendData() {
          * Display a detailed append summary to the user.
          */
         setStatus(
-            QString("Append completed. Added %1 courses, skipped %2 duplicate courses. Added %3 periods, skipped %4 duplicate periods.")
+            QString("ההוספה הושלמה. נוספו %1 קורסים, דולגו %2 קורסים כפולים.\nנוספו %3 תקופות, דולגו %4 תקופות כפולות.")
                 .arg(result.addedCourses)
                 .arg(result.skippedDuplicateCourses)
                 .arg(result.addedExamPeriods)
@@ -245,7 +245,7 @@ void AppController::appendData() {
         /*
          * Convert parser/session exceptions into a visible error message.
          */
-        setError(QString("Failed to append data: %1").arg(ex.what()));
+        setError(QString("הוספת הנתונים נכשלה: %1").arg(ex.what()));
     }
 }
 
@@ -293,22 +293,22 @@ QString AppController::normalizePath(const QString& rawPath) const {
  */
 bool AppController::validateSelectedFiles() {
     if (coursesFilePath_.isEmpty()) {
-        setError("Courses file was not selected.");
+        setError("לא נבחר קובץ קורסים.");
         return false;
     }
 
     if (examPeriodsFilePath_.isEmpty()) {
-        setError("Exam periods file was not selected.");
+        setError("לא נבחר קובץ תקופות בחינה.");
         return false;
     }
 
     if (!QFileInfo::exists(coursesFilePath_)) {
-        setError(QString("Courses file does not exist: %1").arg(coursesFilePath_));
+        setError(QString("קובץ הקורסים אינו קיים: %1").arg(coursesFilePath_));
         return false;
     }
 
     if (!QFileInfo::exists(examPeriodsFilePath_)) {
-        setError(QString("Exam periods file does not exist: %1").arg(examPeriodsFilePath_));
+        setError(QString("קובץ תקופות הבחינה אינו קיים: %1").arg(examPeriodsFilePath_));
         return false;
     }
 
@@ -568,7 +568,7 @@ void AppController::generateSchedules() {
     /*
      * Inform the UI that generation has started.
      */
-    setStatus("Generating schedules...");
+    setStatus("מייצר מערכות שיבוץ...");
 
     // Keep a reference to the full course list for preprocessing
     /*
@@ -630,7 +630,7 @@ void AppController::generateSchedules() {
      * Stop generation if preprocessing did not create any schedulable blocks.
      */
     if (m_allBlocks.empty()) {
-        setError("No scheduling blocks were created for the selected programs and exam periods.");
+        setError("לא נוצרו בלוקי שיבוץ עבור התוכניות ותקופות הבחינה שנבחרו.");
         qDebug() << "[VALIDATION] Schedule generation blocked: no scheduling blocks were created.";
         return;
     }
@@ -687,7 +687,7 @@ void AppController::generateSchedules() {
 void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationResult>& solutions) {
     qDebug() << "--- FINAL ALGORITHM OUTPUT ---";
     qDebug() << "Total solutions calculated:" << solutions.size();
-    setStatus("Scheduling completed!");
+    setStatus("השיבוץ הושלם!");
 
     // Filter the courses to only those that require exams, as the scheduling is based on exam periods
     /*
@@ -716,7 +716,7 @@ void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationRes
  * The error is converted into a user-facing message.
  */
 void AppController::onSchedulingFailed(QString message) {
-    setError("Scheduling failed: " + message);
+    setError("השיבוץ נכשל: " + message);
 }
 
 /*
@@ -754,7 +754,7 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
     /*
      * Notify the UI which period is currently being generated.
      */
-    setStatus("Generating schedules for " + semester + " " + moed + "...");
+    setStatus("מייצר מערכות שיבוץ עבור " + semester + " " + moed + "...");
 
     //update the output manager with the current period filter so it can prepare the UI accordingly
     /*

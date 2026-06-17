@@ -12,7 +12,7 @@ Window {
     minimumWidth: 1050
     minimumHeight: 700
     visible: true
-    title: "Exam Scheduler 2.0 - Input"
+    title: "מתזמן בחינות 2.0 - קלט"
     color: "#f7f5ef"
 
     property color primary: "#14533f"
@@ -303,7 +303,7 @@ Window {
             FileDialog {
                 id: coursesDialog
                 title: "בחר קובץ קורסים"
-                nameFilters: ["Text files (*.txt)", "All files (*)"]
+                nameFilters: ["קבצי טקסט (*.txt)", "כל הקבצים (*)"]
                 onAccepted: appController.setCoursesFilePath(selectedFile)
             }
 
@@ -311,7 +311,7 @@ Window {
             FileDialog {
                 id: periodsDialog
                 title: "בחר קובץ תאריכים"
-                nameFilters: ["Text files (*.txt)", "All files (*)"]
+                nameFilters: ["קבצי טקסט (*.txt)", "כל הקבצים (*)"]
                 onAccepted: appController.setExamPeriodsFilePath(selectedFile)
             }
 
@@ -586,7 +586,7 @@ Window {
                         }
 
                         AppButton {
-                            text: "📅 View Calendar"
+                            text: "📅 צפה בלוח השנה"
                             outline: false
                             visible: appController.hasData
                             onClicked: {
@@ -617,7 +617,7 @@ Window {
                          * screen before any data is loaded would only show the fallback bound.
                          */
                         AppButton {
-                            text: "Settings"
+                            text: "הגדרות"
                             outline: true
                             visible: appController.hasData
                             onClicked: stackView.push(Qt.resolvedUrl("SettingsScreen.qml"))

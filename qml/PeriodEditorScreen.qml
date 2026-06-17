@@ -38,7 +38,7 @@ Page {
              * Returns to the previous screen in the StackView.
              */
             Button {
-                text: "← Back"
+                text: "← חזור"
                 flat: true
                 contentItem: Text {
                     text: parent.text
@@ -61,7 +61,7 @@ Page {
              * Screen title showing the currently selected semester and moed.
              */
             Text {
-                text: "Edit Exam Period — " + calendarManager.currentSemester
+                text: "עריכת תקופת בחינות — " + calendarManager.currentSemester
                 color: "white"
                 font.pixelSize: 18
                 font.bold: true
@@ -150,7 +150,7 @@ Page {
                  */
                 ColumnLayout {
                     spacing: 6
-                    Text { text: "Start Date"; font.pixelSize: 13; color: "#6C757D" }
+                    Text { text: "תאריך התחלה"; font.pixelSize: 13; color: "#6C757D" }
                     TextField {
                         id: startDateField
                         placeholderText: "YYYY-MM-DD"
@@ -171,7 +171,7 @@ Page {
                  */
                 ColumnLayout {
                     spacing: 6
-                    Text { text: "End Date"; font.pixelSize: 13; color: "#6C757D" }
+                    Text { text: "תאריך סיום"; font.pixelSize: 13; color: "#6C757D" }
                     TextField {
                         id: endDateField
                         placeholderText: "YYYY-MM-DD"
@@ -192,7 +192,7 @@ Page {
                  * The input is validated before calling CalendarManager.shiftPeriod().
                  */
                 Button {
-                    text: "Apply Shift"
+                    text: "החל הזזה"
                     Layout.alignment: Qt.AlignBottom
                     background: Rectangle {
                         radius: 8
@@ -232,7 +232,7 @@ Page {
                         /*
                          * Show a temporary success message.
                          */
-                        saveConfirm.text = "✅ Shift applied"
+                        saveConfirm.text = "✅ ההזזה הוחלה"
                         saveConfirm.visible = true
                         saveTimer.restart()
                     }
@@ -243,7 +243,7 @@ Page {
                  * Saves the current period changes.
                  */
                 Button {
-                    text: "💾 Save"
+                    text: "💾 שמור"
                     Layout.alignment: Qt.AlignBottom
                     background: Rectangle {
                         radius: 8
@@ -269,7 +269,7 @@ Page {
                  */
                 Text {
                     id: saveConfirm
-                    text: "✅ Saved"
+                    text: "✅ נשמר"
                     color: "#157347"
                     font.pixelSize: 13
                     font.bold: true
@@ -291,7 +291,7 @@ Page {
                  */
                 Text {
                     id: shiftErrorMsg
-                    text: "⚠ Error: Start date is after end date"
+                    text: "⚠ שגיאה: תאריך ההתחלה מאוחר מתאריך הסיום"
                     color: "#C0392B"
                     font.pixelSize: 13
                     font.bold: true
@@ -332,7 +332,7 @@ Page {
                  * Instruction text for the user.
                  */
                 Text {
-                    text: "Click a day to exclude / restore it"
+                    text: "לחץ על יום כדי להחריג / לשחזר אותו"
                     font.pixelSize: 13
                     color: "#6C757D"
                     font.italic: true
@@ -355,14 +355,15 @@ Page {
                  */
                 Row {
                     Layout.fillWidth: true
+                    layoutDirection: Qt.RightToLeft
                     Repeater {
-                        model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                        model: ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
                         delegate: Text {
                             width: Math.floor(editorGrid.width / 7)
                             text: modelData
-                            font.pixelSize: 12
+                            font.pixelSize: 14
                             font.bold: true
-                            color: index === 6 ? "#C0392B" : "#6C757D"
+                            color: "#69737a"
                             horizontalAlignment: Text.AlignHCenter
                         }
                     }
@@ -379,7 +380,8 @@ Page {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     cellWidth:  Math.floor(width / 7)
-                    cellHeight: 52
+                    cellHeight: 120
+                    layoutDirection: Qt.RightToLeft
 
                     /*
                      * Padded model generated from CalendarManager.days.
@@ -402,40 +404,35 @@ Page {
                      * Delegate for a single calendar day cell.
                      */
                     delegate: Rectangle {
-                        width:  editorGrid.cellWidth  - 4
-                        height: editorGrid.cellHeight - 4
+                        width:  editorGrid.cellWidth  - 10
+                        height: editorGrid.cellHeight - 10
                         radius: 8
                         visible: modelData.status !== -1
 
                         /*
-                         * Cell background color reflects whether the day is active,
-                         * excluded, or neutral.
+                         * Cell background color reflects whether the day is
+                         * excluded or not, using the OutputScreen palette.
                          */
-                        color: {
-                            if (modelData.status === 2) return "#FDECEA"
-                            if (modelData.status === 1) return "#EAFAF1"
-                            return "#F8F9FA"
-                        }
+                        color: modelData.status === 2 ? "#fef2f2" : "#f1f5f9"
 
                         /*
-                         * Cell border color also reflects the day status.
+                         * Cell border color also reflects the day status,
+                         * using the OutputScreen palette.
                          */
-                        border.color: {
-                            if (modelData.status === 2) return "#C0392B"
-                            if (modelData.status === 1) return "#52B788"
-                            return "#E9ECEF"
-                        }
+                        border.color: modelData.status === 2 ? "#fecaca" : "#e2e8f0"
                         border.width: 1
 
                         /*
                          * Calendar day number.
                          */
                         Text {
-                            anchors.centerIn: parent
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.margins: 8
                             text: modelData.date ? Qt.formatDate(modelData.date, "d") : ""
                             font.pixelSize: 14
                             font.bold: true
-                            color: modelData.status === 2 ? "#C0392B" : "#1B4332"
+                            color: modelData.status === 2 ? "#dc2626" : "#64748b"
                         }
 
                         /*

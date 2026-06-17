@@ -77,7 +77,7 @@ Page {
              * Saves the current calendar changes into CalendarManager.
              */
             Button {
-                text: "💾 Save"
+                text: "💾 שמור"
                 contentItem: Text {
                     text: parent.text
                     color: "white"
@@ -101,7 +101,7 @@ Page {
              */
             Text {
                 id: saveConfirm
-                text: "✅ Saved"
+                text: "✅ נשמר"
                 color: "white"
                 font.pixelSize: 13
                 font.bold: true
@@ -121,7 +121,7 @@ Page {
              * Opens the period editor screen.
              */
             Button {
-                text: "✏️ Edit Period"
+                text: "✏️ ערוך תקופה"
                 font.pixelSize: 14
                 contentItem: Text {
                     text: parent.text
@@ -203,7 +203,7 @@ Page {
                  * Sidebar title.
                  */
                 Text {
-                    text: "Periods"
+                    text: "תקופות"
                     color: "#A8D5B5"
                     font.pixelSize: 12
                     font.bold: true
@@ -476,13 +476,13 @@ Page {
                  */
                 Repeater {
                     model: [
-                        { label: "Total Days",
+                        { label: "סך הימים",
                           value: calendarManager.days.length,
                           color: "#1B4332" },
-                        { label: "Active Days",
+                        { label: "ימים פעילים",
                           value: calendarManager.days.filter(d => d.status === 1).length,
                           color: "#52B788" },
-                        { label: "Excluded Days",
+                        { label: "ימים מוחרגים",
                           value: calendarManager.days.filter(d => d.status === 2).length,
                           color: "#C0392B" }
                     ]
@@ -566,14 +566,15 @@ Page {
                      */
                     Row {
                         Layout.fillWidth: true
+                        layoutDirection: Qt.RightToLeft
                         Repeater {
-                            model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                            model: ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
                             delegate: Text {
                                 width: Math.floor(calGrid.width / 7)
                                 text: modelData
-                                font.pixelSize: 12
+                                font.pixelSize: 14
                                 font.bold: true
-                                color: index === 6 ? "#C0392B" : "#6C757D"
+                                color: "#69737a"
                                 horizontalAlignment: Text.AlignHCenter
                             }
                         }
@@ -590,7 +591,8 @@ Page {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         cellWidth:  Math.floor(width / 7)
-                        cellHeight: 52
+                        cellHeight: 120
+                        layoutDirection: Qt.RightToLeft
 
                         /*
                          * Padded calendar days prepared for grid display.
@@ -614,82 +616,36 @@ Page {
                          * Delegate for a single calendar cell.
                          */
                         delegate: Rectangle {
-                            width:  calGrid.cellWidth  - 4
-                            height: calGrid.cellHeight - 4
+                            width:  calGrid.cellWidth  - 10
+                            height: calGrid.cellHeight - 10
                             radius: 8
                             visible: modelData.status !== -1
 
                             /*
-                             * Background color depends on the day status.
+                             * Cell background color reflects whether the day is
+                             * excluded or not, using the OutputScreen palette.
                              */
-                            color: {
-                                if (modelData.status === 2) return "#FDECEA"
-                                if (modelData.status === 1) return "#EAFAF1"
-                                return "#F8F9FA"
-                            }
+                            color: modelData.status === 2 ? "#fef2f2" : "#f1f5f9"
 
                             /*
-                             * Border color also reflects the day status.
+                             * Cell border color also reflects the day status,
+                             * using the OutputScreen palette.
                              */
-                            border.color: {
-                                if (modelData.status === 2) return "#C0392B"
-                                if (modelData.status === 1) return "#52B788"
-                                return "#E9ECEF"
-                            }
+                            border.color: modelData.status === 2 ? "#fecaca" : "#e2e8f0"
                             border.width: 1
 
                             /*
-                             * Draw diagonal stripes for excluded days.
+                             * Calendar day number.
                              */
-                            Canvas {
-                                anchors.fill: parent
-                                visible: modelData.status === 2
-                                onPaint: {
-                                    var ctx = getContext("2d")
-                                    ctx.clearRect(0, 0, width, height)
-                                    ctx.strokeStyle = "#C0392B"
-                                    ctx.globalAlpha = 0.15
-                                    ctx.lineWidth = 1
-                                    for (var i = -height; i < width; i += 8) {
-                                        ctx.beginPath()
-                                        ctx.moveTo(i, 0)
-                                        ctx.lineTo(i + height, height)
-                                        ctx.stroke()
-                                    }
-                                }
-                            }
-
-                            /*
-                             * Day number and optional label.
-                             */
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 2
-
-                                /*
-                                 * Calendar day number.
-                                 */
-                                Text {
-                                    text: modelData.date
-                                          ? Qt.formatDate(modelData.date, "d") : ""
-                                    font.pixelSize: 14
-                                    font.bold: true
-                                    color: modelData.status === 2 ? "#C0392B" : "#1B4332"
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-
-                                /*
-                                 * Optional day label.
-                                 */
-                                Text {
-                                    text: modelData.label
-                                    font.pixelSize: 9
-                                    color: "#6C757D"
-                                    visible: modelData.label !== ""
-                                    Layout.alignment: Qt.AlignHCenter
-                                    elide: Text.ElideRight
-                                    width: calGrid.cellWidth - 12
-                                }
+                            Text {
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.margins: 8
+                                text: modelData.date
+                                      ? Qt.formatDate(modelData.date, "d") : ""
+                                font.pixelSize: 14
+                                font.bold: true
+                                color: modelData.status === 2 ? "#dc2626" : "#64748b"
                             }
 
                             /*

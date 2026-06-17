@@ -247,15 +247,15 @@ SchedulingSession::ValidationResult SchedulingSession::validateBeforeGeneration(
     ValidationResult result;
 
     if (courses_.empty()) {
-        result.errors.push_back("No courses were loaded.");
+        result.errors.push_back("לא נטענו קורסים.");
     }
 
     if (examPeriods_.empty()) {
-        result.errors.push_back("No exam periods were loaded.");
+        result.errors.push_back("לא נטענו תקופות בחינה.");
     }
 
     if (selectedPrograms_.empty()) {
-        result.errors.push_back("At least one academic program must be selected.");
+        result.errors.push_back("יש לבחור לפחות תוכנית לימודים אחת.");
     }
 
     return result;

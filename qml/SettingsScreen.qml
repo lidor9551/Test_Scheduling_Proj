@@ -128,36 +128,36 @@ Item {
     readonly property var ruleModel: [
         {
             tag:         "2.1",
-            title:       "Minimum gap between mandatory exams",
-            description: "Minimum days between two mandatory exams in the same program and year must be >= k",
+            title:       "מרווח מינימלי בין בחינות חובה",
+            description: "מספר הימים המינימלי בין שתי בחינות חובה באותה תוכנית ושנה חייב להיות >= k",
             enabledProp: "rule21Enabled",
             kProp:       "rule21K"
         },
         {
             tag:         "2.2",
-            title:       "Minimum gap between any two exams",
-            description: "Minimum days between any two exams in the same program and year must be >= k",
+            title:       "מרווח מינימלי בין שתי בחינות כלשהן",
+            description: "מספר הימים המינימלי בין שתי בחינות כלשהן באותה תוכנית ושנה חייב להיות >= k",
             enabledProp: "rule22Enabled",
             kProp:       "rule22K"
         },
         {
             tag:         "2.3",
-            title:       "Maximum optional course conflicts",
-            description: "Maximum conflicts between two optional courses in the same program must be <= k",
+            title:       "מקסימום התנגשויות בין קורסי בחירה",
+            description: "מספר ההתנגשויות המקסימלי בין שני קורסי בחירה באותה תוכנית חייב להיות <= k",
             enabledProp: "rule23Enabled",
             kProp:       "rule23K"
         },
         {
             tag:         "2.4",
-            title:       "Mandatory exam spread",
-            description: "Gap between the first and last mandatory exam (same program, year, moed) must be >= k",
+            title:       "פריסת בחינות חובה",
+            description: "המרווח בין בחינת החובה הראשונה לאחרונה (אותה תוכנית, שנה ומועד) חייב להיות >= k",
             enabledProp: "rule24Enabled",
             kProp:       "rule24K"
         },
         {
             tag:         "2.5",
-            title:       "Maximum exams per day",
-            description: "Maximum number of exams scheduled on the same day must be <= k",
+            title:       "מקסימום בחינות ביום",
+            description: "מספר הבחינות המקסימלי המשובצות באותו יום חייב להיות <= k",
             enabledProp: "rule25Enabled",
             kProp:       "rule25K"
         }
@@ -229,7 +229,7 @@ Item {
         // Back and Save now live in the bottom action bar (footer).
         Text {
             Layout.fillWidth: true
-            text: "Settings"
+            text: "הגדרות"
             font.pixelSize: 36
             font.bold: true
             color: settingsRoot.textDark
@@ -238,7 +238,7 @@ Item {
         // ----- Subtitle ------------------------------------------------------
         Text {
             Layout.fillWidth: true
-            text: "Enable or disable hard scheduling constraints and set their threshold value k."
+            text: "הפעל או בטל אילוצי שיבוץ קשיחים והגדר את ערך הסף k שלהם."
             color: settingsRoot.textMuted
             font.pixelSize: 14
             wrapMode: Text.WordWrap
@@ -249,7 +249,7 @@ Item {
         // becomes available in Component.onCompleted.
         Text {
             Layout.fillWidth: true
-            text: "Maximum allowed value for k: " + settingsRoot.kMax + " (exam period length)"
+            text: "הערך המקסימלי המותר ל-k: " + settingsRoot.kMax + " (אורך תקופת הבחינות)"
             color: settingsRoot.textMuted
             font.pixelSize: 13
             wrapMode: Text.WordWrap
@@ -453,7 +453,7 @@ Item {
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     visible: kColumn.kOverflow
-                                    text: "Max is " + settingsRoot.kMax
+                                    text: "המקסימום הוא " + settingsRoot.kMax
                                     color: "#b91c1c"
                                     font.pixelSize: 11
                                 }
@@ -473,7 +473,7 @@ Item {
         Text {
             Layout.fillWidth: true
             visible: settingsRoot.overflowMessageVisible
-            text: "Error: enter a number under " + settingsRoot.kMax
+            text: "שגיאה: הזן מספר קטן מ-" + settingsRoot.kMax
             color: "#b91c1c"
             font.pixelSize: 14
             font.bold: true
@@ -490,7 +490,7 @@ Item {
 
             /** Back button — pops this screen off the StackView without saving. */
             Button {
-                text: "← Back"
+                text: "← חזור"
                 font.pixelSize: 16
                 font.bold: true
                 background: Rectangle {
@@ -515,7 +515,7 @@ Item {
              */
             Button {
                 id: saveButton
-                text: "Save"
+                text: "שמור"
                 font.pixelSize: 16
                 font.bold: true
                 implicitWidth:  100
