@@ -38,14 +38,14 @@ int main() {
 
     examCourse.addProgram(
         "83101",
-        1,
+        Year::FIRST,
         Semester::FALL,
         Requirement::OBLIGATORY
     );
 
     examCourse.addProgram(
         "83102",
-        1,
+        Year::FIRST,
         Semester::FALL,
         Requirement::ELECTIVE
     );
@@ -55,12 +55,12 @@ int main() {
     EXPECT_EQ(programs.size(), static_cast<std::size_t>(2));
 
     EXPECT_EQ(programs[0].programID, std::string("83101"));
-    EXPECT_EQ(programs[0].year, 1);
+    EXPECT_EQ(programs[0].year, Year::FIRST);
     EXPECT_EQ(programs[0].semester, Semester::FALL);
     EXPECT_EQ(programs[0].requirement, Requirement::OBLIGATORY);
 
     EXPECT_EQ(programs[1].programID, std::string("83102"));
-    EXPECT_EQ(programs[1].year, 1);
+    EXPECT_EQ(programs[1].year, Year::FIRST);
     EXPECT_EQ(programs[1].semester, Semester::FALL);
     EXPECT_EQ(programs[1].requirement, Requirement::ELECTIVE);
 
