@@ -4,6 +4,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <cmath>
 
 namespace {
     /*
@@ -28,6 +29,8 @@ namespace {
         }
         return days[month - 1];
     }
+
+    
 }
 
 // Creates a default valid date.
@@ -85,6 +88,20 @@ int Date::getMonth() const { return month_; }
 
 // Returns the year part of the date.
 int Date::getYear() const { return year_; }
+
+static int toJulianDay(int day, int month, int year) {
+    int a = (14 - month) / 12;
+    int y = year + 4800 - a;
+    int m = month + 12 * a - 3;
+    return day + (153 * m + 2) / 5 + 365 * y + y / 4 - y / 100 + y / 400 - 32045;
+}
+
+int Date::daysTo(const Date& other) const {
+    int thisJulian = toJulianDay(day_, month_, year_);
+    int otherJulian = toJulianDay(other.getDay(), other.getMonth(), other.getYear());
+    
+    return std::abs(thisJulian - otherJulian);
+}
 
 /*
  * Checks whether the stored values form a real calendar date.
