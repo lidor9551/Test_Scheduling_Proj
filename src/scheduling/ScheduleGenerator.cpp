@@ -93,7 +93,7 @@ bool ScheduleGenerator::canAssign(const SchedulingState& state,
     return true;
 }
 
-/*fe
+/*
  * Assigns a runtime course to a date inside the current state.
  *
  * This method updates:
