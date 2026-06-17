@@ -944,3 +944,39 @@ int AppController::getExamPeriodDays() const {
      */
     return longestPeriodDays;
 }
+
+/**
+ * Stores the user-defined priority order of the sorting metrics.
+ *
+ * Mirror of saveHardConstraints() for the soft constraints (Block 3). The
+ * incoming QVariantList is flattened into a QStringList of metric identifiers,
+ * preserving the order from highest priority (index 0) to lowest. This is pure
+ * in-memory storage: no engine logic is triggered and nothing is written to
+ * disk. Integration with the ranking of valid schedules is deferred to a future
+ * subtask.
+ */
+void AppController::saveSortingPriorities(const QVariantList& orderedMetricIds) {
+    m_sortingPriorities.clear();
+
+    for (const QVariant& id : orderedMetricIds) {
+        m_sortingPriorities.append(id.toString());
+    }
+
+    qDebug() << "[SortingPriorities] Saved order:" << m_sortingPriorities;
+}
+
+/**
+ * Returns the stored sorting metric priority order as a QVariantList for QML.
+ *
+ * Each entry is a metric identifier string, ordered from highest priority to
+ * lowest. QML reads this in Component.onCompleted to restore the saved order.
+ */
+QVariantList AppController::getSortingPriorities() const {
+    QVariantList list;
+
+    for (const QString& id : m_sortingPriorities) {
+        list.append(id);
+    }
+
+    return list;
+}

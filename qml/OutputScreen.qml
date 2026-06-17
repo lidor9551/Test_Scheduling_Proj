@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtQml.Models
 
 /*
  * OutputScreen.qml displays generated exam schedules.
@@ -16,6 +17,134 @@ import QtQuick.Dialogs
 Item {
     id: outputRoot
 
+    /**
+     * Local color palette.
+     *
+     * Components defined in Main.qml (AppButton, FileCard, the root palette) are
+     * out of scope from a screen pushed onto the StackView, so the colors used
+     * here are redeclared locally, exactly as SettingsScreen.qml does.
+     */
+    readonly property color primary:     "#14533f"
+    readonly property color primaryDark: "#0f3f30"
+    readonly property color borderSoft:  "#e1e5df"
+    readonly property color textDark:    "#1f2933"
+    readonly property color textMuted:   "#69737a"
+
+    /**
+     * Whether the left sorting sidebar is expanded.
+     *
+     * Toggled by the "מיון" button under the "next" navigation button. When true
+     * the sidebar animates open and pushes only the calendar grid to the right;
+     * when false the sidebar collapses to zero width and the calendar reclaims
+     * the full width. The bars above the calendar never move.
+     */
+    property bool sidebarOpen: false
+
+    /**
+     * Maps every sorting metric identifier to its Hebrew label.
+     *
+     * The identifiers mirror the hard constraint keys ("2.1".."2.5"), so a
+     * sorting metric is only relevant when its matching hard constraint is
+     * enabled. All metrics rank schedules in descending order.
+     */
+    readonly property var metricLabels: ({
+        "2.1": "מספר הימים המינימלי בין 2 בחינות חובה (אותה תוכנית/שנה)",
+        "2.2": "ממוצע הימים בין 2 בחינות (חובה או בחירה)",
+        "2.3": "מספר ההתנגשויות בין קורסי בחירה",
+        "2.4": "הפער בין הבחינה הראשונה לאחרונה (חובה)",
+        "2.5": "מספר הבחינות המקסימלי באותו יום"
+    })
+
+    /**
+     * Maps every metric identifier to the QML key returned by
+     * getHardConstraints(), used to keep only the enabled metrics.
+     */
+    readonly property var metricEnabledKeys: ({
+        "2.1": "rule21Enabled",
+        "2.2": "rule22Enabled",
+        "2.3": "rule23Enabled",
+        "2.4": "rule24Enabled",
+        "2.5": "rule25Enabled"
+    })
+
+    /**
+     * Backing model for the drag & drop priority list.
+     *
+     * Populated once in Component.onCompleted from the enabled hard constraints
+     * and the previously saved order. The visual reordering happens on the
+     * DelegateModel (priorityVisualModel), never on this model directly, so the
+     * drag stays local until the user presses Save.
+     */
+    ListModel {
+        id: priorityModel
+    }
+
+    /**
+     * Builds the priority list shown to the user.
+     *
+     * Keeps only the metrics whose matching hard constraint is enabled, then
+     * applies the saved order from getSortingPriorities() when present. Any
+     * enabled metric missing from the saved order is appended at the end so a
+     * newly enabled constraint still appears. Writes to priorityModel only here,
+     * on load — never from a binding — to avoid binding loops.
+     */
+    function rebuildPriorityModel() {
+        var hc = appController.getHardConstraints()
+
+        var allIds = ["2.1", "2.2", "2.3", "2.4", "2.5"]
+        var enabledIds = []
+        for (var i = 0; i < allIds.length; ++i) {
+            var id = allIds[i]
+            if (hc[outputRoot.metricEnabledKeys[id]] === true) {
+                enabledIds.push(id)
+            }
+        }
+
+        // Apply the previously saved order, keeping only still-enabled metrics.
+        var saved = appController.getSortingPriorities()
+        if (saved && saved.length > 0) {
+            var ordered = []
+            for (var s = 0; s < saved.length; ++s) {
+                if (enabledIds.indexOf(saved[s]) !== -1
+                        && ordered.indexOf(saved[s]) === -1) {
+                    ordered.push(saved[s])
+                }
+            }
+            // Append enabled metrics that were not part of the saved order.
+            for (var e = 0; e < enabledIds.length; ++e) {
+                if (ordered.indexOf(enabledIds[e]) === -1) {
+                    ordered.push(enabledIds[e])
+                }
+            }
+            enabledIds = ordered
+        }
+
+        priorityModel.clear()
+        for (var k = 0; k < enabledIds.length; ++k) {
+            priorityModel.append({
+                metricId: enabledIds[k],
+                label:    outputRoot.metricLabels[enabledIds[k]]
+            })
+        }
+    }
+
+    /**
+     * Collects the current visual order and persists it to the backend.
+     *
+     * Reads the order straight from the DelegateModel (which reflects the drag
+     * reordering) rather than priorityModel, builds a QVariantList of metric
+     * identifiers, and forwards it to AppController.saveSortingPriorities().
+     */
+    function saveCurrentOrder() {
+        var orderedIds = []
+        for (var i = 0; i < priorityVisualModel.items.count; ++i) {
+            orderedIds.push(priorityVisualModel.items.get(i).model.metricId)
+        }
+        appController.saveSortingPriorities(orderedIds)
+    }
+
+    Component.onCompleted: outputRoot.rebuildPriorityModel()
+
     // dialog for choosing where to save the exported schedule
     /*
      * File dialog used for exporting the current schedule.
@@ -28,14 +157,14 @@ Item {
         title: "בחר היכן לשמור את המערכת"
         fileMode: FileDialog.SaveFile
         nameFilters: ["Text files (*.txt)"]
-        
+
         /*
          * When the user confirms the save location, convert the selected URL
          * into a local file path and request the C++ output manager to export.
          */
         onAccepted: {
             let path = saveDialog.selectedFile.toString().replace("file:///", "")
-            
+
             if (appController.outputManager.saveCurrentScheduleToFile(path)) {
                 console.log("File saved successfully to: " + path)
             } else {
@@ -44,11 +173,169 @@ Item {
         }
     }
 
+    /**
+     * Reusable drag & drop priority list, shared by the sidebar.
+     *
+     * Defined once at the root scope so the DelegateModel/ListView keep a single
+     * identity regardless of where the sidebar lives in the tree.
+     *
+     * DelegateModel wrapping priorityModel: the drag reordering moves items on
+     * this visual model only (items.move), leaving priorityModel untouched until
+     * the user saves. The rank shown next to each row is derived from
+     * DelegateModel.itemsIndex, which updates live during the drag.
+     */
+    DelegateModel {
+        id: priorityVisualModel
+        model: priorityModel
 
-    /*
+        delegate: Item {
+            id: delegateRoot
+            width: priorityList.width
+            // Adaptive height: grows with the wrapped label, never below 56 px.
+            height: Math.max(56, labelText.implicitHeight + 24)
+
+            /** True while this row is being dragged (long-press engaged). */
+            property bool held: false
+
+            /**
+             * Reorders the visual model as a dragged row hovers over this one.
+             * Only the DelegateModel order changes here.
+             */
+            DropArea {
+                anchors.fill: parent
+                onEntered: function(drag) {
+                    priorityVisualModel.items.move(
+                        drag.source.DelegateModel.itemsIndex,
+                        delegateRoot.DelegateModel.itemsIndex)
+                }
+            }
+
+            Rectangle {
+                id: rowContent
+                width: delegateRoot.width
+                height: delegateRoot.height - 8
+                radius: 10
+                color: delegateRoot.held ? "#edf7f2" : "#f8fafc"
+                border.color: delegateRoot.held ? outputRoot.primary
+                                                : outputRoot.borderSoft
+                border.width: delegateRoot.held ? 2 : 1
+
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+
+                // Required so the dragged row floats above its peers.
+                Drag.active: delegateRoot.held
+                Drag.source: delegateRoot
+                Drag.hotSpot.x: width / 2
+                Drag.hotSpot.y: rowContent.height / 2
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 12
+                    layoutDirection: Qt.RightToLeft
+                    spacing: 10
+
+                    /** Priority rank badge (1 = highest). */
+                    Rectangle {
+                        width: 26
+                        height: 26
+                        radius: 8
+                        color: outputRoot.primary
+                        Text {
+                            anchors.centerIn: parent
+                            text: delegateRoot.DelegateModel.itemsIndex + 1
+                            color: "white"
+                            font.pixelSize: 13
+                            font.bold: true
+                        }
+                    }
+
+                    /** Metric Hebrew label. */
+                    Text {
+                        id: labelText
+                        Layout.fillWidth: true
+                        text: model.label
+                        font.pixelSize: 12
+                        color: outputRoot.textDark
+                        horizontalAlignment: Text.AlignRight
+                        wrapMode: Text.WordWrap
+                    }
+
+                    /**
+                     * Drag handle on the left side. Purely a visual affordance
+                     * now: the whole card is draggable via long press below.
+                     */
+                    Text {
+                        text: "≡"
+                        font.pixelSize: 22
+                        color: outputRoot.textMuted
+                    }
+                }
+
+                /**
+                 * Whole-card drag area.
+                 *
+                 * A long press (~300 ms) anywhere on the card engages the drag,
+                 * so a short tap never triggers an accidental reorder. The press
+                 * timer sets held=true, which switches on drag.target and lets the
+                 * still-pressed pointer drag the row. Covers the full card, the ≡
+                 * handle included, keeping the handle as a visual hint only.
+                 */
+                MouseArea {
+                    id: dragArea
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    drag.target: delegateRoot.held ? rowContent : undefined
+                    drag.axis: Drag.YAxis
+
+                    /** Engages the drag once the press is held long enough. */
+                    Timer {
+                        id: pressTimer
+                        interval: 300
+                        onTriggered: delegateRoot.held = true
+                    }
+
+                    onPressed: pressTimer.start()
+                    onReleased: {
+                        pressTimer.stop()
+                        delegateRoot.held = false
+                    }
+                    onCanceled: {
+                        pressTimer.stop()
+                        delegateRoot.held = false
+                    }
+                }
+            }
+
+            /**
+             * While held, reparent the row to the ListView so it can float
+             * freely over the other rows during the drag.
+             */
+            states: State {
+                when: delegateRoot.held
+                ParentChange {
+                    target: rowContent
+                    parent: priorityList
+                }
+                AnchorChanges {
+                    target: rowContent
+                    anchors.horizontalCenter: undefined
+                    anchors.verticalCenter: undefined
+                }
+            }
+        }
+    }
+
+    /**
      * Main vertical layout of the output screen.
+     *
+     * The top bars (action bar, schedule navigation, semester/moed filters) stay
+     * full width and never move. Only the bottom row — where the sorting sidebar
+     * sits beside the calendar — reacts to the sidebar opening.
      */
     ColumnLayout {
+        id: mainContent
         anchors.fill: parent
         anchors.margins: 34
         spacing: 16
@@ -109,7 +396,7 @@ Item {
                     color: !parent.enabled ? "#94a3b8" : (parent.down ? "#0f3f30" : (parent.hovered ? "#1b664f" : "#14533f"))
                     radius: 8
                 }
-                
+
                 /*
                  * Custom text item for consistent button styling.
                  */
@@ -121,7 +408,7 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                
+
                 /*
                  * Opens the save dialog so the user can choose an export location.
                  */
@@ -140,12 +427,12 @@ Item {
          */
         Rectangle {
             Layout.fillWidth: true
-            height: 60
+            Layout.preferredHeight: 60
             radius: 12
             color: "white"
             border.color: "#e1e5df"
             border.width: 1
-            
+
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: 10
@@ -160,8 +447,9 @@ Item {
                     font.bold: true
                     Layout.preferredWidth: 100
                     Layout.preferredHeight: 40
+                    Layout.alignment: Qt.AlignVCenter
                     enabled: appController.outputManager.currentScheduleIndex > 1
-                    
+
                     background: Rectangle {
                         color: parent.enabled ? (parent.down ? "#e2e8f0" : (parent.hovered ? "#f8fafc" : "white")) : "#f1f5f9"
                         border.color: parent.enabled ? "#cbd5e1" : "#e2e8f0"
@@ -197,8 +485,9 @@ Item {
                     font.bold: true
                     Layout.preferredWidth: 100
                     Layout.preferredHeight: 40
+                    Layout.alignment: Qt.AlignVCenter
                     enabled: appController.outputManager.currentScheduleIndex < appController.outputManager.totalSchedulesCount
-                    
+
                     background: Rectangle {
                         color: parent.enabled ? (parent.down ? "#e2e8f0" : (parent.hovered ? "#f8fafc" : "white")) : "#f1f5f9"
                         border.color: parent.enabled ? "#cbd5e1" : "#e2e8f0"
@@ -215,7 +504,7 @@ Item {
             }
         }
 
-        // choice of semester/moed for filtering the calendar 
+        // choice of semester/moed for filtering the calendar
         /*
          * Semester and moed filter row.
          *
@@ -229,7 +518,7 @@ Item {
             Layout.topMargin: 8
             Layout.bottomMargin: 4
 
-            Item { Layout.fillWidth: true } 
+            Item { Layout.fillWidth: true }
 
             /*
              * Semester filter label.
@@ -252,17 +541,17 @@ Item {
                 Layout.preferredHeight: 40
                 font.pixelSize: 15
                 font.bold: true
-                
+
                 // dynamically linked to the list in C++
                 model: appController.outputManager.availableSemesters
-                
+
                 background: Rectangle {
                     color: "#f8fafc"
                     border.color: "#cbd5e1"
                     border.width: 1
                     radius: 8
                 }
-                
+
                 /*
                  * Generate schedules for the newly selected semester and current moed.
                  */
@@ -271,7 +560,7 @@ Item {
                 }
             }
 
-            Item { width: 20 } 
+            Item { width: 20 }
 
             /*
              * Moed filter label.
@@ -294,17 +583,17 @@ Item {
                 Layout.preferredHeight: 40
                 font.pixelSize: 15
                 font.bold: true
-                
+
                 // dynamically linked to the list in C++
                 model: appController.outputManager.availableMoeds
-                
+
                 background: Rectangle {
                     color: "#f8fafc"
                     border.color: "#cbd5e1"
                     border.width: 1
                     radius: 8
                 }
-                
+
                 /*
                  * Generate schedules for the current semester and newly selected moed.
                  */
@@ -314,196 +603,391 @@ Item {
             }
 
             Item { Layout.fillWidth: true }
+
+            // sorting sidebar toggle
+            /**
+             * Toggle button for the left sorting sidebar.
+             *
+             * Last child of the RTL filter row, so it sits flush against the left
+             * edge. Only shown once schedules exist, since the priority order only
+             * matters for ranking real schedules.
+             */
+            Button {
+                text: "מיון ⚙️"
+                font.pixelSize: 15
+                font.bold: true
+                Layout.preferredWidth: 120
+                Layout.preferredHeight: 40
+                visible: appController.outputManager.totalSchedulesCount > 0
+
+                background: Rectangle {
+                    color: outputRoot.sidebarOpen ? outputRoot.primaryDark
+                         : parent.down            ? "#e2e8f0"
+                         : parent.hovered          ? "#f1f5f9"
+                         : "white"
+                    border.color: "#cbd5e1"
+                    border.width: 1
+                    radius: 8
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: outputRoot.sidebarOpen ? "white" : outputRoot.textDark
+                    font.pixelSize: 15
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: outputRoot.sidebarOpen = !outputRoot.sidebarOpen
+            }
         }
 
-        // Calendar grid
-        /*
-         * Main calendar output container.
+        // ---------------------------------------------------------------------
+        // Bottom row: [ sorting sidebar | calendar grid ].
+        // ---------------------------------------------------------------------
+        /**
+         * Bottom horizontal area pairing the sorting sidebar with the calendar.
          *
-         * Displays the selected generated schedule in a weekly calendar layout.
+         * Only this row reacts to the sidebar: when it opens, the sidebar takes
+         * its 340 px and the calendar (Layout.fillWidth) shrinks to fit, leaving
+         * the bars above untouched and producing no empty white space.
          */
-        Rectangle {
+        RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 16
-            color: "white"
-            border.color: "#e1e5df"
-            border.width: 1
-            clip: true
+            spacing: outputRoot.sidebarOpen ? 16 : 0
 
-            /*
-             * Weekday header area.
+            /**
+             * Collapsible sorting sidebar.
+             *
+             * Holds the full sorting metrics prioritization panel. Its width is
+             * animated so the open/close feels fluid; clip keeps the content
+             * hidden while collapsed. Sits at the calendar's exact height since
+             * it shares this fill-height row.
              */
-            Item {
-                id: weekDaysHeader
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.margins: 20
-                height: 30
+            Rectangle {
+                id: sidebar
+                Layout.fillHeight: true
+                Layout.preferredWidth: outputRoot.sidebarOpen ? 340 : 0
+                clip: true
+                color: "white"
+                border.color: outputRoot.borderSoft
+                border.width: outputRoot.sidebarOpen ? 1 : 0
+                radius: 16
 
-                /*
-                 * Hebrew weekday labels.
+                /** Smooth width animation driving the Gemini-style push effect. */
+                Behavior on Layout.preferredWidth {
+                    NumberAnimation { duration: 220; easing.type: Easing.InOutQuad }
+                }
+
+                /**
+                 * Scrollable container so a long metric list never overflows the
+                 * sidebar; the list scrolls instead of being clipped.
                  */
-                Row {
+                ScrollView {
                     anchors.fill: parent
-                    layoutDirection: Qt.RightToLeft
-                    Repeater {
-                        model: ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
+                    anchors.margins: 16
+                    clip: true
+                    contentWidth: availableWidth
+
+                    ColumnLayout {
+                        id: priorityColumn
+                        width: parent.width
+                        spacing: 12
+
+                        /** Sidebar header row: title + close button. */
+                        RowLayout {
+                            Layout.fillWidth: true
+                            layoutDirection: Qt.RightToLeft
+                            spacing: 8
+
+                            /** Panel title. */
+                            Text {
+                                Layout.fillWidth: true
+                                text: "סדר עדיפויות למיון מערכות"
+                                font.pixelSize: 18
+                                font.bold: true
+                                color: outputRoot.textDark
+                                horizontalAlignment: Text.AlignRight
+                                wrapMode: Text.WordWrap
+                            }
+
+                            /** Close button — collapses the sidebar. */
+                            Button {
+                                text: "✕"
+                                font.pixelSize: 16
+                                implicitWidth: 32
+                                implicitHeight: 32
+                                background: Rectangle {
+                                    color: parent.down ? "#e2e8f0"
+                                         : parent.hovered ? "#f1f5f9"
+                                         : "transparent"
+                                    radius: 8
+                                }
+                                onClicked: outputRoot.sidebarOpen = false
+                            }
+                        }
+
+                        /** Short instruction line. */
                         Text {
-                            width: weekDaysHeader.width / 7
-                            text: modelData
+                            Layout.fillWidth: true
+                            text: "גרור את הקריטריונים כדי לקבוע את סדר העדיפויות (גבוה לנמוך)"
+                            font.pixelSize: 13
+                            color: outputRoot.textMuted
+                            horizontalAlignment: Text.AlignRight
+                            wrapMode: Text.WordWrap
+                        }
+
+                        /**
+                         * Empty-state message shown when no hard constraint is
+                         * enabled, so there is no sorting metric to prioritize.
+                         */
+                        Text {
+                            Layout.fillWidth: true
+                            visible: priorityModel.count === 0
+                            text: "לא הופעלו קריטריונים למיון"
                             font.pixelSize: 14
                             font.bold: true
-                            color: "#69737a"
-                            horizontalAlignment: Text.AlignHCenter
+                            color: outputRoot.textMuted
+                            horizontalAlignment: Text.AlignRight
+                        }
+
+                        /** Draggable, reorderable list of the enabled sorting metrics. */
+                        ListView {
+                            id: priorityList
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: contentHeight
+                            visible: priorityModel.count > 0
+                            interactive: false
+                            spacing: 6
+                            model: priorityVisualModel
+                        }
+
+                        /** Saves the current priority order to the backend. */
+                        Button {
+                            Layout.fillWidth: true
+                            visible: priorityModel.count > 0
+                            text: "שמור סדר עדיפויות"
+                            font.pixelSize: 15
+                            font.bold: true
+                            implicitHeight: 42
+                            padding: 14
+
+                            background: Rectangle {
+                                color: parent.down    ? outputRoot.primaryDark
+                                     : parent.hovered ? "#1b664f"
+                                     : outputRoot.primary
+                                radius: 8
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: "white"
+                                font.pixelSize: 15
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            /**
+                             * Persists the order, then collapses the sidebar so
+                             * the calendar reclaims the full width right away.
+                             */
+                            onClicked: {
+                                outputRoot.saveCurrentOrder()
+                                outputRoot.sidebarOpen = false
+                            }
                         }
                     }
                 }
             }
 
+            // Calendar grid
             /*
-             * Grid view containing calendar day cells.
+             * Main calendar output container.
              *
-             * The data model is prepared by ScheduleOutputManager as QVariantList.
+             * Displays the selected generated schedule in a weekly calendar layout.
              */
-            GridView {
-                id: calendarGrid
-                anchors.top: weekDaysHeader.bottom
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.margins: 20
-                
-                cellWidth: width / 7
-                cellHeight: 120
-                
-                model: appController.outputManager.currentCalendarData
-                layoutDirection: Qt.RightToLeft
-                interactive: true
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: 16
+                color: "white"
+                border.color: "#e1e5df"
+                border.width: 1
                 clip: true
 
                 /*
-                 * Vertical scrollbar for long calendar ranges.
+                 * Weekday header area.
                  */
-                ScrollBar.vertical: ScrollBar {
-                    active: true
-                    policy: ScrollBar.AsNeeded
+                Item {
+                    id: weekDaysHeader
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.margins: 20
+                    height: 30
+
+                    /*
+                     * Hebrew weekday labels.
+                     */
+                    Row {
+                        anchors.fill: parent
+                        layoutDirection: Qt.RightToLeft
+                        Repeater {
+                            model: ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
+                            Text {
+                                width: weekDaysHeader.width / 7
+                                text: modelData
+                                font.pixelSize: 14
+                                font.bold: true
+                                color: "#69737a"
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+                    }
                 }
 
                 /*
-                 * Delegate for one calendar cell.
+                 * Grid view containing calendar day cells.
                  *
-                 * A cell can be:
-                 * - empty padding cell
-                 * - excluded day
-                 * - regular day without an exam
-                 * - day with an exam
+                 * The data model is prepared by ScheduleOutputManager as QVariantList.
                  */
-                delegate: Rectangle {
-                    width: calendarGrid.cellWidth - 10
-                    height: calendarGrid.cellHeight - 10
-                    radius: 8
-                    
-                    /*
-                     * Background color depends on whether the day is empty,
-                     * excluded, contains an exam, or is a regular day.
-                     */
-                    color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fef2f2" : (modelData.hasExam ? "#f8fafc" : "#f1f5f9"))
+                GridView {
+                    id: calendarGrid
+                    anchors.top: weekDaysHeader.bottom
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.margins: 20
+
+                    cellWidth: width / 7
+                    cellHeight: 120
+
+                    model: appController.outputManager.currentCalendarData
+                    layoutDirection: Qt.RightToLeft
+                    interactive: true
+                    clip: true
 
                     /*
-                     * Border color highlights excluded days and exam requirement type.
+                     * Vertical scrollbar for long calendar ranges.
                      */
-                    border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fecaca" : (modelData.hasExam ? (modelData.req === "חובה" ? "#fca5a5" : "#86efac") : "#e2e8f0"))
-                    border.width: 1
-
-                    /*
-                     * Day number text.
-                     */
-                    Text {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.margins: 8
-                        text: modelData.dayText || ""
-                        font.pixelSize: 14
-                        font.bold: true
-                        color: modelData.isExcluded ? "#dc2626" : "#64748b"
-                        visible: modelData.dayText !== ""
+                    ScrollBar.vertical: ScrollBar {
+                        active: true
+                        policy: ScrollBar.AsNeeded
                     }
 
                     /*
-                     * Exam details shown only when the current day has an exam.
+                     * Delegate for one calendar cell.
+                     *
+                     * A cell can be:
+                     * - empty padding cell
+                     * - excluded day
+                     * - regular day without an exam
+                     * - day with an exam
                      */
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        anchors.topMargin: 24
-                        spacing: 2
-                        visible: modelData.hasExam === true
+                    delegate: Rectangle {
+                        width: calendarGrid.cellWidth - 10
+                        height: calendarGrid.cellHeight - 10
+                        radius: 8
 
                         /*
-                         * Exam course name.
+                         * Background color depends on whether the day is empty,
+                         * excluded, contains an exam, or is a regular day.
+                         */
+                        color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fef2f2" : (modelData.hasExam ? "#f8fafc" : "#f1f5f9"))
+
+                        /*
+                         * Border color highlights excluded days and exam requirement type.
+                         */
+                        border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fecaca" : (modelData.hasExam ? (modelData.req === "חובה" ? "#fca5a5" : "#86efac") : "#e2e8f0"))
+                        border.width: 1
+
+                        /*
+                         * Day number text.
                          */
                         Text {
-                            Layout.fillWidth: true
-                            text: modelData.examName || ""
-                            font.pixelSize: 13
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.margins: 8
+                            text: modelData.dayText || ""
+                            font.pixelSize: 14
                             font.bold: true
-                            color: "#1f2933"
-                            elide: Text.ElideRight
-                            horizontalAlignment: Text.AlignRight
+                            color: modelData.isExcluded ? "#dc2626" : "#64748b"
+                            visible: modelData.dayText !== ""
                         }
 
                         /*
-                         * Course ID and requirement type.
+                         * Exam details shown only when the current day has an exam.
                          */
-                        Text {
-                            Layout.fillWidth: true
-                            text: (modelData.courseId || "") + " | " + (modelData.req || "")
-                            font.pixelSize: 11
-                            color: modelData.req === "חובה" ? "#b91c1c" : "#047857"
-                            horizontalAlignment: Text.AlignRight
-                        }
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            anchors.topMargin: 24
+                            spacing: 2
+                            visible: modelData.hasExam === true
 
-                        /*
-                         * Program name or ID.
-                         */
-                        Text {
-                            Layout.fillWidth: true
-                            text: "👤 " + (model.program || "")
-                            font.pixelSize: 10
-                            color: "#14533f" 
-                            elide: Text.ElideRight
-                            horizontalAlignment: Text.AlignRight
+                            /*
+                             * Exam course name.
+                             */
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData.examName || ""
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#1f2933"
+                                elide: Text.ElideRight
+                                horizontalAlignment: Text.AlignRight
+                            }
+
+                            /*
+                             * Course ID and requirement type.
+                             */
+                            Text {
+                                Layout.fillWidth: true
+                                text: (modelData.courseId || "") + " | " + (modelData.req || "")
+                                font.pixelSize: 11
+                                color: modelData.req === "חובה" ? "#b91c1c" : "#047857"
+                                horizontalAlignment: Text.AlignRight
+                            }
+
+                            /*
+                             * Program name or ID.
+                             */
+                            Text {
+                                Layout.fillWidth: true
+                                text: "👤 " + (model.program || "")
+                                font.pixelSize: 10
+                                color: "#14533f"
+                                elide: Text.ElideRight
+                                horizontalAlignment: Text.AlignRight
+                            }
                         }
                     }
                 }
-            }
 
-            // no solutions message
-            /*
-             * Empty-state message.
-             *
-             * Shown when the scheduling process did not produce any valid schedules.
-             */
-            Rectangle {
-                anchors.centerIn: parent
-                width: 350
-                height: 80
-                radius: 8
-                color: "#fef2f2"
-                border.color: "#f87171"
-                border.width: 1
-
-                // only visible when there is no solutions
-                visible: appController.outputManager.totalSchedulesCount === 0
-
-                Text {
+                // no solutions message
+                /*
+                 * Empty-state message.
+                 *
+                 * Shown when the scheduling process did not produce any valid schedules.
+                 */
+                Rectangle {
                     anchors.centerIn: parent
-                    text: "לא נמצאו מערכות שיבוץ תקינות לנתונים אלו."
-                    font.pixelSize: 16
-                    font.bold: true
-                    color: "#991b1b"
+                    width: 350
+                    height: 80
+                    radius: 8
+                    color: "#fef2f2"
+                    border.color: "#f87171"
+                    border.width: 1
+
+                    // only visible when there is no solutions
+                    visible: appController.outputManager.totalSchedulesCount === 0
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "לא נמצאו מערכות שיבוץ תקינות לנתונים אלו."
+                        font.pixelSize: 16
+                        font.bold: true
+                        color: "#991b1b"
+                    }
                 }
             }
         }
