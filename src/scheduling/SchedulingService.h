@@ -5,6 +5,7 @@
 #include <vector>
 #include "scheduling/Preprocessor.h" 
 #include "domain/ScheduleGenerationResult.h"
+#include "application/SchedulingSession.h"
 
 /*
  * SchedulingService is the high-level entry point for asynchronous scheduling.
@@ -48,7 +49,7 @@ public:
      * The method returns immediately.
      * Results are delivered later through generationFinished or generationFailed.
      */
-    void startAsyncGeneration(const SchedulingBlock& block, int limitPerBlock = -1);
+    void startAsyncGeneration(const SchedulingBlock& block, const ScheduleSettings& settings, int limitPerBlock = -1);
 
 signals:
     // Emitted when the scheduling process completes successfully with the generated solutions.

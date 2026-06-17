@@ -43,8 +43,9 @@ int main() {
 
     EXPECT_TRUE(!block.allowedDates.empty());
     EXPECT_EQ(block.runtimeCourses.size(), static_cast<std::size_t>(3));
-
-    ScheduleGenerator generator(block, 5.0);
+    
+    ScheduleSettings emptySettings; 
+    ScheduleGenerator generator(block, emptySettings, 5.0);
 
     std::vector<ScheduleGenerationResult> solutions = generator.runBacktracking(1);
 

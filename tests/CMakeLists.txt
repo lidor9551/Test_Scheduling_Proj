@@ -119,6 +119,7 @@ add_exam_scheduler_test(scheduling_session_test SchedulingSessionTest "Unit;Appl
 add_exam_scheduler_test(same_group_conflict_rule_test SameGroupConflictRuleTest "Unit;Scheduling"
     unit/scheduling/SameGroupConflictRuleTest.cpp
     ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
 )
 
 

@@ -8,6 +8,21 @@
 #include <string>
 #include <vector>
 
+// basic struct for rule info.
+struct RuleConfig {
+    bool isActive = false;
+    int k = 0;
+};
+
+// struct for rule config types.
+struct ScheduleSettings {
+    RuleConfig minDaysObligatory;
+    RuleConfig minDaysAll;
+    RuleConfig maxElectiveConflicts;
+    RuleConfig obligatorySpan;
+    RuleConfig maxExamsPerDay;
+};
+
 /*
  * SchedulingSession belongs to the application layer.
  *
@@ -149,6 +164,10 @@ public:
      */
     ValidationResult validateBeforeGeneration() const;
 
+    // Getters and setters for scheduling settings
+    void setSettings(const ScheduleSettings& settings) { m_settings = settings; }
+    ScheduleSettings getSettings() const { return m_settings; }
+
 private:
     // All courses currently loaded into the application.
     std::vector<Course> courses_;
@@ -156,8 +175,8 @@ private:
     // All exam periods currently loaded or edited in the application.
     std::vector<ExamPeriod> examPeriods_;
 
-    // All conflict rules currently enabled for use in flitering.
-    std::vector<IConflictRule> conflictRules_;
+    // Settings for the scheduling rules
+    ScheduleSettings m_settings;
 
     // Program IDs selected by the user for scheduling.
     std::vector<std::string> selectedPrograms_;

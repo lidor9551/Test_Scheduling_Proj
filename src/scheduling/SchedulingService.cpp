@@ -30,7 +30,7 @@ SchedulingService::~SchedulingService() {
  * - a ScheduleGenerator for the given block
  * - a SchedulingWorker that runs the generator inside the thread
  */
-void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, int limitPerBlock) {
+void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, const ScheduleSettings& settings, int limitPerBlock) {
     // Safety check to prevent multiple concurrent scheduling operations
     /*
      * Reject a new request if a previous scheduling operation is still running.
@@ -53,8 +53,8 @@ void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, int l
      * The worker is responsible for running it inside the QThread.
      */
     auto* thread = new QThread();
-    auto* generator = new ScheduleGenerator(block); // המנוע הטהור החדש שניקינו
-    auto* worker = new SchedulingWorker(generator, limitPerBlock); // השליח שיודע להחזיר ScheduleGenerationResult
+    auto* generator = new ScheduleGenerator(block, settings, 30.0); // 30 seconds max runtime
+    auto* worker = new SchedulingWorker(generator, limitPerBlock); 
 
     // Move the worker to the new thread
     /*

@@ -1,6 +1,7 @@
 #include "ScheduleGenerator.h"
 #include "scheduling/SchedulingWorker.h"
 #include "scheduling/SameGroupConflictRule.h"
+#include "scheduling/AdvancedConflictRules.h"
 #include <memory>
 #include <algorithm>
 #include <chrono>
@@ -25,11 +26,12 @@ SolverTimeoutException::SolverTimeoutException(const std::string& message)
  * - the maximum runtime
  * - the default conflict rules
  */
-ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, double maxRuntimeSeconds)
+ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, const ScheduleSettings& settings, double maxRuntimeSeconds)
     : block_(std::move(block)),
       groupCount_(computeGroupCount()),
-      maxRuntimeSeconds_(maxRuntimeSeconds),
+      maxRuntimeSeconds_(maxRuntimeSeconds), 
       conflictRules_(createDefaultConflictRules()) {
+
     /*
      * Registers the result vector type with Qt.
      *
@@ -37,6 +39,40 @@ ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, double maxRuntimeSec
      * Qt signal/slot connections when used by worker objects.
      */
     qRegisterMetaType<std::vector<ScheduleGenerationResult>>("std::vector<ScheduleGenerationResult>");
+
+    // 2.1 minimum days between obligatory exams
+    if (settings.minDaysObligatory.isActive) {
+        conflictRules_.push_back(std::make_unique<MinDaysObligatoryRule>(
+            settings.minDaysObligatory.k, block_.allowedDates, block_.runtimeCourses));
+    }
+
+    // 2.2 minimum days between all exams
+    if (settings.minDaysAll.isActive) {
+        conflictRules_.push_back(std::make_unique<MinDaysAllRule>(
+            settings.minDaysAll.k, block_.allowedDates, block_.runtimeCourses));
+    }
+
+    // 2.3 maximum conflicts for electives
+    if (settings.maxElectiveConflicts.isActive) {
+        conflictRules_.push_back(std::make_unique<MaxElectiveConflictsRule>(
+            settings.maxElectiveConflicts.k, block_.runtimeCourses));
+    }
+
+    // 2.4 time frame for obligatory exams (the filter that runs at the end of each schedule)
+    if (settings.obligatorySpan.isActive) {
+        conflictRules_.push_back(std::make_unique<ObligatorySpanRule>(
+            settings.obligatorySpan.k, block_.allowedDates, block_.runtimeCourses));
+    }
+
+    // 2.5 maximum exams per day
+    if (settings.maxExamsPerDay.isActive) {
+        conflictRules_.push_back(std::make_unique<MaxExamsPerDayRule>(
+            settings.maxExamsPerDay.k));
+    }
+    
+    // Note: if you have a basic rule that is always applied (like preventing overlaps in the same time slot),
+    // you can add it here:
+    // conflictRules_.push_back(std::make_unique<BasicOverlapRule>());
 }
 
 /*
