@@ -28,13 +28,13 @@ void SchedulingSession::replaceExamPeriods(std::vector<ExamPeriod> examPeriods) 
 }
 
 // basic struct for rule info.
-Struct RuleConfig {
+struct RuleConfig {
     bool isActive = false;
     int k = 0;
 };
 
 // struct for rule config types.
-Struct ScheduleSettings {
+struct ScheduleSettings {
     RuleConfig minDaysObligatory;
     RuleConfig minDaysAll;
     RuleConfig maxElectiveConflicts;

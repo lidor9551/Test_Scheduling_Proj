@@ -2,6 +2,7 @@
 
 #include "domain/Course.h"
 #include "domain/ExamPeriod.h"
+#include "scheduling/IConflictRule.h"
 
 #include <cstddef>
 #include <string>

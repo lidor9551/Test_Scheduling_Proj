@@ -1,6 +1,8 @@
 ﻿#include "presentation/AppController.h"
 #include "infrastructure/InputParser.h"
 #include "scheduling/Preprocessor.h"
+#include "scheduling/IConflictRule.h"
+
 
 #include <QFileInfo>
 #include <QUrl>
