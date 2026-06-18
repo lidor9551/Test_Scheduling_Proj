@@ -39,6 +39,15 @@ struct ExamAssignment {
     bool isObligatory;     // Indicates if the course is obligatory 
 };
 
+// Struct to hold the evaluation scores (metrics) for a completed schedule
+struct ScheduleMetrics {
+    double avgDaysBetweenObligatory = 0.0; // Metric 2.1: Average days between mandatory exams
+    double avgDaysBetweenAll = 0.0;        // Metric 2.2: Average days between any exams
+    int totalElectiveConflicts = 0;        // Metric 2.3: Total number of elective exam overlaps
+    int obligatorySpan = 0;                // Metric 2.4: Total day span from the first to last mandatory exam
+    int maxExamsInSingleDay = 0;           // Metric 2.5: Maximum number of exams scheduled on the exact same day
+};
+
 /*
  * ScheduleGenerationResult represents one complete schedule solution.
  *
@@ -74,6 +83,10 @@ private:
     int m_minDaysBetweenObligatory = 0;
 
 public:
+
+    // The newly added metrics used for sorting and UI display
+    ScheduleMetrics metrics;
+    
     // Constructors
     /*
      * Creates an empty schedule result.

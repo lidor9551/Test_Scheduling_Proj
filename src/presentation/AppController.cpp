@@ -689,6 +689,18 @@ void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationRes
     qDebug() << "Total solutions calculated:" << solutions.size();
     setStatus("השיבוץ הושלם!");
 
+    qDebug() << "--- Sample Metrics for first 5 schedules ---"; 
+    int sampleCount = 0;
+    for (const auto& res : solutions) {
+        if (sampleCount++ >= 5) break;
+        qDebug() << "Schedule" << sampleCount 
+                << "-> Avg Obligatory:" << res.metrics.avgDaysBetweenObligatory
+                << "| Avg All:" << res.metrics.avgDaysBetweenAll
+                << "| Conflicts:" << res.metrics.totalElectiveConflicts
+                << "| Span:" << res.metrics.obligatorySpan
+                << "| Max/Day:" << res.metrics.maxExamsInSingleDay;
+    }
+
     // Filter the courses to only those that require exams, as the scheduling is based on exam periods
     /*
      * Rebuild the exam-only course list for the output manager.

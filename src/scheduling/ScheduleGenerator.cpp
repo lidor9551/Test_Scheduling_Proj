@@ -2,6 +2,7 @@
 #include "scheduling/SchedulingWorker.h"
 #include "scheduling/SameGroupConflictRule.h"
 #include "scheduling/AdvancedConflictRules.h"
+#include "scheduling/MetricsCalculator.h"
 #include <memory>
 #include <algorithm>
 #include <chrono>
@@ -449,6 +450,17 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
      * Start the recursive search.
      */
     backtrack();
+
+    // POST-PROCESSING: Calculate metrics for all valid schedules
+    /*
+     * Now that the algorithm has found all valid solutions, we evaluate them
+     * using the soft constraints to generate a score (Metrics) for each.
+     * This avoids slowing down the backtracking process itself.
+     */
+    for (auto& result : solutions) {
+        // We will create the MetricsCalculator class next to handle this logic
+        result.metrics = MetricsCalculator::calculate(result, block_); 
+    }
 
     /*
      * Return all solutions found for this block.
