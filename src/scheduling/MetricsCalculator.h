@@ -21,4 +21,13 @@ public:
      * @return A filled ScheduleMetrics struct with the evaluated scores.
      */
     static ScheduleMetrics calculate(const ScheduleGenerationResult& result, const SchedulingBlock& block);
+
+    
+private:
+    // Helper functions for each specific metric
+    static int calcObligatorySpan(std::map<int, std::vector<Date>> groupMandatoryDates);
+    static double calcAvgDaysObligatory(std::map<int, std::vector<Date>> groupMandatoryDates);
+    static double calcAvgDaysAll(std::map<int, std::vector<Date>> groupAllDates);
+    static int calcTotalElectiveConflicts(const std::map<int, std::map<std::string, int>>& electiveExams);
+    static int calcMaxExamsInSingleDay(const std::map<std::string, int>& totalExamsPerDay);
 };
