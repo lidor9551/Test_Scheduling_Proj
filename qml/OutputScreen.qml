@@ -156,7 +156,7 @@ Item {
         id: saveDialog
         title: "בחר היכן לשמור את המערכת"
         fileMode: FileDialog.SaveFile
-        nameFilters: ["Text files (*.txt)"]
+        nameFilters: ["קבצי טקסט (*.txt)"]
 
         /*
          * When the user confirms the save location, convert the selected URL
