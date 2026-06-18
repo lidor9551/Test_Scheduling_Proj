@@ -2,6 +2,7 @@
 #include "infrastructure/InputParser.h"
 #include "scheduling/Preprocessor.h"
 #include "scheduling/IConflictRule.h"
+#include "application/SchedulingSession.h"
 
 
 #include <QFileInfo>
@@ -577,7 +578,6 @@ void AppController::generateSchedules() {
      */
     const std::vector<Course>& allCourses = session_.courses();
     const std::vector<ExamPeriod>& examPeriods = session_.examPeriods();
-    const std::vector<IConflictRule>& conflictRules = session_.conflictRules();
 
     // Create a filtered list of courses that require exams
     /*
@@ -764,13 +764,15 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
      */
     m_outputManager.setPeriodFilter(semester, moed);
 
+    ScheduleSettings currentSettings = session_.getSettings();
+
     // Now we call the scheduling service to start the generation process for the selected block
     /*
      * Start asynchronous generation for the selected block.
      *
      * The second parameter limits the number of generated solutions.
      */
-    m_schedulingService.startAsyncGeneration(*selectedBlock, 100000); 
+    m_schedulingService.startAsyncGeneration(*selectedBlock, currentSettings, 100000); 
 }
 
 // C++ function to create the internal map of program IDs to names
@@ -863,12 +865,34 @@ void AppController::saveHardConstraints(bool r21Enabled, int r21K,
     m_rule25Enabled = r25Enabled;
     m_rule25K       = r25K;
 
+    // build a SchedulingSettings struct to hold all the hard constraint configurations together
+    ScheduleSettings settings;
+    
+    settings.minDaysObligatory.isActive = r21Enabled;
+    settings.minDaysObligatory.k = r21K;
+
+    settings.minDaysAll.isActive = r22Enabled;
+    settings.minDaysAll.k = r22K;
+
+    settings.maxElectiveConflicts.isActive = r23Enabled;
+    settings.maxElectiveConflicts.k = r23K;
+
+    settings.obligatorySpan.isActive = r24Enabled;
+    settings.obligatorySpan.k = r24K;
+
+    settings.maxExamsPerDay.isActive = r25Enabled;
+    settings.maxExamsPerDay.k = r25K;
+
+    // Store the settings struct in the scheduling session for later use by the algorithm
+    session_.setSettings(settings);
+
     qDebug() << "[HardConstraints] Saved:"
              << "r21=" << m_rule21Enabled << "k=" << m_rule21K
              << "r22=" << m_rule22Enabled << "k=" << m_rule22K
              << "r23=" << m_rule23Enabled << "k=" << m_rule23K
              << "r24=" << m_rule24Enabled << "k=" << m_rule24K
              << "r25=" << m_rule25Enabled << "k=" << m_rule25K;
+
 }
 
 /**

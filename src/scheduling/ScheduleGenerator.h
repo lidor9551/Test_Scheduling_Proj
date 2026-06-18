@@ -4,6 +4,8 @@
 #include "scheduling/IConflictRule.h"
 #include "scheduling/SchedulingState.h"
 #include "domain/ScheduleGenerationResult.h" 
+#include "application/SchedulingSession.h" 
+#include "scheduling/AdvancedConflictRules.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -44,7 +46,7 @@ public:
      *
      * maxRuntimeSeconds defines how long the solver may run before timing out.
      */
-    ScheduleGenerator(SchedulingBlock block, double maxRuntimeSeconds = 30.0);
+    ScheduleGenerator(SchedulingBlock block, const ScheduleSettings& settings, double maxRuntimeSeconds = 30.0);
 
     
     /*

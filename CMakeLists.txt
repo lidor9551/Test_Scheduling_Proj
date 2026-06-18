@@ -57,6 +57,7 @@ qt_add_executable(
     src/scheduling/SchedulingWorker.cpp
     src/scheduling/SchedulingService.cpp
     src/scheduling/SameGroupConflictRule.cpp
+    src/scheduling/AdvancedConflictRules.cpp
 )
 
 # Allow source files to include headers relative to the src directory.

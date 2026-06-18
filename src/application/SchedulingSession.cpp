@@ -27,21 +27,6 @@ void SchedulingSession::replaceExamPeriods(std::vector<ExamPeriod> examPeriods) 
     examPeriods_ = std::move(examPeriods);
 }
 
-// basic struct for rule info.
-struct RuleConfig {
-    bool isActive = false;
-    int k = 0;
-};
-
-// struct for rule config types.
-struct ScheduleSettings {
-    RuleConfig minDaysObligatory;
-    RuleConfig minDaysAll;
-    RuleConfig maxElectiveConflicts;
-    RuleConfig obligatorySpan;
-    RuleConfig maxExamsPerDay;
-};
-
 /*
  * Adds new courses and exam periods without deleting existing data.
  *
@@ -190,10 +175,6 @@ const std::vector<Course>& SchedulingSession::courses() const {
  */
 const std::vector<ExamPeriod>& SchedulingSession::examPeriods() const {
     return examPeriods_;
-}
-
-const std::vector<IConflictRule>& SchedulingSession::conflictRules() const {
-    return conflictRules_;
 }
 
 /*
