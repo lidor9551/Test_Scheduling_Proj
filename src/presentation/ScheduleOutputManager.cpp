@@ -595,3 +595,66 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     file.close();
     return true;
 }
+
+#include "ScheduleOutputManager.h"
+#include <algorithm>
+
+void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priorityList) {
+    if (priorityList.empty() || m_solutions.empty()) {
+        return; // Nothing to sort
+    }
+
+    std::sort(m_solutions.begin(), m_solutions.end(), 
+        [&priorityList](const ScheduleGenerationResult& a, const ScheduleGenerationResult& b) {
+            
+            // Iterate through the user's priority list from most to least important
+            for (const std::string& criterion : priorityList) {
+                
+                if (criterion == "metric_avgDaysObligatory") {
+                    // Higher average gap is better
+                    if (a.metrics.avgDaysBetweenObligatory != b.metrics.avgDaysBetweenObligatory) {
+                        return a.metrics.avgDaysBetweenObligatory > b.metrics.avgDaysBetweenObligatory;
+                    }
+                } 
+                else if (criterion == "metric_avgDaysAll") {
+                    // Higher average gap is better
+                    if (a.metrics.avgDaysBetweenAll != b.metrics.avgDaysBetweenAll) {
+                        return a.metrics.avgDaysBetweenAll > b.metrics.avgDaysBetweenAll;
+                    }
+                } 
+                else if (criterion == "metric_electiveConflicts") {
+                    // Lower number of conflicts is better
+                    if (a.metrics.totalElectiveConflicts != b.metrics.totalElectiveConflicts) {
+                        return a.metrics.totalElectiveConflicts < b.metrics.totalElectiveConflicts;
+                    }
+                } 
+                else if (criterion == "metric_obligatorySpan") {
+                    // Larger span generally means mandatory exams are more spread out (less crammed)
+                    if (a.metrics.obligatorySpan != b.metrics.obligatorySpan) {
+                        return a.metrics.obligatorySpan > b.metrics.obligatorySpan; 
+                    }
+                } 
+                else if (criterion == "metric_maxExamsPerDay") {
+                    // Lower maximum exams per day is better (less load on the institution)
+                    if (a.metrics.maxExamsInSingleDay != b.metrics.maxExamsInSingleDay) {
+                        return a.metrics.maxExamsInSingleDay < b.metrics.maxExamsInSingleDay;
+                    }
+                }
+            }
+            
+            // If all metrics in the priority list are identical, maintain relative order
+            return false; 
+        });
+
+    // Refresh UI
+    // Reset the view to the first schedule (the new "best" schedule)
+    m_currentIndex = 1; 
+    
+    // Rebuild the calendar data points based on the newly sorted top schedule
+    updateCalendarData(); 
+    
+    // Notify QML bindings to react and redraw
+    emit currentScheduleIndexChanged();
+    emit currentCalendarDataChanged();
+
+}

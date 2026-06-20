@@ -111,6 +111,12 @@ public:
         m_programsMap = map;
     }
 
+    /**
+     * @brief Sorts the internal list of generated schedules dynamically.
+     * @param priorityList A list of criteria ordered by user priority (index 0 is most important).
+     */
+    void sortSchedules(const std::vector<std::string>& priorityList);
+
     // Actions triggered by the user from the QML interface
     /*
      * Moves to the next generated schedule.
