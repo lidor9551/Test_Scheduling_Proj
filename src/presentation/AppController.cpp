@@ -720,6 +720,18 @@ void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationRes
      * output manager for formatting and presentation.
      */
     m_outputManager.setSchedulingData(solutions, examOnlyCourses, session_.examPeriods());
+    
+    // dynamic sorting logic
+    /*
+     * Convert the UI's QStringList of priority IDs into standard C++ strings,
+     * and trigger the output manager to sort the solutions before QML requests them.
+     */
+    std::vector<std::string> stdPriorities;
+    for (const QString& id : m_sortingPriorities) {
+        stdPriorities.push_back(id.toStdString());
+    }
+
+    m_outputManager.sortSchedules(stdPriorities);
 }
 
 /*
@@ -995,12 +1007,18 @@ int AppController::getExamPeriodDays() const {
  */
 void AppController::saveSortingPriorities(const QVariantList& orderedMetricIds) {
     m_sortingPriorities.clear();
+    std::vector<std::string> stdPriorities;
 
     for (const QVariant& id : orderedMetricIds) {
-        m_sortingPriorities.append(id.toString());
+        QString idStr = id.toString();
+        m_sortingPriorities.append(idStr);
+        stdPriorities.push_back(idStr.toStdString()); 
     }
 
-    qDebug() << "[SortingPriorities] Saved order:" << m_sortingPriorities;
+    qDebug() << "[SortingPriorities] Saved order and triggering re-sort:" << m_sortingPriorities;
+
+    // activate sort and print the new results
+    m_outputManager.sortSchedules(stdPriorities);
 }
 
 /**

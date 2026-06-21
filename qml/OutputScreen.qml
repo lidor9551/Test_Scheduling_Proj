@@ -48,23 +48,11 @@ Item {
      * enabled. All metrics rank schedules in descending order.
      */
     readonly property var metricLabels: ({
-        "2.1": "מספר הימים המינימלי בין 2 בחינות חובה (אותה תוכנית/שנה)",
-        "2.2": "ממוצע הימים בין 2 בחינות (חובה או בחירה)",
-        "2.3": "מספר ההתנגשויות בין קורסי בחירה",
-        "2.4": "הפער בין הבחינה הראשונה לאחרונה (חובה)",
-        "2.5": "מספר הבחינות המקסימלי באותו יום"
-    })
-
-    /**
-     * Maps every metric identifier to the QML key returned by
-     * getHardConstraints(), used to keep only the enabled metrics.
-     */
-    readonly property var metricEnabledKeys: ({
-        "2.1": "rule21Enabled",
-        "2.2": "rule22Enabled",
-        "2.3": "rule23Enabled",
-        "2.4": "rule24Enabled",
-        "2.5": "rule25Enabled"
+        "metric_avgDaysObligatory": "ממוצע ימים בין מבחני חובה (אותה שנה)",
+        "metric_avgDaysAll": "ממוצע ימים בין כלל המבחנים (חובה או בחירה)",
+        "metric_electiveConflicts": "מספר ההתנגשויות המינימלי בין קורסי בחירה",
+        "metric_obligatorySpan": "הפער (בימים) בין בחינת החובה הראשונה לאחרונה",
+        "metric_maxExamsPerDay": "מספר הבחינות המקסימלי שנערך באותו יום (לכלל המוסד)"
     })
 
     /**
@@ -89,41 +77,40 @@ Item {
      * on load — never from a binding — to avoid binding loops.
      */
     function rebuildPriorityModel() {
-        var hc = appController.getHardConstraints()
-
-        var allIds = ["2.1", "2.2", "2.3", "2.4", "2.5"]
-        var enabledIds = []
-        for (var i = 0; i < allIds.length; ++i) {
-            var id = allIds[i]
-            if (hc[outputRoot.metricEnabledKeys[id]] === true) {
-                enabledIds.push(id)
-            }
-        }
+        // These are the exact metric IDs the C++ engine listens for
+        var allIds = [
+            "metric_avgDaysObligatory", 
+            "metric_avgDaysAll", 
+            "metric_electiveConflicts", 
+            "metric_obligatorySpan", 
+            "metric_maxExamsPerDay"
+        ]
 
         // Apply the previously saved order, keeping only still-enabled metrics.
         var saved = appController.getSortingPriorities()
+        var ordered = []
+        // Apply the previously saved order first
         if (saved && saved.length > 0) {
-            var ordered = []
             for (var s = 0; s < saved.length; ++s) {
-                if (enabledIds.indexOf(saved[s]) !== -1
-                        && ordered.indexOf(saved[s]) === -1) {
+                if (allIds.indexOf(saved[s]) !== -1 && ordered.indexOf(saved[s]) === -1) {
                     ordered.push(saved[s])
                 }
             }
-            // Append enabled metrics that were not part of the saved order.
-            for (var e = 0; e < enabledIds.length; ++e) {
-                if (ordered.indexOf(enabledIds[e]) === -1) {
-                    ordered.push(enabledIds[e])
-                }
+        }
+        
+        // Append any metrics that were not part of the saved order 
+        // (useful for first-time load or if a new metric was added to the system)
+        for (var e = 0; e < allIds.length; ++e) {
+            if (ordered.indexOf(allIds[e]) === -1) {
+                ordered.push(allIds[e])
             }
-            enabledIds = ordered
         }
 
         priorityModel.clear()
-        for (var k = 0; k < enabledIds.length; ++k) {
+        for (var k = 0; k < ordered.length; ++k) {
             priorityModel.append({
-                metricId: enabledIds[k],
-                label:    outputRoot.metricLabels[enabledIds[k]]
+                metricId: ordered[k],
+                label:    outputRoot.metricLabels[ordered[k]]
             })
         }
     }
