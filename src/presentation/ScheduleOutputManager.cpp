@@ -302,11 +302,12 @@ void ScheduleOutputManager::updateCalendarData() {
             dayData["dayText"] = ""; 
             dayData["isExcluded"] = false;
             dayData["hasExam"] = false;
-            dayData["examName"] = "";
-            dayData["courseId"] = "";
-            dayData["req"] = "";
-            dayData["program"] = "";
-        } 
+            /**
+             * Empty exam list: a padding cell never holds any exam. QML iterates
+             * this list, so an empty list renders nothing.
+             */
+            dayData["exams"] = QVariantList();
+        }
         else {
             // Active day inside the period
             /*
@@ -339,22 +340,24 @@ void ScheduleOutputManager::updateCalendarData() {
              */
             dayData["isExcluded"] = !isAllowed;
             dayData["hasExam"] = false;
-            dayData["examName"] = "";
-            dayData["courseId"] = "";
-            dayData["req"] = "";
-            dayData["program"] = "";
+            /**
+             * Collect every exam scheduled on this date. Each entry is a
+             * QVariantMap consumed by the QML calendar delegate.
+             */
+            QVariantList dayExams;
 
-            // Check if there's an exam on this date in the current solution
+            // Check if there are exams on this date in the current solution
             /*
-             * Search the current solution assignments for an exam scheduled
-             * on the current calendar date.
+             * Search the current solution assignments for every exam scheduled
+             * on the current calendar date. All matching exams are kept so a day
+             * holding several exams shows them all.
              */
             for (const ExamAssignment& assignment : assignments) {
                 if (assignment.examDate == currentDate) {
-                    dayData["hasExam"] = true;
-                    dayData["examName"] = QString::fromStdString(assignment.course->getCourseName()); 
-                    dayData["courseId"] = QString::fromStdString(assignment.course->getCourseNumber()); 
-                    
+                    QVariantMap examEntry;
+                    examEntry["examName"] = QString::fromStdString(assignment.course->getCourseName());
+                    examEntry["courseId"] = QString::fromStdString(assignment.course->getCourseNumber());
+
                     /*
                      * Display the program name when a program mapping exists.
                      * Otherwise, fall back to the raw program ID.
@@ -364,28 +367,31 @@ void ScheduleOutputManager::updateCalendarData() {
                         QString progId = QString::fromStdString(progDetails.programID);
 
                         if (m_programsMap.contains(progId)) {
-                            dayData["program"] = m_programsMap.value(progId);
+                            examEntry["program"] = m_programsMap.value(progId);
                         } else {
-                            dayData["program"] = progId; 
+                            examEntry["program"] = progId;
                         }
                     } else {
                         /*
                          * Use a generic label when the course has no program details.
                          */
-                        dayData["program"] = "כללי";
+                        examEntry["program"] = "כללי";
                     }
-                    
+
                     /*
                      * Store the requirement text for QML display.
                      */
-                    dayData["req"] = assignment.isObligatory ? "חובה" : "בחירה";
-                    
-                    /*
-                     * Only one exam display entry is stored for the day in this view.
-                     */
-                    break;
+                    examEntry["req"] = assignment.isObligatory ? "חובה" : "בחירה";
+
+                    dayExams.append(examEntry);
                 }
             }
+
+            /*
+             * A day has an exam when at least one assignment matched its date.
+             */
+            dayData["hasExam"] = !dayExams.isEmpty();
+            dayData["exams"] = dayExams;
         }
         
         /*

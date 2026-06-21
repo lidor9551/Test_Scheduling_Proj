@@ -859,7 +859,40 @@ Item {
                     anchors.margins: 20
 
                     cellWidth: width / 7
-                    cellHeight: 120
+
+                    /**
+                     * Largest number of exams falling on a single day across the
+                     * whole calendar. Recomputed whenever the data changes so the
+                     * uniform cell height can grow to fit the busiest day.
+                     */
+                    property int maxExamsPerDay: {
+                        var data = appController.outputManager.currentCalendarData
+                        var max = 1
+                        if (data) {
+                            for (var i = 0; i < data.length; ++i) {
+                                var exams = data[i].exams
+                                if (exams && exams.length > max) {
+                                    max = exams.length
+                                }
+                            }
+                        }
+                        return max
+                    }
+
+                    /**
+                     * Uniform cell height. GridView lays cells on a fixed grid,
+                     * so every cell shares this height; it is sized for the
+                     * busiest day and never drops below the original 120 px
+                     * single-exam height.
+                     *
+                     * Budget: 24 px day-number band, ~64 px per exam block
+                     * (three text lines + internal padding), plus ~16 px per gap
+                     * (column spacing + separator) between consecutive exams.
+                     */
+                    cellHeight: Math.max(120,
+                                         24
+                                         + calendarGrid.maxExamsPerDay * 64
+                                         + Math.max(0, calendarGrid.maxExamsPerDay - 1) * 16)
 
                     model: appController.outputManager.currentCalendarData
                     layoutDirection: Qt.RightToLeft
@@ -884,6 +917,31 @@ Item {
                      * - day with an exam
                      */
                     delegate: Rectangle {
+                        id: dayCell
+
+                        /**
+                         * Number of exams scheduled on this day.
+                         */
+                        readonly property int examCount:
+                            (modelData.exams ? modelData.exams.length : 0)
+
+                        /**
+                         * True when at least one exam on this day is obligatory
+                         * ("חובה"). Drives the requirement-based border color now
+                         * that a day may hold several exams of mixed types.
+                         */
+                        readonly property bool hasObligatory: {
+                            var exams = modelData.exams
+                            if (exams) {
+                                for (var i = 0; i < exams.length; ++i) {
+                                    if (exams[i].req === "חובה") {
+                                        return true
+                                    }
+                                }
+                            }
+                            return false
+                        }
+
                         width: calendarGrid.cellWidth - 10
                         height: calendarGrid.cellHeight - 10
                         radius: 8
@@ -897,7 +955,7 @@ Item {
                         /*
                          * Border color highlights excluded days and exam requirement type.
                          */
-                        border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fecaca" : (modelData.hasExam ? (modelData.req === "חובה" ? "#fca5a5" : "#86efac") : "#e2e8f0"))
+                        border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fecaca" : (modelData.hasExam ? (dayCell.hasObligatory ? "#fca5a5" : "#86efac") : "#e2e8f0"))
                         border.width: 1
 
                         /*
@@ -914,50 +972,93 @@ Item {
                             visible: modelData.dayText !== ""
                         }
 
-                        /*
-                         * Exam details shown only when the current day has an exam.
+                        /**
+                         * Exam details shown only when the day has at least one
+                         * exam. Iterates modelData.exams so every exam scheduled
+                         * on the day is rendered, one block per exam.
                          */
                         ColumnLayout {
                             anchors.fill: parent
                             anchors.margins: 8
                             anchors.topMargin: 24
-                            spacing: 2
+                            spacing: 8
                             visible: modelData.hasExam === true
 
-                            /*
-                             * Exam course name.
-                             */
-                            Text {
-                                Layout.fillWidth: true
-                                text: modelData.examName || ""
-                                font.pixelSize: 13
-                                font.bold: true
-                                color: "#1f2933"
-                                elide: Text.ElideRight
-                                horizontalAlignment: Text.AlignRight
-                            }
+                            Repeater {
+                                model: modelData.exams
 
-                            /*
-                             * Course ID and requirement type.
-                             */
-                            Text {
-                                Layout.fillWidth: true
-                                text: (modelData.courseId || "") + " | " + (modelData.req || "")
-                                font.pixelSize: 11
-                                color: modelData.req === "חובה" ? "#b91c1c" : "#047857"
-                                horizontalAlignment: Text.AlignRight
-                            }
+                                /**
+                                 * One exam entry: a padded text block followed by
+                                 * a thin separator drawn between consecutive exams
+                                 * only (never after the last one). Keeps the
+                                 * original colors, fonts and right alignment.
+                                 */
+                                delegate: ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 6
 
-                            /*
-                             * Program name or ID.
-                             */
-                            Text {
-                                Layout.fillWidth: true
-                                text: "👤 " + (model.program || "")
-                                font.pixelSize: 10
-                                color: "#14533f"
-                                elide: Text.ElideRight
-                                horizontalAlignment: Text.AlignRight
+                                    /**
+                                     * Padded exam block so each exam breathes
+                                     * instead of touching the cell edges and the
+                                     * separator.
+                                     */
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        Layout.leftMargin: 4
+                                        Layout.rightMargin: 4
+                                        Layout.topMargin: 4
+                                        Layout.bottomMargin: 4
+                                        spacing: 2
+
+                                        /*
+                                         * Exam course name.
+                                         */
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: modelData.examName || ""
+                                            font.pixelSize: 13
+                                            font.bold: true
+                                            color: "#1f2933"
+                                            elide: Text.ElideRight
+                                            horizontalAlignment: Text.AlignRight
+                                        }
+
+                                        /*
+                                         * Course ID and requirement type.
+                                         */
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: (modelData.courseId || "") + " | " + (modelData.req || "")
+                                            font.pixelSize: 11
+                                            color: modelData.req === "חובה" ? "#b91c1c" : "#047857"
+                                            horizontalAlignment: Text.AlignRight
+                                        }
+
+                                        /*
+                                         * Program name or ID.
+                                         */
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: "👤 " + (modelData.program || "")
+                                            font.pixelSize: 10
+                                            color: "#14533f"
+                                            elide: Text.ElideRight
+                                            horizontalAlignment: Text.AlignRight
+                                        }
+                                    }
+
+                                    /**
+                                     * Thin separator between two consecutive
+                                     * exams. Hidden after the last exam so no
+                                     * trailing line is drawn.
+                                     */
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 1
+                                        color: "#e2e8f0"
+                                        visible: index < (dayCell.examCount - 1)
+                                    }
+                                }
                             }
                         }
                     }
