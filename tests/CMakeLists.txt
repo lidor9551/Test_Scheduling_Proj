@@ -257,3 +257,52 @@ add_exam_scheduler_test(overlap_conflict_integration_test OverlapConflictIntegra
     ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/ScheduleGenerationResult.cpp
 )
+
+# ---------------------------------------------------------------------------
+# Integration tests — Phase 3 hard constraints
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(hard_constraints_integration_test HardConstraintsIntegrationTest "Integration;Scheduling;Phase3"
+    integration/hard_constraints/HardConstraintsIntegrationTest.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — Export flow
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(export_flow_integration_test ExportFlowIntegrationTest "Integration;Export;Regression"
+    integration/export_flow/ExportFlowIntegrationTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests — Phase 3 smoke
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(phase3_regression_smoke_test Phase3RegressionSmokeTest "Regression;Phase3"
+    regression/Phase3RegressionSmokeTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
