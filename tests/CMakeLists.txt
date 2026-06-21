@@ -128,6 +128,14 @@ add_exam_scheduler_test(advanced_conflict_rules_test AdvancedConflictRulesTest "
     ../src/domain/Date.cpp
 )
 
+add_exam_scheduler_test(metrics_calculator_test MetricsCalculatorTest "Unit;Scheduling;Phase3"
+    unit/scheduling/MetricsCalculatorTest.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/Date.cpp
+)
+
 # ---------------------------------------------------------------------------
 # Unit tests — Presentation layer
 # ---------------------------------------------------------------------------
@@ -149,6 +157,15 @@ add_exam_scheduler_test(schedule_output_manager_export_safety_test ScheduleOutpu
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
+add_exam_scheduler_test(schedule_output_manager_sorting_test ScheduleOutputManagerSortingTest "Unit;Presentation;Phase3"
+    unit/presentation/ScheduleOutputManagerSortingTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
 
 # ---------------------------------------------------------------------------
 # Integration tests — Parser + Preprocessor
