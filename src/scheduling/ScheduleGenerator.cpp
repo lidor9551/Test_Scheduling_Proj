@@ -43,37 +43,37 @@ ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, const ScheduleSettin
 
     // 2.1 minimum days between obligatory exams
     if (settings.minDaysObligatory.isActive) {
-        conflictRules_.push_back(std::make_unique<MinDaysObligatoryRule>(
+        conflictRules_.push_back(std::make_shared<MinDaysObligatoryRule>(
             settings.minDaysObligatory.k, block_.allowedDates, block_.runtimeCourses));
     }
 
     // 2.2 minimum days between all exams
     if (settings.minDaysAll.isActive) {
-        conflictRules_.push_back(std::make_unique<MinDaysAllRule>(
+        conflictRules_.push_back(std::make_shared<MinDaysAllRule>(
             settings.minDaysAll.k, block_.allowedDates, block_.runtimeCourses));
     }
 
     // 2.3 maximum conflicts for electives
     if (settings.maxElectiveConflicts.isActive) {
-        conflictRules_.push_back(std::make_unique<MaxElectiveConflictsRule>(
+        conflictRules_.push_back(std::make_shared<MaxElectiveConflictsRule>(
             settings.maxElectiveConflicts.k, block_.runtimeCourses));
     }
 
     // 2.4 time frame for obligatory exams (the filter that runs at the end of each schedule)
     if (settings.obligatorySpan.isActive) {
-        conflictRules_.push_back(std::make_unique<ObligatorySpanRule>(
+        conflictRules_.push_back(std::make_shared<ObligatorySpanRule>(
             settings.obligatorySpan.k, block_.allowedDates, block_.runtimeCourses));
     }
 
     // 2.5 maximum exams per day
     if (settings.maxExamsPerDay.isActive) {
-        conflictRules_.push_back(std::make_unique<MaxExamsPerDayRule>(
+        conflictRules_.push_back(std::make_shared<MaxExamsPerDayRule>(
             settings.maxExamsPerDay.k));
     }
     
     // Note: if you have a basic rule that is always applied (like preventing overlaps in the same time slot),
     // you can add it here:
-    // conflictRules_.push_back(std::make_unique<BasicOverlapRule>());
+    // conflictRules_.push_back(std::make_shared<BasicOverlapRule>());
 }
 
 /*

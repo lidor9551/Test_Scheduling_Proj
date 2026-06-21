@@ -119,9 +119,14 @@ add_exam_scheduler_test(scheduling_session_test SchedulingSessionTest "Unit;Appl
 add_exam_scheduler_test(same_group_conflict_rule_test SameGroupConflictRuleTest "Unit;Scheduling"
     unit/scheduling/SameGroupConflictRuleTest.cpp
     ../src/scheduling/SameGroupConflictRule.cpp
-    ../src/scheduling/AdvancedConflictRules.cpp
 )
 
+add_exam_scheduler_test(advanced_conflict_rules_test AdvancedConflictRulesTest "Unit;Scheduling;Phase3"
+    unit/scheduling/AdvancedConflictRulesTest.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/Date.cpp
+)
 
 # ---------------------------------------------------------------------------
 # Unit tests — Presentation layer
@@ -171,6 +176,8 @@ add_exam_scheduler_test(scheduler_integration_test SchedulerIntegrationTest "Int
     ../src/scheduling/ScheduleGenerator.cpp
     ../src/scheduling/SchedulingWorker.cpp
     ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
     ../src/domain/ExamPeriod.cpp
@@ -203,6 +210,8 @@ add_exam_scheduler_test(no_solution_integration_test NoSolutionIntegrationTest "
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/ScheduleGenerator.cpp
     ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
     ../src/scheduling/SchedulingWorker.cpp
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
@@ -222,6 +231,8 @@ add_exam_scheduler_test(overlap_conflict_integration_test OverlapConflictIntegra
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/ScheduleGenerator.cpp
     ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
     ../src/scheduling/SchedulingWorker.cpp
     ../src/domain/Date.cpp
     ../src/domain/Course.cpp
