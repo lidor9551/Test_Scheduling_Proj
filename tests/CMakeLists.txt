@@ -196,6 +196,28 @@ add_exam_scheduler_test(calendar_manager_test CalendarManagerTest "Unit;Presenta
     ../src/domain/Course.cpp
 )
 
+add_exam_scheduler_test(settings_workflow_test SettingsWorkflowTest "Unit;Presentation;Application;Settings"
+    unit/presentation/SettingsWorkflowTest.cpp
+    ../src/presentation/AppController.cpp
+    ../src/presentation/ProgramCourseModel.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/presentation/CalendarManager.cpp
+    ../src/application/SchedulingSession.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/scheduling/SchedulingService.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
 add_exam_scheduler_test(program_course_model_test ProgramCourseModelTest "Unit;Presentation"
     unit/presentation/ProgramCourseModelTest.cpp
     ../src/presentation/ProgramCourseModel.cpp
