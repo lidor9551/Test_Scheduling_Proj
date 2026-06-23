@@ -148,6 +148,19 @@ add_exam_scheduler_test(metrics_calculator_test MetricsCalculatorTest "Unit;Sche
     ../src/domain/Date.cpp
 )
 
+add_exam_scheduler_test(scheduling_service_async_test SchedulingServiceAsyncTest "Unit;Scheduling;Async"
+    unit/scheduling/SchedulingServiceAsyncTest.cpp
+    ../src/scheduling/SchedulingService.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/Date.cpp
+)
+
 # ---------------------------------------------------------------------------
 # Unit tests — Presentation layer
 # ---------------------------------------------------------------------------
