@@ -97,6 +97,18 @@ add_exam_scheduler_test(schedule_generation_result_test ScheduleGenerationResult
     ../src/domain/Date.cpp
 )
 
+# ---------------------------------------------------------------------------
+# Unit tests — Infrastructure layer
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(input_parser_edge_case_test InputParserEdgeCaseTest "Unit;Infrastructure;Parser"
+    unit/infrastructure/InputParserEdgeCaseTest.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+)
 
 # ---------------------------------------------------------------------------
 # Unit tests — Application layer
