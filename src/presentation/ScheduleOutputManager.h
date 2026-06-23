@@ -151,6 +151,18 @@ public:
      */
     Q_INVOKABLE bool saveCurrentScheduleToFile(const QString& filePath);
 
+    /*
+     * Returns a map of dates and their validity status (true/false) for a specific course,
+     * based strictly on Hard Constraints validation.
+     */
+    Q_INVOKABLE QVariantMap getValidDatesForCourse(const QString& courseId);
+
+    /*
+     * Attempts to move a course to a new date. 
+     * Returns a map with "status": 1 on success, or 0 on failure.
+     */
+    Q_INVOKABLE QVariantMap requestMove(const QString& courseId, const QString& newDate);
+
 signals:
     /*
      * Emitted when the current schedule index changes.

@@ -125,4 +125,16 @@ public:
      * Currently this is initialized to zero and reserved for future ranking logic.
      */
     int getMinDaysBetweenObligatory() const;
+
+    /*
+     * Removes an exam assignment from this schedule by its course ID.
+     * Used for simulating temporary schedules during drag-and-drop validation.
+     */
+    bool removeAssignment(const std::string& courseId);
+
+    /*
+     * Updates the date of an existing exam assignment.
+     * Used when successfully executing a drag-and-drop move.
+     */
+    bool updateAssignmentDate(const std::string& courseId, const Date& newDate);
 };
