@@ -3,8 +3,41 @@
 #include "ScheduleAssertions.h"
 
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
+
+namespace {
+
+void expectInvalidDateConstruction(int day, int month, int year) {
+    try {
+        Date invalidDate(day, month, year);
+        (void)invalidDate;
+
+        TEST_FAIL("FAILED: expected std::invalid_argument for Date("
+                  << day << ", " << month << ", " << year << ")");
+    } catch (const std::invalid_argument&) {
+        // Expected path.
+    } catch (...) {
+        TEST_FAIL("FAILED: expected std::invalid_argument for invalid Date construction");
+    }
+}
+
+void expectInvalidDateParse(const std::string& input) {
+    try {
+        Date parsed = Date::parse(input);
+        (void)parsed;
+
+        TEST_FAIL("FAILED: expected std::invalid_argument for Date::parse(\""
+                  << input << "\")");
+    } catch (const std::invalid_argument&) {
+        // Expected path.
+    } catch (...) {
+        TEST_FAIL("FAILED: expected std::invalid_argument for invalid Date parse input");
+    }
+}
+
+} // namespace
 
 int main() {
     // Date construction and getters
@@ -21,6 +54,22 @@ int main() {
     TEST_EXPECT_EQ(parsed.getYear(), 2026);
     TEST_EXPECT_EQ(parsed.toString(), std::string("01-02-2026"));
 
+    // Date parsing should trim outer whitespace
+    Date parsedWithSpaces = Date::parse(" 01-02-2026 ");
+    TEST_EXPECT_EQ(parsedWithSpaces, Date(1, 2, 2026));
+
+    // Invalid Date construction should throw
+    expectInvalidDateConstruction(0, 1, 2026);
+    expectInvalidDateConstruction(31, 4, 2026);
+    expectInvalidDateConstruction(29, 2, 2025);
+    expectInvalidDateConstruction(1, 13, 2026);
+
+    // Invalid Date parse inputs should throw
+    expectInvalidDateParse("01/02/2026");
+    expectInvalidDateParse("01-02");
+    expectInvalidDateParse("not-a-date");
+    expectInvalidDateParse("31-04-2026");
+
     // Date comparison operators
     Date first(1, 2, 2026);
     Date second(2, 2, 2026);
@@ -35,6 +84,22 @@ int main() {
     // Date nextDay logic
     Date next = first.nextDay();
     TEST_EXPECT_EQ(next, Date(2, 2, 2026));
+
+    // Date nextDay should handle month boundaries
+    TEST_EXPECT_EQ(Date(28, 2, 2026).nextDay(), Date(1, 3, 2026));
+    TEST_EXPECT_EQ(Date(31, 12, 2026).nextDay(), Date(1, 1, 2027));
+
+    // Date nextDay should handle leap years
+    TEST_EXPECT_EQ(Date(28, 2, 2024).nextDay(), Date(29, 2, 2024));
+    TEST_EXPECT_EQ(Date(29, 2, 2024).nextDay(), Date(1, 3, 2024));
+
+    // daysTo should be absolute and symmetric
+    Date start(1, 1, 2026);
+    Date end(10, 1, 2026);
+
+    TEST_EXPECT_EQ(start.daysTo(end), 9);
+    TEST_EXPECT_EQ(end.daysTo(start), 9);
+    TEST_EXPECT_EQ(start.daysTo(start), 0);
 
     // ExcludedRange contains logic
     ExcludedRange range = TestFactory::excludedRange(
