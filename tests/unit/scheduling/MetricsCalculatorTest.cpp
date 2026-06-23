@@ -1,6 +1,6 @@
 #include "scheduling/MetricsCalculator.h"
+#include "TestMacros.h"
 
-#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -12,23 +12,27 @@ bool almostEqual(double left, double right, double epsilon = 0.0001) {
     return std::fabs(left - right) < epsilon;
 }
 
-Course makeCourse(const std::string& name,
-                  const std::string& number,
-                  Requirement requirement = Requirement::OBLIGATORY) {
+Course makeCourse(
+    const std::string& name,
+    const std::string& number,
+    Requirement requirement = Requirement::OBLIGATORY
+) {
     Course course(name, number, "Dr. Metrics", Evaluation::EXAM);
     course.addProgram("83108", Year::FIRST, Semester::FALL, requirement);
     return course;
 }
 
-RuntimeCourse makeRuntimeCourse(int id,
-                                const Course& course,
-                                int groupId,
-                                Requirement requirement) {
+RuntimeCourse makeRuntimeCourse(
+    int id,
+    const Course& course,
+    int groupId,
+    Requirement requirement
+) {
     RuntimeCourse runtimeCourse;
     runtimeCourse.id = id;
     runtimeCourse.course = &course;
     runtimeCourse.memberships = {
-        {groupId, requirement}
+        { groupId, requirement }
     };
     return runtimeCourse;
 }
@@ -58,11 +62,11 @@ void testEmptyScheduleReturnsZeroMetrics() {
 
     ScheduleMetrics metrics = MetricsCalculator::calculate(result, block);
 
-    assert(almostEqual(metrics.avgDaysBetweenObligatory, 0.0));
-    assert(almostEqual(metrics.avgDaysBetweenAll, 0.0));
-    assert(metrics.totalElectiveConflicts == 0);
-    assert(metrics.obligatorySpan == 0);
-    assert(metrics.maxExamsInSingleDay == 0);
+    TEST_EXPECT_TRUE(almostEqual(metrics.avgDaysBetweenObligatory, 0.0));
+    TEST_EXPECT_TRUE(almostEqual(metrics.avgDaysBetweenAll, 0.0));
+    TEST_EXPECT_EQ(metrics.totalElectiveConflicts, 0);
+    TEST_EXPECT_EQ(metrics.obligatorySpan, 0);
+    TEST_EXPECT_EQ(metrics.maxExamsInSingleDay, 0);
 }
 
 void testObligatoryAverageAndSpan() {
@@ -80,17 +84,17 @@ void testObligatoryAverageAndSpan() {
     SchedulingBlock block = makeBlock(runtimeCourses);
 
     ScheduleGenerationResult result = makeResult({
-        {&courses[0], Date(1, 1, 2026), true},
-        {&courses[1], Date(6, 1, 2026), true}
+        { &courses[0], Date(1, 1, 2026), true },
+        { &courses[1], Date(6, 1, 2026), true }
     });
 
     ScheduleMetrics metrics = MetricsCalculator::calculate(result, block);
 
-    assert(almostEqual(metrics.avgDaysBetweenObligatory, 5.0));
-    assert(metrics.obligatorySpan == 5);
-    assert(almostEqual(metrics.avgDaysBetweenAll, 5.0));
-    assert(metrics.totalElectiveConflicts == 0);
-    assert(metrics.maxExamsInSingleDay == 1);
+    TEST_EXPECT_TRUE(almostEqual(metrics.avgDaysBetweenObligatory, 5.0));
+    TEST_EXPECT_EQ(metrics.obligatorySpan, 5);
+    TEST_EXPECT_TRUE(almostEqual(metrics.avgDaysBetweenAll, 5.0));
+    TEST_EXPECT_EQ(metrics.totalElectiveConflicts, 0);
+    TEST_EXPECT_EQ(metrics.maxExamsInSingleDay, 1);
 }
 
 void testAverageDaysBetweenAllExams() {
@@ -119,17 +123,17 @@ void testAverageDaysBetweenAllExams() {
      * Average = 2.5
      */
     ScheduleGenerationResult result = makeResult({
-        {&courses[0], Date(1, 1, 2026), true},
-        {&courses[1], Date(3, 1, 2026), false},
-        {&courses[2], Date(6, 1, 2026), false}
+        { &courses[0], Date(1, 1, 2026), true },
+        { &courses[1], Date(3, 1, 2026), false },
+        { &courses[2], Date(6, 1, 2026), false }
     });
 
     ScheduleMetrics metrics = MetricsCalculator::calculate(result, block);
 
-    assert(almostEqual(metrics.avgDaysBetweenAll, 2.5));
-    assert(almostEqual(metrics.avgDaysBetweenObligatory, 0.0));
-    assert(metrics.obligatorySpan == 0);
-    assert(metrics.maxExamsInSingleDay == 1);
+    TEST_EXPECT_TRUE(almostEqual(metrics.avgDaysBetweenAll, 2.5));
+    TEST_EXPECT_TRUE(almostEqual(metrics.avgDaysBetweenObligatory, 0.0));
+    TEST_EXPECT_EQ(metrics.obligatorySpan, 0);
+    TEST_EXPECT_EQ(metrics.maxExamsInSingleDay, 1);
 }
 
 void testTotalElectiveConflicts() {
@@ -162,17 +166,17 @@ void testTotalElectiveConflicts() {
      * Total = 3 conflicts
      */
     ScheduleGenerationResult result = makeResult({
-        {&courses[0], Date(1, 1, 2026), false},
-        {&courses[1], Date(1, 1, 2026), false},
-        {&courses[2], Date(3, 1, 2026), false},
-        {&courses[3], Date(3, 1, 2026), false},
-        {&courses[4], Date(3, 1, 2026), false}
+        { &courses[0], Date(1, 1, 2026), false },
+        { &courses[1], Date(1, 1, 2026), false },
+        { &courses[2], Date(3, 1, 2026), false },
+        { &courses[3], Date(3, 1, 2026), false },
+        { &courses[4], Date(3, 1, 2026), false }
     });
 
     ScheduleMetrics metrics = MetricsCalculator::calculate(result, block);
 
-    assert(metrics.totalElectiveConflicts == 3);
-    assert(metrics.maxExamsInSingleDay == 3);
+    TEST_EXPECT_EQ(metrics.totalElectiveConflicts, 3);
+    TEST_EXPECT_EQ(metrics.maxExamsInSingleDay, 3);
 }
 
 void testMaxExamsInSingleDay() {
@@ -194,15 +198,15 @@ void testMaxExamsInSingleDay() {
     SchedulingBlock block = makeBlock(runtimeCourses);
 
     ScheduleGenerationResult result = makeResult({
-        {&courses[0], Date(1, 1, 2026), true},
-        {&courses[1], Date(1, 1, 2026), true},
-        {&courses[2], Date(1, 1, 2026), true},
-        {&courses[3], Date(6, 1, 2026), true}
+        { &courses[0], Date(1, 1, 2026), true },
+        { &courses[1], Date(1, 1, 2026), true },
+        { &courses[2], Date(1, 1, 2026), true },
+        { &courses[3], Date(6, 1, 2026), true }
     });
 
     ScheduleMetrics metrics = MetricsCalculator::calculate(result, block);
 
-    assert(metrics.maxExamsInSingleDay == 3);
+    TEST_EXPECT_EQ(metrics.maxExamsInSingleDay, 3);
 }
 
 } // namespace
@@ -215,5 +219,5 @@ int main() {
     testMaxExamsInSingleDay();
 
     std::cout << "MetricsCalculatorTest passed." << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }
