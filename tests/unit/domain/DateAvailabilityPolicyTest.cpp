@@ -1,6 +1,6 @@
 #include "domain/DateAvailabilityPolicy.h"
+#include "TestMacros.h"
 
-#include <cassert>
 #include <iostream>
 #include <vector>
 
@@ -8,19 +8,19 @@ int main() {
     Date saturday(3, 1, 2026);
     Date sunday(4, 1, 2026);
 
-    assert(DateAvailabilityPolicy::isSaturday(saturday));
-    assert(!DateAvailabilityPolicy::isSaturday(sunday));
+    TEST_EXPECT_TRUE(DateAvailabilityPolicy::isSaturday(saturday));
+    TEST_EXPECT_FALSE(DateAvailabilityPolicy::isSaturday(sunday));
 
     ExcludedRange excluded;
     excluded.start = Date(5, 1, 2026);
     excluded.end = Date(5, 1, 2026);
     excluded.reason = "manual";
 
-    std::vector<ExcludedRange> exclusions = {excluded};
+    std::vector<ExcludedRange> exclusions = { excluded };
 
-    assert(DateAvailabilityPolicy::isAllowedExamDate(Date(1, 1, 2026), exclusions));
-    assert(!DateAvailabilityPolicy::isAllowedExamDate(Date(3, 1, 2026), exclusions));
-    assert(!DateAvailabilityPolicy::isAllowedExamDate(Date(5, 1, 2026), exclusions));
+    TEST_EXPECT_TRUE(DateAvailabilityPolicy::isAllowedExamDate(Date(1, 1, 2026), exclusions));
+    TEST_EXPECT_FALSE(DateAvailabilityPolicy::isAllowedExamDate(Date(3, 1, 2026), exclusions));
+    TEST_EXPECT_FALSE(DateAvailabilityPolicy::isAllowedExamDate(Date(5, 1, 2026), exclusions));
 
     std::vector<Date> allowed =
         DateAvailabilityPolicy::allowedDates(
@@ -30,12 +30,12 @@ int main() {
         );
 
     for (const Date& date : allowed) {
-        assert(date != Date(3, 1, 2026));
-        assert(date != Date(5, 1, 2026));
+        TEST_EXPECT_NE(date, Date(3, 1, 2026));
+        TEST_EXPECT_NE(date, Date(5, 1, 2026));
     }
 
-    assert(allowed.size() == 5);
+    TEST_EXPECT_EQ(allowed.size(), static_cast<std::size_t>(5));
 
     std::cout << "DateAvailabilityPolicy test passed." << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }
