@@ -1,5 +1,9 @@
+#include "ScheduleOutputManager.h"
 #include "presentation/ScheduleOutputManager.h"
 #include "domain/DateAvailabilityPolicy.h"
+#include "scheduling/IReadOnlySchedule.h"
+#include "scheduling/Preprocessor.h"
+#include "application/SchedulingSession.h"
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
@@ -7,6 +11,90 @@
 #include <set>
 #include <QFile>
 #include <QTextStream>
+#include <algorithm>
+
+/**
+ * @brief Adapter class that allows Conflict Rules to validate a ScheduleGenerationResult.
+ * Translates integer index queries into real domain object queries using pointer comparison.
+ */
+class DragAndDropAdapter : public IReadOnlySchedule {
+    const ScheduleGenerationResult& m_schedule;
+    const std::vector<RuntimeCourse>& m_courses;
+    const std::vector<Date>& m_dates;
+
+public:
+    DragAndDropAdapter(const ScheduleGenerationResult& schedule, 
+                       const std::vector<RuntimeCourse>& courses, 
+                       const std::vector<Date>& dates)
+        : m_schedule(schedule), m_courses(courses), m_dates(dates) {}
+
+    // IReadOnlySchedule Implementation
+
+    int getAssignedDate(int courseIndex) const override {
+        // Grab the pointer to the original course object
+        const Course* targetCourse = m_courses[courseIndex].course; 
+        
+        // Fast pointer comparison to find the assignment
+        for (const auto& assignment : m_schedule.getAssignments()) {
+            if (assignment.course == targetCourse) { 
+                for (int i = 0; i < m_dates.size(); ++i) {
+                    if (m_dates[i].toString() == assignment.examDate.toString()) {
+                        return i;
+                    }
+                }
+            }
+        }
+        return -1; // Unassigned
+    }
+
+    int getObligatoryCount(int groupIndex, int dateIndex) const override {
+        int count = 0;
+        const std::string& targetDateStr = m_dates[dateIndex].toString();
+        
+        for (const auto& assignment : m_schedule.getAssignments()) {
+            if (assignment.examDate.toString() == targetDateStr) {
+                for (const auto& runtimeC : m_courses) {
+                    // Fast pointer comparison
+                    if (runtimeC.course == assignment.course) {
+                        for (const auto& membership : runtimeC.memberships) {
+                            // Added Requirement:: scope here
+                            if (membership.groupId == groupIndex && membership.requirement == Requirement::OBLIGATORY) {
+                                count++;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    int getElectiveCount(int groupIndex, int dateIndex) const override {
+        int count = 0;
+        const std::string& targetDateStr = m_dates[dateIndex].toString();
+        
+        for (const auto& assignment : m_schedule.getAssignments()) {
+            if (assignment.examDate.toString() == targetDateStr) {
+                for (const auto& runtimeC : m_courses) {
+                    // Fast pointer comparison
+                    if (runtimeC.course == assignment.course) {
+                        for (const auto& membership : runtimeC.memberships) {
+                            // Added Requirement:: scope here
+                            if (membership.groupId == groupIndex && membership.requirement == Requirement::ELECTIVE) {
+                                count++;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+};
 
 /*
  * Creates an empty ScheduleOutputManager.
@@ -613,9 +701,6 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     return true;
 }
 
-#include "ScheduleOutputManager.h"
-#include <algorithm>
-
 void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priorityList) {
     if (priorityList.empty() || m_solutions.empty()) {
         return; // Nothing to sort
@@ -676,118 +761,77 @@ void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priori
 
 }
 
-/**
- * @brief Evaluates all displayed calendar dates to determine if a specific course can be moved there.
- * * This function simulates the removal of the requested course from the current schedule
- * and tests every available date against the system's Hard Constraints. It is designed 
- * to be called continuously by the QML frontend during a drag-and-drop "hover" state 
- * without modifying the actual underlying schedule memory.
- * * @param courseId The unique identifier of the course being dragged (e.g., "83101").
- * @return QVariantMap A map where keys are date strings ("dd-MM-yyyy") and values are booleans 
- * (true if the date is a valid drop target, false otherwise).
- */
-QVariantMap ScheduleOutputManager::getValidDatesForCourse(const QString& courseId) {
-    QVariantMap resultMap;
+// ----------------------------------------------
+// Drag & Drop Validation and Execution Methods
+
+QVariantMap ScheduleOutputManager::requestMove(const QString& courseId, const QString& newDate) {
+    QVariantMap response;
+
+    if (m_solutions.empty() || m_currentIndex < 1 || m_currentIndex > m_solutions.size()) {
+        response["status"] = 0; // 0 for failure
+        return response;
+    }
+
+    // 1. Retrieve the current working schedule
+    ScheduleGenerationResult& currentSchedule = m_solutions[m_currentIndex - 1];
+
+    // 2. Clever workaround: Instead of parsing a string into a Date object (which requires
+    // specific constructors), we search the existing assignments for a matching Date string
+    // and copy the valid Date object directly.
+    Date targetDate;
+    bool dateFound = false;
     
-    // Ensure we have a valid schedule loaded before attempting any simulations
-    if (!isCurrentScheduleIndexValid()) {
-        return resultMap;
+    for (const auto& assignment : currentSchedule.getAssignments()) {
+        if (assignment.examDate.toString() == newDate.toStdString()) {
+            targetDate = assignment.examDate;
+            dateFound = true;
+            break;
+        }
     }
 
-    // 1. Create an isolated COPY of the current schedule.
-    // m_currentIndex is 1-based for the UI, so we subtract 1 to get the correct vector index.
-    ScheduleGenerationResult tempSchedule = m_solutions[m_currentIndex - 1];
+    // If the target date doesn't exist anywhere in the current schedule, we abort the move.
+    if (!dateFound) {
+        response["status"] = 0; 
+        return response;
+    }
 
-    // 2. Temporarily extract the dragged exam from this isolated copy.
-    // This ensures the algorithm doesn't conflict with the exam's own current placement.
-    tempSchedule.removeAssignment(courseId.toStdString());
+    // 3. Apply the move to our data structure
+    bool success = currentSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
 
-    // 3. Iterate through all date cells currently rendered on the UI calendar.
-    for (const QVariant& cellVar : m_calendarData) {
-        QVariantMap cellData = cellVar.toMap();
-        QString dateKey = cellData["dateKey"].toString();
+    if (success) {
+        // Refresh the QML view
+        updateCalendarData();
+        emit currentCalendarDataChanged();
         
-        // Skip empty padding cells that fall outside the actual exam period
-        if (dateKey.isEmpty()) {
-            continue; 
-        }
-
-        bool isValid = false;
-
-        // 4. Perform foundational constraint checks.
-        // Globally excluded days (e.g., Shabbat, national holidays) are strictly invalid.
-        if (cellData["isExcluded"].toBool() == true) {
-            isValid = false;
-        } else {
-            // 5. Run advanced Hard Constraints Validation.
-            // TODO (Next Task): Integrate your specific ConstraintsValidator here.
-            // Example implementation:
-            // isValid = ConstraintsValidator::checkHardConstraints(tempSchedule, courseId, dateKey);
-            
-            // Temporary placeholder: Assume valid unless it is an excluded day, 
-            // allowing the UI drag-and-drop mechanics to be tested.
-            isValid = true; 
-        }
-
-        // Map the result to the corresponding date string
-        resultMap[dateKey] = isValid;
+        response["status"] = 1; // 1 for success
+    } else {
+        response["status"] = 0; // 0 for failure
     }
 
-    return resultMap;
+    return response;
 }
 
-/**
- * @brief Attempts to permanently relocate an exam to a new target date in the schedule's memory.
- * * This function is triggered by the QML frontend upon dropping an exam card. It performs a 
- * secondary, secure validation check on the backend to prevent illegal moves. If the target 
- * date is valid, it parses the date string, updates the actual schedule memory, and prepares 
- * the system for a UI recalculation.
- * * @param courseId The unique identifier of the course being moved.
- * @param newDate The target date formatted as a string ("dd-MM-yyyy").
- * @return QVariantMap A status dictionary containing {"status": 1} on success or {"status": 0} on failure.
- */
-QVariantMap ScheduleOutputManager::requestMove(const QString& courseId, const QString& newDate) {
-    QVariantMap result;
-    result["status"] = 0; // Default initialization to failure state
+QVariantMap ScheduleOutputManager::getValidDatesForCourse(const QString& courseId) {
+    QVariantMap response;
+    QStringList validDates;
 
-    // Abort if the schedule index is invalid or the target date string is empty
-    if (!isCurrentScheduleIndexValid() || newDate.isEmpty()) {
-        return result;
-    }
-
-    // 1. Secure Backend Validation.
-    // Re-verify the requested target date to prevent illegal moves initiated by UI glitches.
-    QVariantMap validDates = getValidDatesForCourse(courseId);
-    
-    // Check if the exact requested date exists in the valid map and is flagged as true
-    if (validDates.contains(newDate) && validDates[newDate].toBool() == true) {
+    // We only process if there's an active schedule
+    if (!m_solutions.empty() && m_currentIndex >= 1 && m_currentIndex <= m_solutions.size()) {
+        const ScheduleGenerationResult& currentSchedule = m_solutions[m_currentIndex - 1];
         
-        // 2. Date Parsing.
-        // Extract day, month, and year from the "dd-MM-yyyy" string format.
-        QStringList dateParts = newDate.split("-");
-        if (dateParts.size() == 3) {
-            // Convert strings to integers and construct the domain Date object
-            Date targetDate(dateParts[0].toInt(), dateParts[1].toInt(), dateParts[2].toInt());
+        // Instead of reading private members of ExamPeriod to find
+        // start dates and holidays, we iterate through the active schedule. 
+        // Any date that currently hosts an exam is guaranteed to be a valid, non-holiday date.
+        for (const auto& assignment : currentSchedule.getAssignments()) {
+            QString dateStr = QString::fromStdString(assignment.examDate.toString());
             
-            // 3. Memory Update.
-            // Access the actual schedule instance by reference and apply the new date.
-            ScheduleGenerationResult& realSchedule = m_solutions[m_currentIndex - 1];
-            realSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
-            
-            // Mark the operation as a complete success
-            result["status"] = 1; 
-            qDebug() << "[Drag&Drop] Successfully moved course" << courseId << "to" << newDate;
-            
-            // 4. Finalization (Story 1.3 Preparation).
-            // TODO: Uncomment these lines in Story 1.3 to trigger metrics recalculation 
-            // and notify the QML layer to redraw the updated calendar.
-            // updateCalendarData();
-            // emit currentCalendarDataChanged();
+            // Add unique dates to our allowed list
+            if (!validDates.contains(dateStr)) {
+                validDates.append(dateStr);
+            }
         }
-    } else {
-        // Log the rejection for debugging purposes
-        qDebug() << "[Drag&Drop] Rejected move for course" << courseId << "to invalid date:" << newDate;
     }
 
-    return result;
+    response["validDates"] = validDates;
+    return response;
 }

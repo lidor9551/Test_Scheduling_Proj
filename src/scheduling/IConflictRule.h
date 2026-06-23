@@ -1,7 +1,7 @@
 #pragma once
 
 #include "scheduling/Preprocessor.h"
-#include "scheduling/SchedulingState.h"
+#include "scheduling/IReadOnlySchedule.h"
 
 /*
  * IConflictRule defines the common interface for all scheduling constraints.
@@ -31,13 +31,13 @@ public:
      * Checks whether a specific course can be assigned to a specific date.
      *
      * Parameters:
-     * - state: the current partial schedule.
+     * - schedule: the abstract read-only interface of the current schedule.     
      * - course: the runtime course the solver wants to place.
      * - dateIndex: the candidate date index inside the scheduling block.
      *
      * Returns true if the assignment is allowed by this rule.
      */
-    virtual bool isSatisfied(const SchedulingState& state,
+    virtual bool isSatisfied(const IReadOnlySchedule& schedule,
                              const RuntimeCourse& course,
                              int dateIndex) const = 0;
 };
