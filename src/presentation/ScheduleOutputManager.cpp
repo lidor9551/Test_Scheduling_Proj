@@ -299,9 +299,14 @@ void ScheduleOutputManager::updateCalendarData() {
          * They are kept empty so the QML calendar keeps a full weekly grid.
          */
         if (current < qStart || current > qEnd) {
-            dayData["dayText"] = ""; 
+            dayData["dayText"] = "";
             dayData["isExcluded"] = false;
             dayData["hasExam"] = false;
+            /**
+             * Padding cells lie outside the exam period and carry no real date,
+             * so the drag & drop date key is left empty.
+             */
+            dayData["dateKey"] = "";
             /**
              * Empty exam list: a padding cell never holds any exam. QML iterates
              * this list, so an empty list renders nothing.
@@ -314,6 +319,12 @@ void ScheduleOutputManager::updateCalendarData() {
              * Convert the current QDate back into the domain Date type.
              */
             Date currentDate(current.day(), current.month(), current.year());
+
+            /**
+             * Expose the exact cell date in the "dd-MM-yyyy" format expected by
+             * the drag & drop API contract, with zero-padded day and month.
+             */
+            dayData["dateKey"] = current.toString("dd-MM-yyyy");
 
             /*
              * Show month information on the first day of the month or on the

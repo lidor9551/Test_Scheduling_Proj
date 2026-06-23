@@ -132,6 +132,58 @@ Item {
 
     Component.onCompleted: outputRoot.rebuildPriorityModel()
 
+    /**
+     * Pure-QML mock of the future drag & drop backend.
+     *
+     * Simulates the scheduling service the real C++ layer will expose later. The
+     * validity rule mirrors a real scheduling constraint using data already in
+     * the model: a date is droppable only when its calendar cell is not excluded
+     * (excluded days are holidays / shabbat where no exam may be placed). This
+     * object is the single source of truth for the two API methods the drag &
+     * drop layer calls, matching the agreed contract exactly.
+     */
+    QtObject {
+        id: mockScheduleManager
+
+        /**
+         * Returns the set of valid drop dates for a course as a plain object
+         * mapping every non-empty "dd-MM-yyyy" key to its validity boolean.
+         *
+         * A date is valid when its cell is not excluded. The courseId is part of
+         * the contract but ignored by this mock rule.
+         */
+        function getValidDatesForCourse(courseId) {
+            var result = ({})
+            var data = appController.outputManager.currentCalendarData
+            if (data) {
+                for (var i = 0; i < data.length; ++i) {
+                    var dk = data[i].dateKey
+                    if (dk && dk !== "") {
+                        result[dk] = (data[i].isExcluded === false)
+                    }
+                }
+            }
+            return result
+        }
+
+        /**
+         * Simulates a move request. Finds the cell whose dateKey matches newDate
+         * and returns { "status": 1 } when it exists and is not excluded, or
+         * { "status": 0 } otherwise.
+         */
+        function requestMove(courseId, newDate) {
+            var data = appController.outputManager.currentCalendarData
+            if (data) {
+                for (var i = 0; i < data.length; ++i) {
+                    if (data[i].dateKey === newDate) {
+                        return { "status": (data[i].isExcluded === false) ? 1 : 0 }
+                    }
+                }
+            }
+            return { "status": 0 }
+        }
+    }
+
     // dialog for choosing where to save the exported schedule
     /*
      * File dialog used for exporting the current schedule.
@@ -845,6 +897,17 @@ Item {
                     anchors.right: parent.right
                     anchors.margins: 20
 
+                    /**
+                     * Drag & drop shared state, read by every day cell.
+                     *
+                     * dragActive toggles the valid/invalid drop overlays;
+                     * validDates holds the { "dd-MM-yyyy": bool } map for the card
+                     * currently dragged; draggedCourseId keeps that card's course.
+                     */
+                    property bool dragActive: false
+                    property var validDates: ({})
+                    property string draggedCourseId: ""
+
                     cellWidth: width / 7
 
                     /**
@@ -945,6 +1008,22 @@ Item {
                         border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fecaca" : (modelData.hasExam ? (dayCell.hasObligatory ? "#fca5a5" : "#86efac") : "#e2e8f0"))
                         border.width: 1
 
+                        /**
+                         * Drop-target overlay shown only while a drag is in
+                         * progress and only on real (non-padding) cells. Green
+                         * marks a valid drop date, red an invalid one. It carries
+                         * no MouseArea so it never intercepts the drag pointer.
+                         */
+                        Rectangle {
+                            anchors.fill: parent
+                            z: 5
+                            radius: 4
+                            opacity: 0.35
+                            visible: calendarGrid.dragActive && modelData.dateKey !== ""
+                            color: calendarGrid.validDates[modelData.dateKey] === true
+                                   ? "#22c55e" : "#ef4444"
+                        }
+
                         /*
                          * Day number text.
                          */
@@ -981,8 +1060,109 @@ Item {
                                  * original colors, fonts and right alignment.
                                  */
                                 delegate: ColumnLayout {
+                                    id: examCard
                                     Layout.fillWidth: true
                                     spacing: 6
+
+                                    /**
+                                     * Drag bookkeeping.
+                                     *
+                                     * Stores the cell-side parent and the on-grid
+                                     * return position/size captured at drag start,
+                                     * so the card can bounce back and re-attach to
+                                     * its origin cell on drop.
+                                     */
+                                    property var originalParent: null
+                                    property real returnX: 0
+                                    property real returnY: 0
+                                    property real startWidth: 0
+                                    property real startHeight: 0
+
+                                    /**
+                                     * Makes the exam card draggable. On start the
+                                     * card detaches from its cell and floats on
+                                     * dragLayer at the same screen position/size;
+                                     * on drop it resolves the target cell, runs the
+                                     * mock move request, then bounces home.
+                                     */
+                                    DragHandler {
+                                        target: examCard
+
+                                        onActiveChanged: {
+                                            if (active) {
+                                                /** START: capture origin, reparent to the floating layer. */
+                                                var pos = examCard.mapToItem(dragLayer, 0, 0)
+                                                examCard.originalParent = examCard.parent
+                                                examCard.startWidth = examCard.width
+                                                examCard.startHeight = examCard.height
+                                                examCard.returnX = pos.x
+                                                examCard.returnY = pos.y
+
+                                                examCard.parent = dragLayer
+                                                examCard.x = pos.x
+                                                examCard.y = pos.y
+                                                examCard.width = examCard.startWidth
+                                                examCard.height = examCard.startHeight
+
+                                                calendarGrid.draggedCourseId = modelData.courseId
+                                                calendarGrid.validDates =
+                                                    mockScheduleManager.getValidDatesForCourse(modelData.courseId)
+                                                calendarGrid.dragActive = true
+                                            } else {
+                                                /** DROP: resolve target cell at the card center, request the move. */
+                                                calendarGrid.dragActive = false
+
+                                                var center = examCard.mapToItem(
+                                                    calendarGrid.contentItem,
+                                                    examCard.width / 2, examCard.height / 2)
+                                                var idx = calendarGrid.indexAt(center.x, center.y)
+
+                                                if (idx >= 0) {
+                                                    var cell = appController.outputManager.currentCalendarData[idx]
+                                                    var dk = cell ? cell.dateKey : ""
+                                                    if (dk && dk !== "") {
+                                                        var result = mockScheduleManager.requestMove(
+                                                            modelData.courseId, dk)
+                                                        console.log("DROP", modelData.courseId,
+                                                                    "→", dk, "| status =", result.status)
+                                                    }
+                                                }
+
+                                                /** For now every drop bounces back to the origin cell. */
+                                                bounceBack.start()
+                                            }
+                                        }
+                                    }
+
+                                    /**
+                                     * Return-to-origin animation. Eases the card
+                                     * back to its captured position with an OutBack
+                                     * bounce, then re-attaches it to its cell.
+                                     */
+                                    SequentialAnimation {
+                                        id: bounceBack
+
+                                        ParallelAnimation {
+                                            NumberAnimation {
+                                                target: examCard; property: "x"
+                                                to: examCard.returnX
+                                                duration: 220; easing.type: Easing.OutBack
+                                            }
+                                            NumberAnimation {
+                                                target: examCard; property: "y"
+                                                to: examCard.returnY
+                                                duration: 220; easing.type: Easing.OutBack
+                                            }
+                                        }
+
+                                        ScriptAction {
+                                            script: {
+                                                examCard.parent = examCard.originalParent
+                                                examCard.x = 0
+                                                examCard.y = 0
+                                            }
+                                        }
+                                    }
 
                                     /**
                                      * Padded exam block so each exam breathes
@@ -1049,6 +1229,18 @@ Item {
                             }
                         }
                     }
+                }
+
+                /**
+                 * Floating layer hosting a dragged exam card while it travels.
+                 *
+                 * A card is reparented here on drag start so it can move freely
+                 * above the grid and its clipping, and reparented back on drop.
+                 */
+                Item {
+                    id: dragLayer
+                    anchors.fill: calendarGrid
+                    z: 1000
                 }
 
                 // no solutions message
