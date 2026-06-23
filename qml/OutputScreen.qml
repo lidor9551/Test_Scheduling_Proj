@@ -1018,10 +1018,10 @@ Item {
                             anchors.fill: parent
                             z: 5
                             radius: 4
-                            opacity: 0.35
+                            opacity: 0.25
                             visible: calendarGrid.dragActive && modelData.dateKey !== ""
                             color: calendarGrid.validDates[modelData.dateKey] === true
-                                   ? "#22c55e" : "#ef4444"
+                                   ? "#86efac" : "#fca5a5"
                         }
 
                         /*
@@ -1132,6 +1132,10 @@ Item {
                                                 bounceBack.start()
                                             }
                                         }
+                                    }
+
+                                    HoverHandler {
+                                        cursorShape: Qt.PointingHandCursor
                                     }
 
                                     /**
