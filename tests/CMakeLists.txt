@@ -174,6 +174,15 @@ add_exam_scheduler_test(app_controller_test AppControllerTest "Unit;Presentation
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
+add_exam_scheduler_test(calendar_manager_test CalendarManagerTest "Unit;Presentation"
+    unit/presentation/CalendarManagerTest.cpp
+    ../src/presentation/CalendarManager.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/Course.cpp
+)
+
 add_exam_scheduler_test(program_course_model_test ProgramCourseModelTest "Unit;Presentation"
     unit/presentation/ProgramCourseModelTest.cpp
     ../src/presentation/ProgramCourseModel.cpp
