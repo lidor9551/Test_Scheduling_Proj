@@ -1,5 +1,7 @@
 #include "presentation/ScheduleOutputManager.h"
 #include "domain/DateAvailabilityPolicy.h"
+#include "ScheduleOutputManager.h"
+#include <algorithm>
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
@@ -601,9 +603,6 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     file.close();
     return true;
 }
-
-#include "ScheduleOutputManager.h"
-#include <algorithm>
 
 void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priorityList) {
     if (priorityList.empty() || m_solutions.empty()) {
