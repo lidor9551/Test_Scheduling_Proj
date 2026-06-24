@@ -7,6 +7,7 @@
 #include <QVariantMap>
 #include <vector>
 #include <QMap>
+#include <functional>
 
 #include "domain/Course.h"
 #include "domain/ExamPeriod.h"
@@ -116,6 +117,24 @@ public:
      * @param priorityList A list of criteria ordered by user priority (index 0 is most important).
      */
     void sortSchedules(const std::vector<std::string>& priorityList);
+
+    /**
+     * @brief Defines the signature for the validation callback.
+     * * This callback bridges the gap between the UI layer and the Domain rules.
+     * It takes the proposed schedule, the course ID being moved, and the target date.
+     * * @return true if the move strictly obeys scheduling constraints, false otherwise.
+     */
+    using ValidatorCallback = std::function<bool(const ScheduleGenerationResult&, const std::string&, const Date&)>;
+    
+    /**
+     * @brief Registers the validation callback to be used during drag-and-drop operations.
+     * * By injecting this validator (typically from the Controller), we ensure the Manager 
+     * remains decoupled from the complex Conflict Rules engine.
+     * * @param validator The callback function wrapping the rules engine.
+     */
+    void setMoveValidator(ValidatorCallback validator) { 
+        m_moveValidator = validator; 
+    }
 
     // Actions triggered by the user from the QML interface
     /*
@@ -247,6 +266,11 @@ private:
      */
     int m_currentIndex = 1;
 
+    /**
+     * @brief Stores the registered validation logic injected by the external Controller.
+     */
+    ValidatorCallback m_moveValidator;
+
     /*
      * Currently selected semester filter.
      */
@@ -271,4 +295,5 @@ private:
      * Calendar entries prepared for the QML calendar output view.
      */
     QVariantList m_calendarData;
+
 };

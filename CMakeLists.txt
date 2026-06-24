@@ -35,6 +35,7 @@ qt_add_executable(
     src/presentation/CalendarManager.cpp
     src/presentation/ScheduleOutputManager.cpp
     src/presentation/ScheduleOutputManager.h
+    src/presentation/DragAndDropAdapter.cpp
 
     # Domain layer: core business objects and date logic.
     src/domain/Date.cpp

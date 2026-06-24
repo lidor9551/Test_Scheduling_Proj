@@ -767,45 +767,77 @@ void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priori
 QVariantMap ScheduleOutputManager::requestMove(const QString& courseId, const QString& newDate) {
     QVariantMap response;
 
+    // 1. Basic validation: Ensure we have valid results to work with.
     if (m_solutions.empty() || m_currentIndex < 1 || m_currentIndex > m_solutions.size()) {
         response["status"] = 0; // 0 for failure
         return response;
     }
 
-    // 1. Retrieve the current working schedule
+    // 2. Retrieve the current working schedule.
     ScheduleGenerationResult& currentSchedule = m_solutions[m_currentIndex - 1];
 
-    // 2. Clever workaround: Instead of parsing a string into a Date object (which requires
-    // specific constructors), we search the existing assignments for a matching Date string
-    // and copy the valid Date object directly.
+    std::vector<Date> allDates;
+    // get all the periods dates
+    for (const auto& period : m_periods) { 
+        const auto& dates = period.allowedDates();
+        allDates.insert(allDates.end(), dates.begin(), dates.end());
+    }
+
+    // 3. Clever workaround: Copy the valid Date object directly.
+    // Instead of parsing strings and risking invalid date instantiation, 
+    // we search existing assignments to guarantee a valid domain Date.
     Date targetDate;
     bool dateFound = false;
     
-    for (const auto& assignment : currentSchedule.getAssignments()) {
-        if (assignment.examDate.toString() == newDate.toStdString()) {
-            targetDate = assignment.examDate;
+    for (const auto& date : allDates) { 
+        if (date.toString() == newDate.toStdString()) {
+            targetDate = date;
             dateFound = true;
             break;
         }
     }
+    // -------------------
 
-    // If the target date doesn't exist anywhere in the current schedule, we abort the move.
+    // If the target date doesn't exist anywhere in the period, abort.
     if (!dateFound) {
         response["status"] = 0; 
+        response["error"] = "Invalid target date";
         return response;
     }
 
-    // 3. Apply the move to our data structure
+    // Smart Validation Area: Check constraints before applying the move
+
+    // A. Create a temporary schedule and simulate the move "dry run"
+    ScheduleGenerationResult tempSchedule = currentSchedule;
+    tempSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
+
+    // B. Trigger the rules engine via the injected callback
+    if (m_moveValidator) {
+        
+        // The controller will evaluate the temporary schedule (usually via 
+        // the DragAndDropAdapter) and check for hard constraint conflicts.
+        bool isLegal = m_moveValidator(tempSchedule, courseId.toStdString(), targetDate);
+        
+        if (!isLegal) {
+            // Conflict detected! The rules engine rejected the move.
+            response["status"] = 0;
+            response["error"] = "Conflict detected. Move violates scheduling rules.";
+            return response;
+        }
+    }
+
+    // 4. If we reached this point, the move is perfectly legal.
+    // Apply the update to the actual schedule data structure.
     bool success = currentSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
 
     if (success) {
-        // Refresh the QML view
+        // Refresh the QML UI components to reflect the new state.
         updateCalendarData();
         emit currentCalendarDataChanged();
         
         response["status"] = 1; // 1 for success
     } else {
-        response["status"] = 0; // 0 for failure
+        response["status"] = 0; // 0 for failure (e.g., course not found)
     }
 
     return response;
@@ -813,25 +845,38 @@ QVariantMap ScheduleOutputManager::requestMove(const QString& courseId, const QS
 
 QVariantMap ScheduleOutputManager::getValidDatesForCourse(const QString& courseId) {
     QVariantMap response;
-    QStringList validDates;
+    QVariantMap validationMap;
 
-    // We only process if there's an active schedule
-    if (!m_solutions.empty() && m_currentIndex >= 1 && m_currentIndex <= m_solutions.size()) {
-        const ScheduleGenerationResult& currentSchedule = m_solutions[m_currentIndex - 1];
-        
-        // Instead of reading private members of ExamPeriod to find
-        // start dates and holidays, we iterate through the active schedule. 
-        // Any date that currently hosts an exam is guaranteed to be a valid, non-holiday date.
-        for (const auto& assignment : currentSchedule.getAssignments()) {
-            QString dateStr = QString::fromStdString(assignment.examDate.toString());
-            
-            // Add unique dates to our allowed list
-            if (!validDates.contains(dateStr)) {
-                validDates.append(dateStr);
-            }
-        }
+    if (m_solutions.empty() || m_currentIndex < 1) return response;
+    const ScheduleGenerationResult& currentSchedule = m_solutions[m_currentIndex - 1];
+
+    // FIX 1: Collect dates from ALL periods, not just the first one
+    std::vector<Date> allDates;
+    for (const auto& period : m_periods) {
+        const auto& pDates = period.allowedDates();
+        allDates.insert(allDates.end(), pDates.begin(), pDates.end());
     }
 
-    response["validDates"] = validDates;
-    return response;
+    for (const auto& targetDate : allDates) {
+        QString dateStr = QString::fromStdString(targetDate.toString());
+        ScheduleGenerationResult tempSchedule = currentSchedule;
+        
+        // Temporarily move the course to evaluate this specific date
+        tempSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
+
+        bool isLegal = true;
+        if (m_moveValidator) {
+            isLegal = m_moveValidator(tempSchedule, courseId.toStdString(), targetDate);
+        }
+
+        // Only print if blocked, but keep it in the map anyway
+        if (!isLegal) {
+            // The UI will see 'false', making it red
+        }
+
+        validationMap[dateStr] = isLegal;
+    }
+
+    
+    return validationMap;
 }
