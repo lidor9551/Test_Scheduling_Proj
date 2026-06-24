@@ -97,6 +97,18 @@ add_exam_scheduler_test(schedule_generation_result_test ScheduleGenerationResult
     ../src/domain/Date.cpp
 )
 
+# ---------------------------------------------------------------------------
+# Unit tests — Infrastructure layer
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(input_parser_edge_case_test InputParserEdgeCaseTest "Unit;Infrastructure;Parser"
+    unit/infrastructure/InputParserEdgeCaseTest.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+)
 
 # ---------------------------------------------------------------------------
 # Unit tests — Application layer
@@ -136,9 +148,75 @@ add_exam_scheduler_test(metrics_calculator_test MetricsCalculatorTest "Unit;Sche
     ../src/domain/Date.cpp
 )
 
+add_exam_scheduler_test(scheduling_service_async_test SchedulingServiceAsyncTest "Unit;Scheduling;Async"
+    unit/scheduling/SchedulingServiceAsyncTest.cpp
+    ../src/scheduling/SchedulingService.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/Date.cpp
+)
+
 # ---------------------------------------------------------------------------
 # Unit tests — Presentation layer
 # ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(app_controller_test AppControllerTest "Unit;Presentation;Application"
+    unit/presentation/AppControllerTest.cpp
+    ../src/presentation/AppController.cpp
+    ../src/presentation/ProgramCourseModel.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/presentation/CalendarManager.cpp
+    ../src/application/SchedulingSession.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/scheduling/SchedulingService.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+add_exam_scheduler_test(calendar_manager_test CalendarManagerTest "Unit;Presentation"
+    unit/presentation/CalendarManagerTest.cpp
+    ../src/presentation/CalendarManager.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/Course.cpp
+)
+
+add_exam_scheduler_test(settings_workflow_test SettingsWorkflowTest "Unit;Presentation;Application;Settings"
+    unit/presentation/SettingsWorkflowTest.cpp
+    ../src/presentation/AppController.cpp
+    ../src/presentation/ProgramCourseModel.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/presentation/CalendarManager.cpp
+    ../src/application/SchedulingSession.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/scheduling/SchedulingService.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
 
 add_exam_scheduler_test(program_course_model_test ProgramCourseModelTest "Unit;Presentation"
     unit/presentation/ProgramCourseModelTest.cpp

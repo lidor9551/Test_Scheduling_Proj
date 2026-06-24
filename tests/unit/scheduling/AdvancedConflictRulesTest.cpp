@@ -1,36 +1,42 @@
 #include "scheduling/AdvancedConflictRules.h"
+#include "TestMacros.h"
 
-#include <cassert>
 #include <iostream>
 #include <string>
 #include <vector>
 
 namespace {
 
-Course makeCourse(const std::string& name,
-                  const std::string& number,
-                  Requirement domainRequirement = Requirement::OBLIGATORY) {
+Course makeCourse(
+    const std::string& name,
+    const std::string& number,
+    Requirement domainRequirement = Requirement::OBLIGATORY
+) {
     Course course(name, number, "Dr. Test", Evaluation::EXAM);
     course.addProgram("83108", Year::FIRST, Semester::FALL, domainRequirement);
     return course;
 }
 
-RuntimeCourse makeRuntimeCourse(int id,
-                                const Course& course,
-                                int groupId,
-                                Requirement requirement) {
+RuntimeCourse makeRuntimeCourse(
+    int id,
+    const Course& course,
+    int groupId,
+    Requirement requirement
+) {
     RuntimeCourse runtimeCourse;
     runtimeCourse.id = id;
     runtimeCourse.course = &course;
     runtimeCourse.memberships = {
-        {groupId, requirement}
+        { groupId, requirement }
     };
     return runtimeCourse;
 }
 
-SchedulingState makeState(std::size_t courseCount,
-                          std::size_t dateCount,
-                          std::size_t groupCount = 3) {
+SchedulingState makeState(
+    std::size_t courseCount,
+    std::size_t dateCount,
+    std::size_t groupCount = 3
+) {
     SchedulingState state;
     state.assignedDate = std::vector<int>(courseCount, -1);
     state.obligatoryCount =
@@ -40,9 +46,11 @@ SchedulingState makeState(std::size_t courseCount,
     return state;
 }
 
-void assignCourse(SchedulingState& state,
-                  const RuntimeCourse& course,
-                  int dateIndex) {
+void assignCourse(
+    SchedulingState& state,
+    const RuntimeCourse& course,
+    int dateIndex
+) {
     state.assignedDate[course.id] = dateIndex;
 
     for (const CourseMembership& membership : course.memberships) {
@@ -82,9 +90,9 @@ void testMinDaysObligatoryRule() {
 
     MinDaysObligatoryRule rule(3, dates, runtimeCourses);
 
-    assert(!rule.isSatisfied(state, runtimeCourses[1], 1));
-    assert(rule.isSatisfied(state, runtimeCourses[1], 3));
-    assert(rule.isSatisfied(state, runtimeCourses[2], 1));
+    TEST_EXPECT_FALSE(rule.isSatisfied(state, runtimeCourses[1], 1));
+    TEST_EXPECT_TRUE(rule.isSatisfied(state, runtimeCourses[1], 3));
+    TEST_EXPECT_TRUE(rule.isSatisfied(state, runtimeCourses[2], 1));
 }
 
 void testMinDaysObligatoryUsesRuntimeMembershipsOnly() {
@@ -111,7 +119,7 @@ void testMinDaysObligatoryUsesRuntimeMembershipsOnly() {
     assignCourse(state, runtimeCourses[0], 0);
 
     MinDaysObligatoryRule rule(3, dates, runtimeCourses);
-    assert(rule.isSatisfied(state, runtimeCourses[1], 1));
+    TEST_EXPECT_TRUE(rule.isSatisfied(state, runtimeCourses[1], 1));
 }
 
 void testMinDaysAllRule() {
@@ -133,9 +141,9 @@ void testMinDaysAllRule() {
 
     MinDaysAllRule rule(3, dates, runtimeCourses);
 
-    assert(!rule.isSatisfied(state, runtimeCourses[1], 1));
-    assert(rule.isSatisfied(state, runtimeCourses[1], 3));
-    assert(rule.isSatisfied(state, runtimeCourses[2], 1));
+    TEST_EXPECT_FALSE(rule.isSatisfied(state, runtimeCourses[1], 1));
+    TEST_EXPECT_TRUE(rule.isSatisfied(state, runtimeCourses[1], 3));
+    TEST_EXPECT_TRUE(rule.isSatisfied(state, runtimeCourses[2], 1));
 }
 
 void testMaxElectiveConflictsRule() {
@@ -158,15 +166,15 @@ void testMaxElectiveConflictsRule() {
     assignCourse(state, runtimeCourses[0], 0);
 
     MaxElectiveConflictsRule zeroConflictsAllowed(0, runtimeCourses);
-    assert(!zeroConflictsAllowed.isSatisfied(state, runtimeCourses[1], 0));
-    assert(zeroConflictsAllowed.isSatisfied(state, runtimeCourses[1], 1));
-    assert(zeroConflictsAllowed.isSatisfied(state, runtimeCourses[3], 0));
+    TEST_EXPECT_FALSE(zeroConflictsAllowed.isSatisfied(state, runtimeCourses[1], 0));
+    TEST_EXPECT_TRUE(zeroConflictsAllowed.isSatisfied(state, runtimeCourses[1], 1));
+    TEST_EXPECT_TRUE(zeroConflictsAllowed.isSatisfied(state, runtimeCourses[3], 0));
 
     MaxElectiveConflictsRule oneConflictAllowed(1, runtimeCourses);
-    assert(oneConflictAllowed.isSatisfied(state, runtimeCourses[1], 0));
+    TEST_EXPECT_TRUE(oneConflictAllowed.isSatisfied(state, runtimeCourses[1], 0));
 
     assignCourse(state, runtimeCourses[1], 0);
-    assert(!oneConflictAllowed.isSatisfied(state, runtimeCourses[2], 0));
+    TEST_EXPECT_FALSE(oneConflictAllowed.isSatisfied(state, runtimeCourses[2], 0));
 }
 
 void testObligatorySpanRule() {
@@ -187,14 +195,14 @@ void testObligatorySpanRule() {
 
     SchedulingState partialState = makeState(runtimeCourses.size(), dates.size());
     assignCourse(partialState, runtimeCourses[0], 0);
-    assert(rule.isSatisfied(partialState, runtimeCourses[1], 1));
+    TEST_EXPECT_TRUE(rule.isSatisfied(partialState, runtimeCourses[1], 1));
 
     SchedulingState completeState = makeState(runtimeCourses.size(), dates.size());
     assignCourse(completeState, runtimeCourses[0], 0);
     assignCourse(completeState, runtimeCourses[1], 1);
 
-    assert(!rule.isSatisfied(completeState, runtimeCourses[2], 2));
-    assert(rule.isSatisfied(completeState, runtimeCourses[2], 3));
+    TEST_EXPECT_FALSE(rule.isSatisfied(completeState, runtimeCourses[2], 2));
+    TEST_EXPECT_TRUE(rule.isSatisfied(completeState, runtimeCourses[2], 3));
 }
 
 void testMaxExamsPerDayRule() {
@@ -216,11 +224,11 @@ void testMaxExamsPerDayRule() {
     assignCourse(state, runtimeCourses[1], 0);
 
     MaxExamsPerDayRule maxTwo(2);
-    assert(!maxTwo.isSatisfied(state, runtimeCourses[2], 0));
-    assert(maxTwo.isSatisfied(state, runtimeCourses[2], 1));
+    TEST_EXPECT_FALSE(maxTwo.isSatisfied(state, runtimeCourses[2], 0));
+    TEST_EXPECT_TRUE(maxTwo.isSatisfied(state, runtimeCourses[2], 1));
 
     MaxExamsPerDayRule maxThree(3);
-    assert(maxThree.isSatisfied(state, runtimeCourses[2], 0));
+    TEST_EXPECT_TRUE(maxThree.isSatisfied(state, runtimeCourses[2], 0));
 }
 
 } // namespace
@@ -234,5 +242,5 @@ int main() {
     testMaxExamsPerDayRule();
 
     std::cout << "AdvancedConflictRulesTest passed." << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }
