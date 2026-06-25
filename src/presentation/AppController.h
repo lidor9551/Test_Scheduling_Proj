@@ -401,6 +401,13 @@ private:
     std::vector<SchedulingBlock> m_allBlocks;
 
     /*
+     * Index of the scheduling block currently displayed/generated.
+     *
+     * Used when recalculating metrics after a drag-and-drop move.
+     */
+    int m_currentBlockIndex = 0;
+
+    /*
      * Available academic program IDs.
      */
     QStringList m_availablePrograms;

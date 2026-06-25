@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QVariantMap>
 #include <cassert>
 #include <iostream>
 
@@ -58,6 +59,33 @@ int main(int argc, char* argv[]) {
     assert(QFile::exists(validPath));
 
     QFile::remove(validPath);
+
+    int metricsChangedCount = 0;
+    QObject::connect(&manager,
+                     &ScheduleOutputManager::currentMetricsChanged,
+                     [&metricsChangedCount]() {
+                         ++metricsChangedCount;
+                     });
+
+    manager.setMetricsUpdater([](const ScheduleGenerationResult& updatedSchedule) {
+        ScheduleMetrics metrics;
+        metrics.avgDaysBetweenAll = 42.0;
+        metrics.maxExamsInSingleDay =
+            static_cast<int>(updatedSchedule.getAssignments().size());
+        return metrics;
+    });
+
+    metricsChangedCount = 0;
+
+    const QVariantMap moveResult =
+        manager.requestMove("89101", "05-01-2026");
+
+    assert(moveResult.value("status").toInt() == 1);
+    assert(metricsChangedCount == 1);
+
+    const QVariantMap currentMetrics = manager.getCurrentMetrics();
+    assert(currentMetrics.value("avgDaysBetweenAll").toDouble() == 42.0);
+    assert(currentMetrics.value("maxExamsInSingleDay").toInt() == 1);
 
     // After clearData(), current index is invalid and export must be blocked.
     manager.clearData();

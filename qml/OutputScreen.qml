@@ -895,6 +895,23 @@ Item {
                     property var validDates: ({})
                     property string draggedCourseId: ""
 
+                    function dropOverlayColor(dateKey) {
+                        if (!dateKey || dateKey === "") {
+                            return "transparent"
+                        }
+
+                        if (!calendarGrid.validDates) {
+                            return "transparent"
+                        }
+
+                        var status = calendarGrid.validDates[dateKey]
+                        if (status === undefined) {
+                            return "transparent"
+                        }
+
+                        return status === true ? "#86efac" : "#fca5a5"
+                    }
+
                     cellWidth: width / 7
 
                     /**
@@ -1007,23 +1024,7 @@ Item {
                             radius: 4
                             opacity: 0.25
                             visible: calendarGrid.dragActive && modelData.dateKey !== ""
-                            color: {
-                                if (!calendarGrid.validDates) return "#fca5a5"; 
-                                
-                                // Debugging: Print keys only once to console to avoid spam
-                                console.log("Searching for key:", modelData.dateKey); 
-                                
-                                var status = calendarGrid.validDates[modelData.dateKey];
-                                
-                                if (status === undefined) {
-                                    // This line runs because the key doesn't match
-                                    console.log("CRITICAL MISMATCH! Searching for key: '" + modelData.dateKey + "'");
-                                    console.log("Available keys in Map: " + Object.keys(calendarGrid.validDates).join(", "));
-                                    return "gray"; 
-                                }
-                                
-                                return status === true ? "#86efac" : "#fca5a5";
-                            }
+                            color: calendarGrid.dropOverlayColor(modelData.dateKey)
                         }
 
                         /*

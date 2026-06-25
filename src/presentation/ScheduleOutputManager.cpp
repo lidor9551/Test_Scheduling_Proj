@@ -55,6 +55,7 @@ void ScheduleOutputManager::setSchedulingData(const std::vector<ScheduleGenerati
      */
     emit totalSchedulesCountChanged();
     emit currentScheduleIndexChanged();
+    emit currentMetricsChanged();
 }
 
 /*
@@ -93,12 +94,43 @@ QVariantList ScheduleOutputManager::getCurrentCalendarData() const {
 }
 
 /*
+ * Returns the metrics for the currently selected schedule.
+ *
+ * QML receives a QVariantMap so it can bind individual metric values without
+ * knowing the C++ ScheduleMetrics type.
+ */
+QVariantMap ScheduleOutputManager::getCurrentMetrics() const {
+    QVariantMap metrics;
+
+    if (!isCurrentScheduleIndexValid()) {
+        return metrics;
+    }
+
+    const ScheduleMetrics& currentMetrics =
+        m_solutions[m_currentIndex - 1].metrics;
+
+    metrics["avgDaysBetweenObligatory"] =
+        currentMetrics.avgDaysBetweenObligatory;
+    metrics["avgDaysBetweenAll"] =
+        currentMetrics.avgDaysBetweenAll;
+    metrics["totalElectiveConflicts"] =
+        currentMetrics.totalElectiveConflicts;
+    metrics["obligatorySpan"] =
+        currentMetrics.obligatorySpan;
+    metrics["maxExamsInSingleDay"] =
+        currentMetrics.maxExamsInSingleDay;
+
+    return metrics;
+}
+
+/*
  * Moves the output screen to the next schedule if possible.
  */
 void ScheduleOutputManager::nextSchedule() {
     if (m_currentIndex < m_solutions.size()) {
         m_currentIndex++;
         emit currentScheduleIndexChanged();
+        emit currentMetricsChanged();
 
         /*
          * The visible calendar depends on the selected schedule,
@@ -115,6 +147,7 @@ void ScheduleOutputManager::previousSchedule() {
     if (m_currentIndex > 1) {
         m_currentIndex--;
         emit currentScheduleIndexChanged();
+        emit currentMetricsChanged();
 
         /*
          * Rebuild the calendar for the newly selected schedule.
@@ -458,6 +491,7 @@ void ScheduleOutputManager::clearData() {
     emit totalSchedulesCountChanged();
     emit currentScheduleIndexChanged();
     emit currentCalendarDataChanged();
+    emit currentMetricsChanged();
     
     qDebug() << "[MANAGER] Data cleared successfully.";
 }
@@ -677,6 +711,7 @@ void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priori
     // Notify QML bindings to react and redraw
     emit currentScheduleIndexChanged();
     emit currentCalendarDataChanged();
+    emit currentMetricsChanged();
 
 }
 
@@ -750,9 +785,15 @@ QVariantMap ScheduleOutputManager::requestMove(const QString& courseId, const QS
     bool success = currentSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
 
     if (success) {
+        // ReCalculate the modified scedule metrics using Callback
+        if (m_metricsUpdater) {
+            currentSchedule.metrics = m_metricsUpdater(currentSchedule);
+        }
+
         // Refresh the QML UI components to reflect the new state.
         updateCalendarData();
         emit currentCalendarDataChanged();
+        emit currentMetricsChanged();
         
         response["status"] = 1; // 1 for success
     } else {
