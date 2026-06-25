@@ -386,3 +386,69 @@ add_exam_scheduler_test(phase3_regression_smoke_test Phase3RegressionSmokeTest "
     ../src/domain/DateAvailabilityPolicy.cpp
     ../src/domain/ScheduleGenerationResult.cpp
 )
+
+# ---------------------------------------------------------------------------
+# GUI / QML tests
+# ---------------------------------------------------------------------------
+
+add_executable(qml_smoke_test
+    gui/QmlSmokeTest.cpp
+    ../src/presentation/AppController.cpp
+    ../src/presentation/ProgramCourseModel.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/presentation/CalendarManager.cpp
+    ../src/presentation/DragAndDropAdapter.cpp
+    ../src/application/SchedulingSession.cpp
+    ../src/infrastructure/InputParser.cpp
+    ../src/scheduling/Preprocessor.cpp
+    ../src/scheduling/SchedulingService.cpp
+    ../src/scheduling/SchedulingWorker.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+target_include_directories(qml_smoke_test
+    PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/../src
+        ${CMAKE_CURRENT_LIST_DIR}/common
+)
+
+target_link_libraries(qml_smoke_test
+    PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Qml
+        Qt6::Quick
+        Qt6::QuickControls2
+        Qt6::Concurrent
+)
+
+add_test(
+    NAME QmlSmokeTest
+    COMMAND qml_smoke_test
+)
+
+set_tests_properties(QmlSmokeTest
+    PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        LABELS "GUI;QML;Smoke;Regression"
+)
+
+if(WIN32 AND EXAM_SCHEDULER_TEST_ENV)
+    set_tests_properties(QmlSmokeTest
+        PROPERTIES
+            ENVIRONMENT "${EXAM_SCHEDULER_TEST_ENV};QT_QPA_PLATFORM=offscreen;QT_QUICK_CONTROLS_STYLE=Basic"
+    )
+else()
+    set_tests_properties(QmlSmokeTest
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_CONTROLS_STYLE=Basic"
+    )
+endif()
