@@ -11,7 +11,7 @@ on:
 jobs:
   windows-debug:
     name: Windows Debug Build + CTest
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     env:
       QT_VERSION: "6.8.0"
