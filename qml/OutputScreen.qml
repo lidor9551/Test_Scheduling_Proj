@@ -145,42 +145,29 @@ Item {
     QtObject {
         id: mockScheduleManager
 
-        /**
-         * Returns the set of valid drop dates for a course as a plain object
-         * mapping every non-empty "dd-MM-yyyy" key to its validity boolean.
-         *
-         * A date is valid when its cell is not excluded. The courseId is part of
-         * the contract but ignored by this mock rule.
-         */
         function getValidDatesForCourse(courseId) {
-            var result = ({})
-            var data = appController.outputManager.currentCalendarData
-            if (data) {
-                for (var i = 0; i < data.length; ++i) {
-                    var dk = data[i].dateKey
-                    if (dk && dk !== "") {
-                        result[dk] = (data[i].isExcluded === false)
-                    }
-                }
-            }
-            return result
+            // This now returns the real validity map from C++
+            return appController.outputManager.getValidDatesForCourse(courseId);
         }
 
-        /**
-         * Simulates a move request. Finds the cell whose dateKey matches newDate
-         * and returns { "status": 1 } when it exists and is not excluded, or
-         * { "status": 0 } otherwise.
-         */
-        function requestMove(courseId, newDate) {
-            var data = appController.outputManager.currentCalendarData
-            if (data) {
-                for (var i = 0; i < data.length; ++i) {
-                    if (data[i].dateKey === newDate) {
-                        return { "status": (data[i].isExcluded === false) ? 1 : 0 }
-                    }
-                }
+       function requestMove(courseId, newDate) {
+            // Call the C++ backend function we just implemented
+            // Make sure 'appController.outputManager' is accessible in your QML
+            var response = appController.outputManager.requestMove(courseId, newDate);
+
+             // The C++ logic handled all the complex rule checks (Adapter + RulesEngine)
+            if (response.status === 1) {
+                console.log("Move successful! C++ validated it.");
+                return { "status": 1 };
+            } else {
+                // Here we handle the failure
+                console.log("Move rejected by C++ engine. Error: " + response.error);
+        
+            // Use this to show a popup to the user in QML
+            // showErrorDialog("Move rejected: " + response.error);
+        
+            return { "status": 0, "error": response.error };
             }
-            return { "status": 0 }
         }
     }
 
@@ -1020,8 +1007,23 @@ Item {
                             radius: 4
                             opacity: 0.25
                             visible: calendarGrid.dragActive && modelData.dateKey !== ""
-                            color: calendarGrid.validDates[modelData.dateKey] === true
-                                   ? "#86efac" : "#fca5a5"
+                            color: {
+                                if (!calendarGrid.validDates) return "#fca5a5"; 
+                                
+                                // Debugging: Print keys only once to console to avoid spam
+                                console.log("Searching for key:", modelData.dateKey); 
+                                
+                                var status = calendarGrid.validDates[modelData.dateKey];
+                                
+                                if (status === undefined) {
+                                    // This line runs because the key doesn't match
+                                    console.log("CRITICAL MISMATCH! Searching for key: '" + modelData.dateKey + "'");
+                                    console.log("Available keys in Map: " + Object.keys(calendarGrid.validDates).join(", "));
+                                    return "gray"; 
+                                }
+                                
+                                return status === true ? "#86efac" : "#fca5a5";
+                            }
                         }
 
                         /*
@@ -1072,6 +1074,7 @@ Item {
                                      * so the card can bounce back and re-attach to
                                      * its origin cell on drop.
                                      */
+                                    property int capturedCourseId: (typeof modelData !== 'undefined' && modelData !== null) ? modelData.courseId : -1
                                     property var originalParent: null
                                     property real returnX: 0
                                     property real returnY: 0
@@ -1104,9 +1107,9 @@ Item {
                                                 examCard.width = examCard.startWidth
                                                 examCard.height = examCard.startHeight
 
-                                                calendarGrid.draggedCourseId = modelData.courseId
+                                                calendarGrid.draggedCourseId = capturedCourseId
                                                 calendarGrid.validDates =
-                                                    mockScheduleManager.getValidDatesForCourse(modelData.courseId)
+                                                    mockScheduleManager.getValidDatesForCourse(capturedCourseId)
                                                 calendarGrid.dragActive = true
                                             } else {
                                                 /** DROP: resolve target cell at the card center, request the move. */
@@ -1117,14 +1120,12 @@ Item {
                                                     examCard.width / 2, examCard.height / 2)
                                                 var idx = calendarGrid.indexAt(center.x, center.y)
 
-                                                if (idx >= 0) {
+                                                if (idx >= 0 && capturedCourseId !== -1) {
                                                     var cell = appController.outputManager.currentCalendarData[idx]
                                                     var dk = cell ? cell.dateKey : ""
                                                     if (dk && dk !== "") {
-                                                        var result = mockScheduleManager.requestMove(
-                                                            modelData.courseId, dk)
-                                                        console.log("DROP", modelData.courseId,
-                                                                    "→", dk, "| status =", result.status)
+                                                        var result = mockScheduleManager.requestMove(capturedCourseId, dk);
+                                                        console.log("DROP", capturedCourseId, "→", dk, "| status =", result.status);
                                                     }
                                                 }
 

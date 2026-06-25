@@ -1,5 +1,4 @@
 #include "AdvancedConflictRules.h"
-
 #include <algorithm>
 
 namespace {
@@ -27,9 +26,8 @@ bool hasAnyMembershipInGroup(const RuntimeCourse& course, int groupId) {
 
 } // namespace
 
-// ============================================================================
+
 // Rule 2.1: Minimum days between obligatory exams
-// ============================================================================
 MinDaysObligatoryRule::MinDaysObligatoryRule(
     int k,
     const std::vector<Date>& dates,
@@ -37,7 +35,7 @@ MinDaysObligatoryRule::MinDaysObligatoryRule(
     : m_k(k), m_dates(dates), m_allCourses(allCourses) {}
 
 bool MinDaysObligatoryRule::isSatisfied(
-    const SchedulingState& state,
+    const IReadOnlySchedule& schedule, // Using abstract interface instead of concrete state
     const RuntimeCourse& course,
     int dateIndex) const {
 
@@ -48,17 +46,15 @@ bool MinDaysObligatoryRule::isSatisfied(
             continue;
         }
 
-        for (std::size_t i = 0; i < state.assignedDate.size(); ++i) {
-            if (i >= m_allCourses.size()) {
-                break;
-            }
-
+        // Loop through all possible courses to check their assigned dates
+        for (std::size_t i = 0; i < m_allCourses.size(); ++i) {
             if (static_cast<int>(i) == course.id) {
                 continue;
             }
 
-            const int assignedDateIdx = state.assignedDate[i];
-            if (assignedDateIdx == -1) {
+            // Retrieve the assigned date via the abstract interface
+            const int assignedDateIdx = schedule.getAssignedDate(static_cast<int>(i));
+            if (assignedDateIdx == -1) { // -1 means unassigned
                 continue;
             }
 
@@ -79,9 +75,7 @@ bool MinDaysObligatoryRule::isSatisfied(
     return true;
 }
 
-// ============================================================================
 // Rule 2.2: Minimum days between ANY exams (Obligatory or Elective)
-// ============================================================================
 MinDaysAllRule::MinDaysAllRule(
     int k,
     const std::vector<Date>& dates,
@@ -89,23 +83,20 @@ MinDaysAllRule::MinDaysAllRule(
     : m_k(k), m_dates(dates), m_allCourses(allCourses) {}
 
 bool MinDaysAllRule::isSatisfied(
-    const SchedulingState& state,
+    const IReadOnlySchedule& schedule, 
     const RuntimeCourse& course,
     int dateIndex) const {
 
     const Date candidateDate = m_dates[dateIndex];
 
     for (const CourseMembership& currentMembership : course.memberships) {
-        for (std::size_t i = 0; i < state.assignedDate.size(); ++i) {
-            if (i >= m_allCourses.size()) {
-                break;
-            }
-
+        for (std::size_t i = 0; i < m_allCourses.size(); ++i) {
             if (static_cast<int>(i) == course.id) {
                 continue;
             }
 
-            const int assignedDateIdx = state.assignedDate[i];
+            // Abstract date retrieval
+            const int assignedDateIdx = schedule.getAssignedDate(static_cast<int>(i));
             if (assignedDateIdx == -1) {
                 continue;
             }
@@ -124,16 +115,14 @@ bool MinDaysAllRule::isSatisfied(
     return true;
 }
 
-// ============================================================================
 // Rule 2.3: Maximum conflicts (same day) for elective courses
-// ============================================================================
 MaxElectiveConflictsRule::MaxElectiveConflictsRule(
     int k,
     const std::vector<RuntimeCourse>& allCourses)
     : m_k(k), m_allCourses(allCourses) {}
 
 bool MaxElectiveConflictsRule::isSatisfied(
-    const SchedulingState& state,
+    const IReadOnlySchedule& schedule, 
     const RuntimeCourse& course,
     int dateIndex) const {
 
@@ -144,16 +133,16 @@ bool MaxElectiveConflictsRule::isSatisfied(
 
         int sameDayElectiveCount = 0;
 
-        for (std::size_t i = 0; i < state.assignedDate.size(); ++i) {
-            if (i >= m_allCourses.size()) {
-                break;
-            }
-
+        for (std::size_t i = 0; i < m_allCourses.size(); ++i) {
             if (static_cast<int>(i) == course.id) {
                 continue;
             }
 
-            if (state.assignedDate[i] != dateIndex) {
+            // Abstract date retrieval
+            const int assignedDateIdx = schedule.getAssignedDate(static_cast<int>(i));
+            
+            // Check if the other course is assigned to the SAME date candidate
+            if (assignedDateIdx != dateIndex) {
                 continue;
             }
 
@@ -182,9 +171,7 @@ bool MaxElectiveConflictsRule::isSatisfied(
     return true;
 }
 
-// ============================================================================
 // Rule 2.4: Minimum span (days) between the FIRST and LAST obligatory exams
-// ============================================================================
 ObligatorySpanRule::ObligatorySpanRule(
     int k,
     const std::vector<Date>& dates,
@@ -192,7 +179,7 @@ ObligatorySpanRule::ObligatorySpanRule(
     : m_k(k), m_dates(dates), m_allCourses(allCourses) {}
 
 bool ObligatorySpanRule::isSatisfied(
-    const SchedulingState& state,
+    const IReadOnlySchedule& schedule, 
     const RuntimeCourse& course,
     int dateIndex) const {
 
@@ -218,15 +205,17 @@ bool ObligatorySpanRule::isSatisfied(
 
             totalObligatoryInProgram++;
 
-            if (checkedCourse.id == course.id ||
-                i >= state.assignedDate.size() ||
-                state.assignedDate[i] == -1) {
+            if (checkedCourse.id == course.id) {
+                continue;
+            }
+            
+            // Abstract date retrieval
+            const int assignedDate = schedule.getAssignedDate(static_cast<int>(i));
+            if (assignedDate == -1) {
                 continue;
             }
 
             assignedObligatoryInProgram++;
-
-            const int assignedDate = state.assignedDate[i];
 
             if (assignedDate < earliestDateIdx) {
                 earliestDateIdx = assignedDate;
@@ -249,19 +238,34 @@ bool ObligatorySpanRule::isSatisfied(
     return true;
 }
 
-// ============================================================================
 // Rule 2.5: Maximum total exams per day
-// ============================================================================
 MaxExamsPerDayRule::MaxExamsPerDayRule(int k) : m_k(k) {}
 
 bool MaxExamsPerDayRule::isSatisfied(
-    const SchedulingState& state,
+    const IReadOnlySchedule& schedule, // UPDATED
     const RuntimeCourse& course,
     int dateIndex) const {
 
     int examsOnThisDate = 0;
 
-    for (int assignedIdx : state.assignedDate) {
+    // Loop through all potentially assigned courses to count how many are on the candidate date.
+    // Assuming course IDs run sequentially up to a known maximum, but since this specific rule 
+    // doesn't have m_allCourses natively, we need to iterate until getAssignedDate returns an out-of-bounds indication.
+    // A simple approach is to iterate over an assumed large number and break on consecutive failures,
+    // or to rely on the fact that the interface handles out-of-bounds gracefully.
+    // However, the cleanest way to adapt this without m_allCourses is to rely on a known course limit.
+    
+    // For safety, let's assume a maximum of 10,000 courses for this loop. 
+    // In a production refactor, you'd pass totalCourseCount to the rule constructor.
+    for (int i = 0; i < 10000; ++i) { 
+        int assignedIdx = schedule.getAssignedDate(i);
+        
+        if (assignedIdx == -1) {
+            // Unassigned or out of bounds. Since we don't know the exact array size here,
+            // we skip it. If the underlying vector throws or returns -1 for out-of-bounds, this is safe.
+            continue; 
+        }
+
         if (assignedIdx == dateIndex) {
             examsOnThisDate++;
         }

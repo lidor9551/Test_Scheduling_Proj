@@ -2,7 +2,11 @@
 #include "infrastructure/InputParser.h"
 #include "scheduling/Preprocessor.h"
 #include "scheduling/IConflictRule.h"
+#include "scheduling/SameGroupConflictRule.h"
+#include "scheduling/AdvancedConflictRules.h"
 #include "application/SchedulingSession.h"
+#include "presentation/DragAndDropAdapter.h"
+
 
 
 #include <QFileInfo>
@@ -37,7 +41,110 @@ AppController::AppController(QObject* parent)
      */
     connect(&m_schedulingService, &SchedulingService::generationFailed,
             this, &AppController::onSchedulingFailed);
+
+    
+    m_outputManager.setMoveValidator([this](const ScheduleGenerationResult& tempScheduleCopy, 
+                                        const std::string& courseId, 
+                                        const Date& targetDate) -> bool {
+    
+        // Flatten allowed dates
+        std::vector<Date> allowedDates;
+        for (const auto& period : session_.examPeriods()) {
+            const std::vector<Date>& periodDates = period.allowedDates();
+            allowedDates.insert(allowedDates.end(), periodDates.begin(), periodDates.end());
+        }
+
+        // Resolve date index
+        int dateIndex = -1;
+        for (std::size_t i = 0; i < allowedDates.size(); ++i) {
+            if (allowedDates[i].toString() == targetDate.toString()) {
+                dateIndex = static_cast<int>(i);
+                break;
+            }
+        }
+        if (dateIndex == -1) return false;
+
+        // Load preprocessor blocks
+        SchedulingPreprocessor preprocessor(session_.courses(), session_.examPeriods(), session_.selectedPrograms());
+        std::vector<SchedulingBlock> blocks = preprocessor.buildBlocks();
+
+        // Extract all RuntimeCourses into a single vector (Required by the Advanced Rules constructors)
+        std::vector<RuntimeCourse> allCourses;
+        for (const auto& block : blocks) {
+            allCourses.insert(allCourses.end(), block.runtimeCourses.begin(), block.runtimeCourses.end());
+        }
+
+        
+        // Simulate the exact state of the backtracking engine.
+        ScheduleGenerationResult simulatedSchedule = tempScheduleCopy;
+        
+        // Step 1: Remove the course from its current placement to make it "float"
+        simulatedSchedule.removeAssignment(courseId); 
+
+        // Step 2: Pass the cleaned, unassigned schedule state to the adapter
+        DragAndDropAdapter uiAdapter(simulatedSchedule, allowedDates, blocks, courseId);
+
+        // Step 3: Find the RuntimeCourse specs
+        RuntimeCourse courseToMove;
+        bool foundCourse = false;
+        for (const auto& block : blocks) {
+            for (const auto& rc : block.runtimeCourses) {
+                if (rc.course->getCourseNumber() == courseId) {
+                    courseToMove = rc;
+                    foundCourse = true;
+                    break;
+                }
+            }
+            if (foundCourse) break;
+        }
+        if (!foundCourse) return false;
+
+        // Step 4: Evaluate the basic rule on the target date while the course is unassigned
+        SameGroupConflictRule hardRule;
+        if (!hardRule.isSatisfied(uiAdapter, courseToMove, dateIndex)) {
+            return false; // Real collision with ANOTHER course detected!
+        }
+
+        // get all the activated rules
+        ScheduleSettings currentSettings = session_.getSettings();
+
+        // Rule 2.1: MinDaysObligatoryRule
+        if (currentSettings.minDaysObligatory.isActive) {
+            MinDaysObligatoryRule rule(currentSettings.minDaysObligatory.k, allowedDates, allCourses); 
+            if (!rule.isSatisfied(uiAdapter, courseToMove, dateIndex)) {
+                qDebug() << "DEBUG: Blocked by MinDaysObligatoryRule on date" << targetDate.toString().c_str(); 
+                return false;
+            }
+        }
+
+        // Rule 2.2: MinDaysAllRule
+        if (currentSettings.minDaysAll.isActive) {
+            MinDaysAllRule rule(currentSettings.minDaysAll.k, allowedDates, allCourses); 
+            if (!rule.isSatisfied(uiAdapter, courseToMove, dateIndex)) return false;
+        }
+
+        // Rule 2.3: MaxElectiveConflictsRule
+        if (currentSettings.maxElectiveConflicts.isActive) {
+            MaxElectiveConflictsRule rule(currentSettings.maxElectiveConflicts.k, allCourses); 
+            if (!rule.isSatisfied(uiAdapter, courseToMove, dateIndex)) return false;
+        }
+
+        // Rule 2.4: ObligatorySpanRule
+        if (currentSettings.obligatorySpan.isActive) {
+            ObligatorySpanRule rule(currentSettings.obligatorySpan.k, allowedDates, allCourses); 
+            if (!rule.isSatisfied(uiAdapter, courseToMove, dateIndex)) return false;
+        }
+
+        // Rule 2.5: MaxExamsPerDayRule
+        if (currentSettings.maxExamsPerDay.isActive) {
+            MaxExamsPerDayRule rule(currentSettings.maxExamsPerDay.k); 
+            if (!rule.isSatisfied(uiAdapter, courseToMove, dateIndex)) return false;
+        }
+
+        return true; 
+    });
 }
+
 
 /*
  * Returns the currently selected courses file path.

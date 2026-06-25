@@ -7,7 +7,7 @@
  * The method loops over all memberships of the course because one course can
  * belong to more than one academic program/year group.
  */
-bool SameGroupConflictRule::isSatisfied(const SchedulingState& state,
+bool SameGroupConflictRule::isSatisfied(const IReadOnlySchedule& schedule, // Using abstract interface instead of concrete state
                                         const RuntimeCourse& course,
                                         int dateIndex) const {
     /*
@@ -23,11 +23,13 @@ bool SameGroupConflictRule::isSatisfied(const SchedulingState& state,
          * from the same academic group.
          */
         if (membership.requirement == Requirement::OBLIGATORY) {
-            if (state.obligatoryCount[groupId][dateIndex] > 0) {
+            // Fetching from the abstract interface in O(1)
+            if (schedule.getObligatoryCount(groupId, dateIndex) > 0) {
                 return false;
             }
 
-            if (state.electiveCount[groupId][dateIndex] > 0) {
+            // Fetching from the abstract interface in O(1)
+            if (schedule.getElectiveCount(groupId, dateIndex) > 0) {
                 return false;
             }
         } else {
@@ -37,7 +39,7 @@ bool SameGroupConflictRule::isSatisfied(const SchedulingState& state,
              * but they cannot overlap with an obligatory course
              * from the same academic group.
              */
-            if (state.obligatoryCount[groupId][dateIndex] > 0) {
+            if (schedule.getObligatoryCount(groupId, dateIndex) > 0) {
                 return false;
             }
         }

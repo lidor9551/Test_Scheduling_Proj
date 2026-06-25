@@ -1,5 +1,6 @@
 #include "ScheduleGenerationResult.h"
 
+#include <algorithm>
 #include <utility>
 
 /*
@@ -57,4 +58,28 @@ int ScheduleGenerationResult::getElectiveConflicts() const {
  */
 int ScheduleGenerationResult::getMinDaysBetweenObligatory() const {
     return m_minDaysBetweenObligatory;
+}
+
+// function to remove assignment from specific solution
+bool ScheduleGenerationResult::removeAssignment(const std::string& courseId) {
+    auto it = std::remove_if(m_assignments.begin(), m_assignments.end(),
+        [&courseId](const ExamAssignment& a) {
+            return a.course->getCourseNumber() == courseId;
+        });
+        
+    if (it != m_assignments.end()) {
+        m_assignments.erase(it, m_assignments.end());
+        return true;
+    }
+    return false;
+}
+// function to change assignment's date in specific solution
+bool ScheduleGenerationResult::updateAssignmentDate(const std::string& courseId, const Date& newDate) {
+    for (auto& assignment : m_assignments) {
+        if (assignment.course->getCourseNumber() == courseId) {
+            assignment.examDate = newDate;
+            return true;
+        }
+    }
+    return false;
 }

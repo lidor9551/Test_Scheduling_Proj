@@ -70,10 +70,6 @@ ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, const ScheduleSettin
         conflictRules_.push_back(std::make_shared<MaxExamsPerDayRule>(
             settings.maxExamsPerDay.k));
     }
-    
-    // Note: if you have a basic rule that is always applied (like preventing overlaps in the same time slot),
-    // you can add it here:
-    // conflictRules_.push_back(std::make_shared<BasicOverlapRule>());
 }
 
 /*

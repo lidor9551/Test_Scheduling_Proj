@@ -1,4 +1,5 @@
 #include "scheduling/SameGroupConflictRule.h"
+#include "scheduling/SchedulingState.h"
 #include "TestMacros.h"
 
 #include <iostream>

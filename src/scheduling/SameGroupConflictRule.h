@@ -1,6 +1,8 @@
 #pragma once
 
 #include "scheduling/IConflictRule.h"
+#include "scheduling/IReadOnlySchedule.h"
+
 
 /*
  * SameGroupConflictRule implements the main V1/V2 same-day conflict logic.
@@ -27,7 +29,7 @@ public:
      * Returns true if placing the given course on the given date does not
      * violate same-group exam conflict rules.
      */
-    bool isSatisfied(const SchedulingState& state,
+    bool isSatisfied(const IReadOnlySchedule& schedule,
                      const RuntimeCourse& course,
                      int dateIndex) const override;
 };

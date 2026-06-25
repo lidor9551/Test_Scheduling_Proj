@@ -1,5 +1,10 @@
+#include "ScheduleOutputManager.h"
 #include "presentation/ScheduleOutputManager.h"
 #include "domain/DateAvailabilityPolicy.h"
+#include "scheduling/IReadOnlySchedule.h"
+#include "scheduling/Preprocessor.h"
+#include "application/SchedulingSession.h"
+#include "presentation/DragAndDropAdapter.h"
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
@@ -7,6 +12,8 @@
 #include <set>
 #include <QFile>
 #include <QTextStream>
+#include <algorithm>
+
 
 /*
  * Creates an empty ScheduleOutputManager.
@@ -613,9 +620,6 @@ bool ScheduleOutputManager::saveCurrentScheduleToFile(const QString& filePath) {
     return true;
 }
 
-#include "ScheduleOutputManager.h"
-#include <algorithm>
-
 void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priorityList) {
     if (priorityList.empty() || m_solutions.empty()) {
         return; // Nothing to sort
@@ -674,4 +678,124 @@ void ScheduleOutputManager::sortSchedules(const std::vector<std::string>& priori
     emit currentScheduleIndexChanged();
     emit currentCalendarDataChanged();
 
+}
+
+// ----------------------------------------------
+// Drag & Drop Validation and Execution Methods
+
+QVariantMap ScheduleOutputManager::requestMove(const QString& courseId, const QString& newDate) {
+    QVariantMap response;
+
+    // 1. Basic validation: Ensure we have valid results to work with.
+    if (m_solutions.empty() || m_currentIndex < 1 || m_currentIndex > m_solutions.size()) {
+        response["status"] = 0; // 0 for failure
+        return response;
+    }
+
+    // 2. Retrieve the current working schedule.
+    ScheduleGenerationResult& currentSchedule = m_solutions[m_currentIndex - 1];
+
+    std::vector<Date> allDates;
+    // get all the periods dates
+    for (const auto& period : m_periods) { 
+        const auto& dates = period.allowedDates();
+        allDates.insert(allDates.end(), dates.begin(), dates.end());
+    }
+
+    // 3. Clever workaround: Copy the valid Date object directly.
+    // Instead of parsing strings and risking invalid date instantiation, 
+    // we search existing assignments to guarantee a valid domain Date.
+    Date targetDate;
+    bool dateFound = false;
+    
+    for (const auto& date : allDates) { 
+        if (date.toString() == newDate.toStdString()) {
+            targetDate = date;
+            dateFound = true;
+            break;
+        }
+    }
+    // -------------------
+
+    // If the target date doesn't exist anywhere in the period, abort.
+    if (!dateFound) {
+        response["status"] = 0; 
+        response["error"] = "Invalid target date";
+        return response;
+    }
+
+    // Smart Validation Area: Check constraints before applying the move
+
+    // A. Create a temporary schedule and simulate the move "dry run"
+    ScheduleGenerationResult tempSchedule = currentSchedule;
+    tempSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
+
+    // B. Trigger the rules engine via the injected callback
+    if (m_moveValidator) {
+        
+        // The controller will evaluate the temporary schedule (usually via 
+        // the DragAndDropAdapter) and check for hard constraint conflicts.
+        bool isLegal = m_moveValidator(tempSchedule, courseId.toStdString(), targetDate);
+        
+        if (!isLegal) {
+            // Conflict detected! The rules engine rejected the move.
+            response["status"] = 0;
+            response["error"] = "Conflict detected. Move violates scheduling rules.";
+            return response;
+        }
+    }
+
+    // 4. If we reached this point, the move is perfectly legal.
+    // Apply the update to the actual schedule data structure.
+    bool success = currentSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
+
+    if (success) {
+        // Refresh the QML UI components to reflect the new state.
+        updateCalendarData();
+        emit currentCalendarDataChanged();
+        
+        response["status"] = 1; // 1 for success
+    } else {
+        response["status"] = 0; // 0 for failure (e.g., course not found)
+    }
+
+    return response;
+}
+
+QVariantMap ScheduleOutputManager::getValidDatesForCourse(const QString& courseId) {
+    QVariantMap response;
+    QVariantMap validationMap;
+
+    if (m_solutions.empty() || m_currentIndex < 1) return response;
+    const ScheduleGenerationResult& currentSchedule = m_solutions[m_currentIndex - 1];
+
+    // FIX 1: Collect dates from ALL periods, not just the first one
+    std::vector<Date> allDates;
+    for (const auto& period : m_periods) {
+        const auto& pDates = period.allowedDates();
+        allDates.insert(allDates.end(), pDates.begin(), pDates.end());
+    }
+
+    for (const auto& targetDate : allDates) {
+        QString dateStr = QString::fromStdString(targetDate.toString());
+        ScheduleGenerationResult tempSchedule = currentSchedule;
+        
+        // Temporarily move the course to evaluate this specific date
+        tempSchedule.updateAssignmentDate(courseId.toStdString(), targetDate);
+
+        bool isLegal = true;
+        if (m_moveValidator) {
+            isLegal = m_moveValidator(tempSchedule, courseId.toStdString(), targetDate);
+        }
+
+        // Only print if blocked, but keep it in the map anyway
+        if (!isLegal) {
+            // The UI will see 'false', making it red
+        }
+
+        validationMap[dateStr] = isLegal;
+    }
+
+    
+    return validationMap;
 }
