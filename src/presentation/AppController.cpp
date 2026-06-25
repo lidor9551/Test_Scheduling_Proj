@@ -19,6 +19,15 @@
 #include <QDate>
 #include <QDebug>
 
+namespace {
+
+constexpr int kInteractiveSolutionLimitPerBlock = 100000;
+
+QString periodCacheKey(const QString& semester, const QString& moed) {
+    return semester + "|" + moed;
+}
+
+} // namespace
 
 /*
  * Constructs the main application controller.
@@ -43,6 +52,12 @@ AppController::AppController(QObject* parent)
      */
     connect(&m_schedulingService, &SchedulingService::generationFailed,
             this, &AppController::onSchedulingFailed);
+
+    /*
+     * Keep the period cache aligned with user edits such as drag-and-drop moves.
+     */
+    connect(&m_outputManager, &ScheduleOutputManager::solutionsChanged,
+            this, &AppController::cacheCurrentOutputSolutions);
 
     
     m_outputManager.setMoveValidator([this](const ScheduleGenerationResult& tempScheduleCopy, 
@@ -455,6 +470,28 @@ void AppController::setError(const QString& message) {
 }
 
 /*
+ * Stores the output manager's latest schedule list in the cache for the active
+ * semester/moed.
+ */
+void AppController::cacheCurrentOutputSolutions() {
+    if (m_currentBlockIndex < 0 ||
+        m_currentBlockIndex >= static_cast<int>(m_allBlocks.size())) {
+        return;
+    }
+
+    const SchedulingBlock& activeBlock =
+        m_allBlocks[static_cast<std::size_t>(m_currentBlockIndex)];
+    const QString cacheKey = periodCacheKey(
+        QString::fromStdString(activeBlock.semester),
+        QString::fromStdString(activeBlock.moed)
+    );
+
+    m_generatedSolutionsByPeriod.insert(cacheKey, m_outputManager.getSolutions());
+    qDebug() << "[CACHE] Updated schedules for" << cacheKey
+             << "| count:" << m_outputManager.getSolutions().size();
+}
+
+/*
  * Converts the loaded courses into a QVariantList for QML.
  *
  * Each Course object is wrapped with QVariant::fromValue().
@@ -654,6 +691,7 @@ ScheduleOutputManager* AppController::outputManager() {
  */
 void AppController::generateSchedules() {
     clearMessages();
+    m_generatedSolutionsByPeriod.clear();
     qDebug() << "=========================================";
     qDebug() << ">>> generateSchedules STARTED! <<<";
     qDebug() << "Selected programs count:" << session_.selectedProgramCount();
@@ -807,6 +845,8 @@ void AppController::generateSchedules() {
  * The results are transferred to the output manager so the UI can display them.
  */
 void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationResult>& solutions) {
+    m_generationInProgress = false;
+
     qDebug() << "--- FINAL ALGORITHM OUTPUT ---";
     qDebug() << "Total solutions calculated:" << solutions.size();
     setStatus("השיבוץ הושלם!");
@@ -854,6 +894,7 @@ void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationRes
     }
 
     m_outputManager.sortSchedules(stdPriorities);
+    cacheCurrentOutputSolutions();
 }
 
 /*
@@ -862,6 +903,7 @@ void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationRes
  * The error is converted into a user-facing message.
  */
 void AppController::onSchedulingFailed(QString message) {
+    m_generationInProgress = false;
     setError("השיבוץ נכשל: " + message);
 }
 
@@ -900,6 +942,15 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
         return;
     }
 
+    const QString cacheKey = periodCacheKey(semester, moed);
+
+    if (m_generationInProgress) {
+        qDebug() << "[CACHE] Ignoring period switch while generation is running for"
+                 << cacheKey;
+        setStatus("מייצר מערכות שיבוץ, אנא המתן...");
+        return;
+    }
+
     /*
      * Notify the UI which period is currently being generated.
      */
@@ -914,15 +965,50 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
      */
     m_outputManager.setPeriodFilter(semester, moed);
 
+    auto cachedSolutions = m_generatedSolutionsByPeriod.constFind(cacheKey);
+    if (cachedSolutions != m_generatedSolutionsByPeriod.constEnd()) {
+        qDebug() << "[CACHE] Reusing schedules for" << cacheKey
+                 << "| count:" << cachedSolutions.value().size();
+        setStatus("השיבוץ הושלם!");
+
+        std::vector<Course> examOnlyCourses;
+        for (const auto& course : session_.courses()) {
+            if (course.getEvaluationMethod() == Evaluation::EXAM) {
+                examOnlyCourses.push_back(course);
+            }
+        }
+
+        m_outputManager.setSchedulingData(
+            cachedSolutions.value(),
+            examOnlyCourses,
+            session_.examPeriods()
+        );
+
+        std::vector<std::string> stdPriorities;
+        for (const QString& id : m_sortingPriorities) {
+            stdPriorities.push_back(id.toStdString());
+        }
+
+        m_outputManager.sortSchedules(stdPriorities);
+        return;
+    }
+
     ScheduleSettings currentSettings = session_.getSettings();
 
     // Now we call the scheduling service to start the generation process for the selected block
     /*
      * Start asynchronous generation for the selected block.
      *
-     * The second parameter limits the number of generated solutions.
+     * Keep the interactive UI bounded. Full exhaustive runs can create millions
+     * of schedules and spend most of the time calculating metrics for results
+     * the user cannot realistically browse.
      */
-    m_schedulingService.startAsyncGeneration(*selectedBlock, currentSettings, 100000); 
+    m_generationInProgress = true;
+    m_schedulingService.startAsyncGeneration(
+        *selectedBlock,
+        currentSettings,
+        kInteractiveSolutionLimitPerBlock
+    );
 }
 
 // C++ function to create the internal map of program IDs to names
@@ -1000,6 +1086,8 @@ void AppController::saveHardConstraints(bool r21Enabled, int r21K,
                                          bool r23Enabled, int r23K,
                                          bool r24Enabled, int r24K,
                                          bool r25Enabled, int r25K) {
+    m_generatedSolutionsByPeriod.clear();
+
     m_rule21Enabled = r21Enabled;
     m_rule21K       = r21K;
 

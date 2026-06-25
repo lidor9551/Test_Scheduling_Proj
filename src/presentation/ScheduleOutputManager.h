@@ -86,6 +86,11 @@ public:
     int getTotalSchedulesCount() const;
 
     /*
+     * Returns the currently stored generated schedules.
+     */
+    const std::vector<ScheduleGenerationResult>& getSolutions() const;
+
+    /*
      * Returns available semester filter values.
      */
     QStringList getAvailableSemesters() const;
@@ -229,6 +234,11 @@ signals:
      * Emitted when current schedule metrics were recalculated or changed.
      */
     void currentMetricsChanged();
+
+    /*
+     * Emitted when the stored schedule results were modified in-place.
+     */
+    void solutionsChanged();
 
 private:
     /*
