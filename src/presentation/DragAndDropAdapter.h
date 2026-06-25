@@ -16,7 +16,8 @@ public:
 
     int getObligatoryCount(int groupId, int dateIndex) const override;
     int getElectiveCount(int groupId, int dateIndex) const override;
-    int getAssignedDate(int courseId) const;
+    int getAssignedDate(int courseId) const override;
+    int getTotalExamsOnDate(int dateIndex) const override;
 
 
 private:

@@ -133,9 +133,11 @@ bool ScheduleGenerator::canAssign(const SchedulingState& state,
  * - assignedDate for the course
  * - obligatory counters for obligatory memberships
  * - elective counters for elective memberships
+ * - total exam counter for the assigned date
  */
 void ScheduleGenerator::assign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = dateIndex;
+    state.totalExamsPerDate[dateIndex]++;
     for (const CourseMembership& membership : course.memberships) {
         if (membership.requirement == Requirement::OBLIGATORY) {
             state.obligatoryCount[membership.groupId][dateIndex]++;
@@ -152,6 +154,7 @@ void ScheduleGenerator::assign(SchedulingState& state, const RuntimeCourse& cour
  */
 void ScheduleGenerator::unassign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = -1;
+    state.totalExamsPerDate[dateIndex]--;
     for (const CourseMembership& membership : course.memberships) {
         if (membership.requirement == Requirement::OBLIGATORY) {
             state.obligatoryCount[membership.groupId][dateIndex]--;
@@ -307,7 +310,8 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
     SchedulingState state{
         std::vector<int>(block_.runtimeCourses.size(), -1),
         std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0)),
-        std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0))
+        std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0)),
+        std::vector<int>(block_.allowedDates.size(), 0)
     };
 
     /*
