@@ -48,8 +48,11 @@ QString firstDisplayedCourseId(const ScheduleOutputManager& manager) {
     for (const QVariant& item : calendarData) {
         const QVariantMap day = item.toMap();
 
-        if (day.value("hasExam").toBool()) {
-            return day.value("courseId").toString();
+        const QVariantList exams = day.value("exams").toList();
+
+        if (!exams.isEmpty()) {
+            const QVariantMap firstExam = exams.first().toMap();
+            return firstExam.value("courseId").toString();
         }
     }
 
