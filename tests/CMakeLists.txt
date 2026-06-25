@@ -171,6 +171,7 @@ add_exam_scheduler_test(app_controller_test AppControllerTest "Unit;Presentation
     ../src/presentation/ProgramCourseModel.cpp
     ../src/presentation/ScheduleOutputManager.cpp
     ../src/presentation/CalendarManager.cpp
+    ../src/presentation/DragAndDropAdapter.cpp
     ../src/application/SchedulingSession.cpp
     ../src/infrastructure/InputParser.cpp
     ../src/scheduling/Preprocessor.cpp
@@ -202,6 +203,7 @@ add_exam_scheduler_test(settings_workflow_test SettingsWorkflowTest "Unit;Presen
     ../src/presentation/ProgramCourseModel.cpp
     ../src/presentation/ScheduleOutputManager.cpp
     ../src/presentation/CalendarManager.cpp
+    ../src/presentation/DragAndDropAdapter.cpp
     ../src/application/SchedulingSession.cpp
     ../src/infrastructure/InputParser.cpp
     ../src/scheduling/Preprocessor.cpp

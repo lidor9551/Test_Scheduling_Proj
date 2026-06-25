@@ -51,6 +51,13 @@ class ScheduleOutputManager : public QObject {
      */
     Q_PROPERTY(QVariantList currentCalendarData READ getCurrentCalendarData NOTIFY currentCalendarDataChanged)
 
+    /*
+     * Current schedule metrics exposed to QML.
+     *
+     * These values are recalculated after a successful drag-and-drop move.
+     */
+    Q_PROPERTY(QVariantMap currentMetrics READ getCurrentMetrics NOTIFY currentMetricsChanged)
+
 public:
     /*
      * Creates an empty output manager.
@@ -92,6 +99,11 @@ public:
      * Returns the calendar data currently displayed by QML.
      */
     QVariantList getCurrentCalendarData() const;
+
+    /*
+     * Returns the metrics of the currently selected schedule for QML display.
+     */
+    QVariantMap getCurrentMetrics() const;
     
     /*
      * Stores the courses used for output display.
@@ -117,6 +129,11 @@ public:
      * @param priorityList A list of criteria ordered by user priority (index 0 is most important).
      */
     void sortSchedules(const std::vector<std::string>& priorityList);
+
+    // set the schedule Metrics
+    void setMetricsUpdater(std::function<ScheduleMetrics(const ScheduleGenerationResult&)> updater) {
+        m_metricsUpdater = updater;
+    }
 
     /**
      * @brief Defines the signature for the validation callback.
@@ -208,6 +225,11 @@ signals:
      */
     void currentCalendarDataChanged();
 
+    /*
+     * Emitted when current schedule metrics were recalculated or changed.
+     */
+    void currentMetricsChanged();
+
 private:
     /*
      * Checks whether there is a valid current schedule that can be exported.
@@ -257,6 +279,9 @@ private:
      * Exam periods relevant to the generated output.
      */
     std::vector<ExamPeriod> m_periods;
+
+    // get the schedule and return the updated metrics
+    std::function<ScheduleMetrics(const ScheduleGenerationResult&)> m_metricsUpdater;
 
     // Current state of the output screen
     /*

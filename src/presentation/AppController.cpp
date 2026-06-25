@@ -4,6 +4,7 @@
 #include "scheduling/IConflictRule.h"
 #include "scheduling/SameGroupConflictRule.h"
 #include "scheduling/AdvancedConflictRules.h"
+#include "scheduling/MetricsCalculator.h"
 #include "application/SchedulingSession.h"
 #include "presentation/DragAndDropAdapter.h"
 
@@ -17,6 +18,7 @@
 #include <QVariant>
 #include <QDate>
 #include <QDebug>
+
 
 /*
  * Constructs the main application controller.
@@ -142,6 +144,19 @@ AppController::AppController(QObject* parent)
         }
 
         return true; 
+    });
+
+    m_outputManager.setMetricsUpdater([this](const ScheduleGenerationResult& schedule) {
+        if (this->m_allBlocks.empty() ||
+            this->m_currentBlockIndex < 0 ||
+            this->m_currentBlockIndex >= static_cast<int>(this->m_allBlocks.size())) {
+            return ScheduleMetrics{};
+        }
+
+        return MetricsCalculator::calculate(
+            schedule,
+            this->m_allBlocks[static_cast<std::size_t>(this->m_currentBlockIndex)]
+        );
     });
 }
 
@@ -861,14 +876,17 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
     std::string targetMoed = moed.toStdString();
 
     SchedulingBlock* selectedBlock = nullptr;
+    int selectedBlockIndex = -1;
     
     // search for the block that matches the selected semester and moed
     /*
      * Find the block that matches the requested semester and moed.
      */
-    for (auto& block : m_allBlocks) {
+    for (std::size_t i = 0; i < m_allBlocks.size(); ++i) {
+        auto& block = m_allBlocks[i];
         if (block.semester == targetSem && block.moed == targetMoed) {
             selectedBlock = &block;
+            selectedBlockIndex = static_cast<int>(i);
             break;
         }
     }
@@ -886,6 +904,7 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
      * Notify the UI which period is currently being generated.
      */
     setStatus("מייצר מערכות שיבוץ עבור " + semester + " " + moed + "...");
+    m_currentBlockIndex = selectedBlockIndex;
 
     //update the output manager with the current period filter so it can prepare the UI accordingly
     /*

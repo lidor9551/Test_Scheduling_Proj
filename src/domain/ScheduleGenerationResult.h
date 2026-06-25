@@ -83,7 +83,6 @@ private:
     int m_minDaysBetweenObligatory = 0;
 
 public:
-
     // The newly added metrics used for sorting and UI display
     ScheduleMetrics metrics;
     
