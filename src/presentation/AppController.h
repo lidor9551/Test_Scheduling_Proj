@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QHash>
 #include <vector>
 #include "domain/Course.h"
 #include "domain/ExamPeriod.h"
@@ -338,6 +339,12 @@ private:
      * Updates the error message and notifies QML.
      */
     void setError(const QString& message);
+
+    /*
+     * Updates the current semester/moed cache from the output manager's latest
+     * schedule results.
+     */
+    void cacheCurrentOutputSolutions();
     
     /*
      * Model used by QML to display courses grouped by selected programs.
@@ -406,6 +413,19 @@ private:
      * Used when recalculating metrics after a drag-and-drop move.
      */
     int m_currentBlockIndex = 0;
+
+    /*
+     * Generated schedules cached by semester/moed for the current generation run.
+     *
+     * This prevents rerunning the same expensive block when the user switches
+     * away from a period and then returns to it.
+     */
+    QHash<QString, std::vector<ScheduleGenerationResult>> m_generatedSolutionsByPeriod;
+
+    /*
+     * True while the scheduling service is running a background generation job.
+     */
+    bool m_generationInProgress = false;
 
     /*
      * Available academic program IDs.

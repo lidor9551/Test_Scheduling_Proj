@@ -25,4 +25,9 @@ public:
      * Returns the number of elective exams for a specific academic group on a specific date.
      */
     virtual int getElectiveCount(int groupIndex, int dateIndex) const = 0;
+
+    /*
+     * Returns the total number of exams assigned to a specific date.
+     */
+    virtual int getTotalExamsOnDate(int dateIndex) const = 0;
 };

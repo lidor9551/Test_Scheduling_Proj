@@ -8,6 +8,7 @@
 #include <chrono>
 #include <functional>
 #include <limits>
+#include <QDebug>
 
 /*
  * Creates a timeout exception.
@@ -133,9 +134,11 @@ bool ScheduleGenerator::canAssign(const SchedulingState& state,
  * - assignedDate for the course
  * - obligatory counters for obligatory memberships
  * - elective counters for elective memberships
+ * - total exam counter for the assigned date
  */
 void ScheduleGenerator::assign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = dateIndex;
+    state.totalExamsPerDate[dateIndex]++;
     for (const CourseMembership& membership : course.memberships) {
         if (membership.requirement == Requirement::OBLIGATORY) {
             state.obligatoryCount[membership.groupId][dateIndex]++;
@@ -152,6 +155,7 @@ void ScheduleGenerator::assign(SchedulingState& state, const RuntimeCourse& cour
  */
 void ScheduleGenerator::unassign(SchedulingState& state, const RuntimeCourse& course, int dateIndex) const {
     state.assignedDate[course.id] = -1;
+    state.totalExamsPerDate[dateIndex]--;
     for (const CourseMembership& membership : course.memberships) {
         if (membership.requirement == Requirement::OBLIGATORY) {
             state.obligatoryCount[membership.groupId][dateIndex]--;
@@ -307,7 +311,8 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
     SchedulingState state{
         std::vector<int>(block_.runtimeCourses.size(), -1),
         std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0)),
-        std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0))
+        std::vector<std::vector<int>>(groupCount_, std::vector<int>(block_.allowedDates.size(), 0)),
+        std::vector<int>(block_.allowedDates.size(), 0)
     };
 
     /*
@@ -446,6 +451,13 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
      * Start the recursive search.
      */
     backtrack();
+    const auto searchFinishedTime = std::chrono::steady_clock::now();
+    const auto searchElapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        searchFinishedTime - startTime
+    ).count();
+
+    qDebug() << "[ScheduleGenerator] Backtracking finished in"
+             << searchElapsedMs << "ms | solutions:" << solutions.size();
 
     // POST-PROCESSING: Calculate metrics for all valid schedules
     /*
@@ -457,6 +469,17 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
         // We will create the MetricsCalculator class next to handle this logic
         result.metrics = MetricsCalculator::calculate(result, block_); 
     }
+    const auto metricsFinishedTime = std::chrono::steady_clock::now();
+    const auto metricsElapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        metricsFinishedTime - searchFinishedTime
+    ).count();
+    const auto totalElapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        metricsFinishedTime - startTime
+    ).count();
+
+    qDebug() << "[ScheduleGenerator] Metrics calculated in"
+             << metricsElapsedMs << "ms | total generation pipeline:"
+             << totalElapsedMs << "ms";
 
     /*
      * Return all solutions found for this block.

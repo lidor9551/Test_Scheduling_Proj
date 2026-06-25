@@ -73,6 +73,13 @@ int ScheduleOutputManager::getTotalSchedulesCount() const {
 }
 
 /*
+ * Returns the generated schedules currently stored by the output manager.
+ */
+const std::vector<ScheduleGenerationResult>& ScheduleOutputManager::getSolutions() const {
+    return m_solutions;
+}
+
+/*
  * Returns all available semesters for the output filter UI.
  */
 QStringList ScheduleOutputManager::getAvailableSemesters() const {
@@ -794,6 +801,7 @@ QVariantMap ScheduleOutputManager::requestMove(const QString& courseId, const QS
         updateCalendarData();
         emit currentCalendarDataChanged();
         emit currentMetricsChanged();
+        emit solutionsChanged();
         
         response["status"] = 1; // 1 for success
     } else {

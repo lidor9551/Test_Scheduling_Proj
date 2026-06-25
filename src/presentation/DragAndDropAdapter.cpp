@@ -138,3 +138,29 @@ int DragAndDropAdapter::getAssignedDate(int courseId) const {
     }
     return -1; 
 }
+
+int DragAndDropAdapter::getTotalExamsOnDate(int dateIndex) const {
+    if (dateIndex < 0 || dateIndex >= static_cast<int>(m_allowedDates.size())) {
+        return 0;
+    }
+
+    const Date& targetDate = m_allowedDates[dateIndex];
+    int count = 0;
+
+    for (const auto& assignment : m_result.getAssignments()) {
+        if (!assignment.course) {
+            continue;
+        }
+
+        const std::string assignedCourseNum = assignment.course->getCourseNumber();
+        if (!m_ignoreCourseId.empty() && assignedCourseNum == m_ignoreCourseId) {
+            continue;
+        }
+
+        if (assignment.examDate == targetDate) {
+            count++;
+        }
+    }
+
+    return count;
+}

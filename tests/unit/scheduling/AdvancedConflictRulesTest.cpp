@@ -43,6 +43,7 @@ SchedulingState makeState(
         std::vector<std::vector<int>>(groupCount, std::vector<int>(dateCount, 0));
     state.electiveCount =
         std::vector<std::vector<int>>(groupCount, std::vector<int>(dateCount, 0));
+    state.totalExamsPerDate = std::vector<int>(dateCount, 0);
     return state;
 }
 
@@ -52,6 +53,7 @@ void assignCourse(
     int dateIndex
 ) {
     state.assignedDate[course.id] = dateIndex;
+    state.totalExamsPerDate[dateIndex]++;
 
     for (const CourseMembership& membership : course.memberships) {
         if (membership.requirement == Requirement::OBLIGATORY) {

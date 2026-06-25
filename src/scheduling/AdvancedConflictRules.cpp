@@ -242,34 +242,11 @@ bool ObligatorySpanRule::isSatisfied(
 MaxExamsPerDayRule::MaxExamsPerDayRule(int k) : m_k(k) {}
 
 bool MaxExamsPerDayRule::isSatisfied(
-    const IReadOnlySchedule& schedule, // UPDATED
-    const RuntimeCourse& course,
+    const IReadOnlySchedule& schedule,
+    const RuntimeCourse&,
     int dateIndex) const {
 
-    int examsOnThisDate = 0;
-
-    // Loop through all potentially assigned courses to count how many are on the candidate date.
-    // Assuming course IDs run sequentially up to a known maximum, but since this specific rule 
-    // doesn't have m_allCourses natively, we need to iterate until getAssignedDate returns an out-of-bounds indication.
-    // A simple approach is to iterate over an assumed large number and break on consecutive failures,
-    // or to rely on the fact that the interface handles out-of-bounds gracefully.
-    // However, the cleanest way to adapt this without m_allCourses is to rely on a known course limit.
-    
-    // For safety, let's assume a maximum of 10,000 courses for this loop. 
-    // In a production refactor, you'd pass totalCourseCount to the rule constructor.
-    for (int i = 0; i < 10000; ++i) { 
-        int assignedIdx = schedule.getAssignedDate(i);
-        
-        if (assignedIdx == -1) {
-            // Unassigned or out of bounds. Since we don't know the exact array size here,
-            // we skip it. If the underlying vector throws or returns -1 for out-of-bounds, this is safe.
-            continue; 
-        }
-
-        if (assignedIdx == dateIndex) {
-            examsOnThisDate++;
-        }
-    }
+    const int examsOnThisDate = schedule.getTotalExamsOnDate(dateIndex);
 
     if (examsOnThisDate >= m_k) {
         return false;

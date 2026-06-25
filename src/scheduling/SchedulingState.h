@@ -31,10 +31,12 @@ struct SchedulingState : public IReadOnlySchedule {
      */
     SchedulingState(std::vector<int> assigned,
                     std::vector<std::vector<int>> obligatory,
-                    std::vector<std::vector<int>> elective)
+                    std::vector<std::vector<int>> elective,
+                    std::vector<int> totalPerDate = {})
         : assignedDate(std::move(assigned)),
           obligatoryCount(std::move(obligatory)),
-          electiveCount(std::move(elective)) {}
+          electiveCount(std::move(elective)),
+          totalExamsPerDate(std::move(totalPerDate)) {}
     /*
      * Stores the assigned date index for each runtime course.
      *
@@ -66,12 +68,20 @@ struct SchedulingState : public IReadOnlySchedule {
      */
     std::vector<std::vector<int>> electiveCount;
 
+    /*
+     * Counts the total number of exams assigned to each date.
+     *
+     * The vector index represents the date index. This lets rules that only
+     * care about overall date load avoid scanning every course assignment.
+     */
+    std::vector<int> totalExamsPerDate;
+
     // IReadOnlySchedule Implementation
 
     // Returns the assigned date index, or -1 if the course is unassigned 
     // this is exactly what the Backtracking algorithm needs to know
     int getAssignedDate(int courseIndex) const override {
-        if (courseIndex < 0 || courseIndex >= assignedDate.size()) return -1;
+        if (courseIndex < 0 || courseIndex >= static_cast<int>(assignedDate.size())) return -1;
         return assignedDate[courseIndex];
     }
 
@@ -83,5 +93,14 @@ struct SchedulingState : public IReadOnlySchedule {
     // returns the number of elective exams for a specific academic group on a specific date.
     int getElectiveCount(int groupIndex, int dateIndex) const override {
         return electiveCount[groupIndex][dateIndex];
+    }
+
+    // returns the total number of exams already assigned to a specific date.
+    int getTotalExamsOnDate(int dateIndex) const override {
+        if (dateIndex < 0 || dateIndex >= static_cast<int>(totalExamsPerDate.size())) {
+            return 0;
+        }
+
+        return totalExamsPerDate[dateIndex];
     }
 };
