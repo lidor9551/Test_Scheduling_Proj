@@ -66,8 +66,7 @@ std::vector<SchedulingBlock> SchedulingPreprocessor::buildBlocks() const {
             allowedDates,
             runtimeCourses
         });
-    }
-    // qDebug() << ">>> Number of blocks built:" << blocks.size(); 
+    } 
 
     /*
      * If no blocks were created, there is nothing meaningful to send to the solver.

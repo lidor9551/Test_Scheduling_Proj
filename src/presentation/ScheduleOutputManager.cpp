@@ -4,6 +4,7 @@
 #include "scheduling/IReadOnlySchedule.h"
 #include "scheduling/Preprocessor.h"
 #include "application/SchedulingSession.h"
+#include "presentation/DragAndDropAdapter.h"
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
@@ -13,88 +14,6 @@
 #include <QTextStream>
 #include <algorithm>
 
-/**
- * @brief Adapter class that allows Conflict Rules to validate a ScheduleGenerationResult.
- * Translates integer index queries into real domain object queries using pointer comparison.
- */
-class DragAndDropAdapter : public IReadOnlySchedule {
-    const ScheduleGenerationResult& m_schedule;
-    const std::vector<RuntimeCourse>& m_courses;
-    const std::vector<Date>& m_dates;
-
-public:
-    DragAndDropAdapter(const ScheduleGenerationResult& schedule, 
-                       const std::vector<RuntimeCourse>& courses, 
-                       const std::vector<Date>& dates)
-        : m_schedule(schedule), m_courses(courses), m_dates(dates) {}
-
-    // IReadOnlySchedule Implementation
-
-    int getAssignedDate(int courseIndex) const override {
-        // Grab the pointer to the original course object
-        const Course* targetCourse = m_courses[courseIndex].course; 
-        
-        // Fast pointer comparison to find the assignment
-        for (const auto& assignment : m_schedule.getAssignments()) {
-            if (assignment.course == targetCourse) { 
-                for (int i = 0; i < m_dates.size(); ++i) {
-                    if (m_dates[i].toString() == assignment.examDate.toString()) {
-                        return i;
-                    }
-                }
-            }
-        }
-        return -1; // Unassigned
-    }
-
-    int getObligatoryCount(int groupIndex, int dateIndex) const override {
-        int count = 0;
-        const std::string& targetDateStr = m_dates[dateIndex].toString();
-        
-        for (const auto& assignment : m_schedule.getAssignments()) {
-            if (assignment.examDate.toString() == targetDateStr) {
-                for (const auto& runtimeC : m_courses) {
-                    // Fast pointer comparison
-                    if (runtimeC.course == assignment.course) {
-                        for (const auto& membership : runtimeC.memberships) {
-                            // Added Requirement:: scope here
-                            if (membership.groupId == groupIndex && membership.requirement == Requirement::OBLIGATORY) {
-                                count++;
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    int getElectiveCount(int groupIndex, int dateIndex) const override {
-        int count = 0;
-        const std::string& targetDateStr = m_dates[dateIndex].toString();
-        
-        for (const auto& assignment : m_schedule.getAssignments()) {
-            if (assignment.examDate.toString() == targetDateStr) {
-                for (const auto& runtimeC : m_courses) {
-                    // Fast pointer comparison
-                    if (runtimeC.course == assignment.course) {
-                        for (const auto& membership : runtimeC.memberships) {
-                            // Added Requirement:: scope here
-                            if (membership.groupId == groupIndex && membership.requirement == Requirement::ELECTIVE) {
-                                count++;
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-};
 
 /*
  * Creates an empty ScheduleOutputManager.
