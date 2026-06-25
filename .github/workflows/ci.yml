@@ -52,9 +52,6 @@ jobs:
 
       - name: Run CTest
         shell: pwsh
-        env:
-          PATH: "${{ env.QT_DIR }}\\bin;${{ env.PATH }}"
-          QT_QPA_PLATFORM: "offscreen"
-          QT_QUICK_CONTROLS_STYLE: "Basic"
         run: |
+          $env:PATH = "$env:QT_DIR\bin;$env:PATH"
           ctest --test-dir build -C Debug --output-on-failure
