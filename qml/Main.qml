@@ -13,16 +13,18 @@ Window {
     minimumHeight: 700
     visible: true
     title: "מתזמן בחינות 2.0 - קלט"
-    color: "#f7f5ef"
+    color: theme.pageBg
 
-    property color primary: "#14533f"
-    property color primaryDark: "#0f3f30"
-    property color primarySoft: "#edf7f2"
-    property color borderSoft: "#e1e5df"
-    property color textDark: "#1f2933"
-    property color textMuted: "#69737a"
-    property color danger: "#b91c1c"
-    property color success: "#047857"
+    AppTheme { id: theme }
+
+    property color primary: theme.primary
+    property color primaryDark: theme.primaryDark
+    property color primarySoft: theme.primarySoft
+    property color borderSoft: theme.borderSoft
+    property color textDark: theme.textDark
+    property color textMuted: theme.textMuted
+    property color danger: theme.danger
+    property color success: theme.success
 
     property string currentProgramView: ""
     property string currentProgramId: ""  
@@ -127,35 +129,6 @@ Window {
         }
     }
 }
-    // Custom Button Component
-    component AppButton: Button {
-        id: control
-        property bool outline: false
-
-        implicitWidth: 165
-        implicitHeight: 46
-        font.pixelSize: 15
-        font.bold: true
-
-        contentItem: Text {
-            text: control.text
-            color: control.outline ? root.primary : "white"
-            font.pixelSize: 15
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-
-        background: Rectangle {
-            radius: 12
-            color: control.outline
-                   ? (control.down ? "#e3efe9" : control.hovered ? "#f3faf6" : "white")
-                   : (control.down ? root.primaryDark : control.hovered ? "#1b664f" : root.primary)
-            border.color: root.primary
-            border.width: 1
-        }
-    }
-
     // Custom Card Component for file selection
     component FileCard: Rectangle {
         id: card

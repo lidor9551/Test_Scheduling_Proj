@@ -24,11 +24,13 @@ Item {
      * out of scope from a screen pushed onto the StackView, so the colors used
      * here are redeclared locally, exactly as SettingsScreen.qml does.
      */
-    readonly property color primary:     "#14533f"
-    readonly property color primaryDark: "#0f3f30"
-    readonly property color borderSoft:  "#e1e5df"
-    readonly property color textDark:    "#1f2933"
-    readonly property color textMuted:   "#69737a"
+    AppTheme { id: theme }
+
+    readonly property color primary:     theme.primary
+    readonly property color primaryDark: theme.primaryDark
+    readonly property color borderSoft:  theme.borderSoft
+    readonly property color textDark:    theme.textDark
+    readonly property color textMuted:   theme.textMuted
 
     /**
      * Whether the left sorting sidebar is expanded.
