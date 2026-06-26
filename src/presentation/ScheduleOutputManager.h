@@ -175,11 +175,6 @@ public:
     Q_INVOKABLE void setPeriodFilter(const QString& semester, const QString& moed);
 
     /*
-     * Placeholder action for exporting the current schedule.
-     */
-    Q_INVOKABLE void exportCurrentSchedule();
-
-    /*
      * Clears all scheduling output data.
      */
     Q_INVOKABLE void clearData();
@@ -260,13 +255,7 @@ private:
     /*
      * Rebuilds m_calendarData according to the selected schedule and period filter.
      */
-    void updateCalendarData(); 
-
-    // Extracts unique semesters and moeds from the ExamPeriod data
-    /*
-     * Extracts available semester and moed values from the loaded exam periods.
-     */
-    void extractAvailableFilters(); 
+    void updateCalendarData();
 
     // Map to convert programID to programName for display purposes
     /*

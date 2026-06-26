@@ -9,7 +9,6 @@
 #include <QDir>
 #include <QDebug>
 #include <QDate>
-#include <set>
 #include <QFile>
 #include <QTextStream>
 #include <algorithm>
@@ -178,52 +177,6 @@ void ScheduleOutputManager::setPeriodFilter(const QString& semester, const QStri
      * Rebuild the calendar after changing the selected period filter.
      */
     updateCalendarData();
-}
-
-/*
- * Placeholder method for export action from QML.
- *
- * The actual text-file export is implemented in saveCurrentScheduleToFile().
- */
-void ScheduleOutputManager::exportCurrentSchedule() {
-    qDebug() << "Exporting schedule index:" << m_currentIndex;
-}
-
-/*
- * Extracts unique semester and moed values from loaded exam periods.
- *
- * The extracted values are used by QML dropdowns or filters.
- */
-void ScheduleOutputManager::extractAvailableFilters() {
-    std::set<QString> uniqueSemesters;
-    std::set<QString> uniqueMoeds;
-
-    /*
-     * Use sets to avoid duplicate filter values.
-     */
-    for (const auto& period : m_periods) {
-        uniqueSemesters.insert(QString::fromStdString(semesterToString(period.getSemester())));
-        uniqueMoeds.insert(QString::fromStdString(moedToString(period.getMoed())));
-    }
-
-    /*
-     * Convert the sets into QStringList values for QML.
-     */
-    m_semesters = QStringList(uniqueSemesters.begin(), uniqueSemesters.end());
-    m_moeds = QStringList(uniqueMoeds.begin(), uniqueMoeds.end());
-
-    // Set default selection to the first available option
-    /*
-     * Select default filter values when possible.
-     */
-    if (!m_semesters.isEmpty()) m_selectedSemester = m_semesters.first();
-    if (!m_moeds.isEmpty()) m_selectedMoed = m_moeds.first();
-
-    /*
-     * Notify QML that available filter options changed.
-     */
-    emit availableSemestersChanged();
-    emit availableMoedsChanged();
 }
 
 /*

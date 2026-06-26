@@ -2,7 +2,6 @@
 
 #include "domain/Course.h"
 #include "domain/ExamPeriod.h"
-#include "scheduling/IConflictRule.h"
 
 #include <cstddef>
 #include <string>
@@ -138,9 +137,6 @@ public:
 
     // Returns all loaded exam periods.
     const std::vector<ExamPeriod>& examPeriods() const;
-
-    // Returns all conflicts rules.
-    const std::vector<IConflictRule>& conflictRules() const;
 
     // Returns all currently selected academic programs.
     const std::vector<std::string>& selectedPrograms() const;
