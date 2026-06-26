@@ -247,6 +247,16 @@ add_exam_scheduler_test(schedule_output_manager_sorting_test ScheduleOutputManag
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
+add_exam_scheduler_test(schedule_output_manager_move_date_boundary_test ScheduleOutputManagerMoveDateBoundaryTest "Unit;Presentation;DragDrop;MVP;TES202"
+    unit/presentation/ScheduleOutputManagerMoveDateBoundaryTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
 # ---------------------------------------------------------------------------
 # Integration tests — Parser + Preprocessor
 # ---------------------------------------------------------------------------
