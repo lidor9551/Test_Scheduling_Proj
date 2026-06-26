@@ -11,7 +11,12 @@
  */
 SchedulingWorker::SchedulingWorker(const ScheduleGenerator* generator, int limitPerBlock)
     : generator_(generator),
-      limitPerBlock_(limitPerBlock) {
+      limitPerBlock_(limitPerBlock),
+      cancellationRequested_(false) {
+}
+
+void SchedulingWorker::requestCancellation() {
+    cancellationRequested_.store(true);
 }
 
 /*
@@ -26,7 +31,9 @@ void SchedulingWorker::run() {
          * Run the backtracking solver using the configured solution limit.
          */
         std::vector<ScheduleGenerationResult> solutions =
-            generator_->runBacktracking(limitPerBlock_);
+            generator_->runBacktracking(limitPerBlock_, [this]() {
+                return cancellationRequested_.load();
+            });
 
         /*
          * Send successful results back to the scheduling service.

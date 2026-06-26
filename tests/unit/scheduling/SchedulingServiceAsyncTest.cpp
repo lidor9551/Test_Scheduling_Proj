@@ -69,6 +69,29 @@ SchedulingBlock makeNoSolutionBlock(const Course& course) {
     return block;
 }
 
+SchedulingBlock makeLargeSearchBlock(const std::vector<Course>& courses) {
+    SchedulingBlock block;
+    block.semester = "FALL";
+    block.moed = "Aleph";
+
+    for (int day = 1; day <= static_cast<int>(courses.size()); ++day) {
+        block.allowedDates.push_back(Date(day, 1, 2026));
+    }
+
+    for (std::size_t index = 0; index < courses.size(); ++index) {
+        RuntimeCourse runtimeCourse;
+        runtimeCourse.id = static_cast<int>(index);
+        runtimeCourse.course = &courses[index];
+        runtimeCourse.memberships = {
+            CourseMembership{0, Requirement::OBLIGATORY}
+        };
+
+        block.runtimeCourses.push_back(runtimeCourse);
+    }
+
+    return block;
+}
+
 ScheduleSettings defaultSettings() {
     return ScheduleSettings{};
 }
@@ -255,6 +278,106 @@ void testConcurrentStartEmitsAlreadyRunningFailure() {
     TEST_EXPECT_EQ(finishedCount, 1);
 }
 
+void testCancellationEmitsFailureForActiveRun() {
+    std::vector<Course> courses;
+    courses.reserve(10);
+
+    for (int index = 0; index < 10; ++index) {
+        courses.push_back(makeExamCourse(
+            "Cancellation Course " + std::to_string(index),
+            "89" + std::to_string(200 + index)
+        ));
+    }
+
+    SchedulingBlock block = makeLargeSearchBlock(courses);
+    ScheduleSettings settings = defaultSettings();
+
+    SchedulingService service;
+
+    QEventLoop loop;
+    QTimer timeoutTimer;
+    timeoutTimer.setSingleShot(true);
+
+    bool finished = false;
+    bool failed = false;
+    bool timedOut = false;
+    QString failureMessage;
+
+    QObject::connect(
+        &service,
+        &SchedulingService::generationFinished,
+        &loop,
+        [&](const std::vector<ScheduleGenerationResult>& solutions) {
+            (void)solutions;
+            finished = true;
+            loop.quit();
+        }
+    );
+
+    QObject::connect(
+        &service,
+        &SchedulingService::generationFailed,
+        &loop,
+        [&](QString message) {
+            failed = true;
+            failureMessage = message;
+            loop.quit();
+        }
+    );
+
+    QObject::connect(
+        &timeoutTimer,
+        &QTimer::timeout,
+        &loop,
+        [&]() {
+            timedOut = true;
+            loop.quit();
+        }
+    );
+
+    service.startAsyncGeneration(block, settings, -1);
+    QTimer::singleShot(0, &service, &SchedulingService::cancelActiveGeneration);
+
+    timeoutTimer.start(3000);
+
+    if (!finished && !failed) {
+        loop.exec();
+    }
+
+    timeoutTimer.stop();
+
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+    TEST_EXPECT_FALSE(timedOut);
+    TEST_EXPECT_FALSE(finished);
+    TEST_EXPECT_TRUE(failed);
+    TEST_EXPECT_TRUE(failureMessage.contains("cancelled"));
+}
+
+void testDestructorShutsDownActiveRunWithoutCrash() {
+    std::vector<Course> courses;
+    courses.reserve(10);
+
+    for (int index = 0; index < 10; ++index) {
+        courses.push_back(makeExamCourse(
+            "Destructor Course " + std::to_string(index),
+            "89" + std::to_string(300 + index)
+        ));
+    }
+
+    SchedulingBlock block = makeLargeSearchBlock(courses);
+    ScheduleSettings settings = defaultSettings();
+
+    {
+        SchedulingService service;
+        service.startAsyncGeneration(block, settings, -1);
+        service.cancelActiveGeneration();
+    }
+
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    TEST_EXPECT_TRUE(true);
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -267,6 +390,8 @@ int main(int argc, char* argv[]) {
     testAsyncGenerationEmitsFinishedForSimpleBlock();
     testAsyncGenerationCanReturnEmptySolutionListWhenNoDatesExist();
     testConcurrentStartEmitsAlreadyRunningFailure();
+    testCancellationEmitsFailureForActiveRun();
+    testDestructorShutsDownActiveRunWithoutCrash();
 
     std::cout << "SchedulingServiceAsyncTest passed." << std::endl;
     return EXIT_SUCCESS;
