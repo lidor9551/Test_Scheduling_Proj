@@ -267,6 +267,15 @@ add_exam_scheduler_test(schedule_output_manager_move_hard_constraints_test Sched
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
+add_exam_scheduler_test(schedule_output_manager_move_memory_integrity_test ScheduleOutputManagerMoveMemoryIntegrityTest "Unit;Presentation;DragDrop;MVP;Memory;TES204"
+    unit/presentation/ScheduleOutputManagerMoveMemoryIntegrityTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
 # ---------------------------------------------------------------------------
 # Integration tests — Parser + Preprocessor
 # ---------------------------------------------------------------------------
