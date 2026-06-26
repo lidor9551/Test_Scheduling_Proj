@@ -53,7 +53,7 @@ Page {
                     if (calendarScreen.StackView.view) {
                         calendarScreen.StackView.view.pop()
                     } else {
-                        console.log("CalendarScreen: StackView view was not found")
+                        console.warn("CalendarScreen: StackView view was not found")
                     }
                 }
             }
@@ -140,7 +140,7 @@ Page {
                     if (calendarScreen.StackView.view) {
                         calendarScreen.StackView.view.push(Qt.resolvedUrl("PeriodEditorScreen.qml"))
                     } else {
-                        console.log("CalendarScreen: StackView view was not found")
+                        console.warn("CalendarScreen: StackView view was not found")
                     }
                 }
             }
