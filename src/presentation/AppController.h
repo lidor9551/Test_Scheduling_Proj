@@ -15,6 +15,7 @@
 #include "application/SchedulingSession.h"
 #include "domain/ScheduleGenerationResult.h"
 #include "scheduling/SchedulingService.h"
+#include "application/MoveValidationService.h"
 
 /*
  * AppController is the main presentation-layer controller.
@@ -468,4 +469,6 @@ private:
      * OutputScreen.qml. Read by the schedule-ranking logic in a future subtask.
      */
     QStringList m_sortingPriorities;
+    
+    MoveValidationService m_moveValidationService;
 };

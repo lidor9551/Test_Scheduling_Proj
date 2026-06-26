@@ -47,6 +47,7 @@ qt_add_executable(
 
     # Application layer: central scheduling session state.
     src/application/SchedulingSession.cpp
+    src/application/MoveValidationService.cpp
 
     # Infrastructure layer: file parsing and output writing.
     src/infrastructure/InputParser.cpp
