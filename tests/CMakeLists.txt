@@ -353,6 +353,20 @@ add_exam_scheduler_test(hard_constraints_integration_test HardConstraintsIntegra
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
+# ---------------------------------------------------------------------------
+# Integration tests — Metrics and sorting
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(metrics_sorting_integration_test MetricsSortingIntegrationTest "Integration;Scheduling;Phase3;Metrics;Sorting"
+    integration/metrics_sorting/MetricsSortingIntegrationTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
 
 # ---------------------------------------------------------------------------
 # Integration tests — Export flow
