@@ -257,6 +257,16 @@ add_exam_scheduler_test(schedule_output_manager_move_date_boundary_test Schedule
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
+add_exam_scheduler_test(schedule_output_manager_move_hard_constraints_test ScheduleOutputManagerMoveHardConstraintsTest "Unit;Presentation;DragDrop;MVP;Phase3;TES203"
+    unit/presentation/ScheduleOutputManagerMoveHardConstraintsTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
 # ---------------------------------------------------------------------------
 # Integration tests — Parser + Preprocessor
 # ---------------------------------------------------------------------------
