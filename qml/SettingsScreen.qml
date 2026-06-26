@@ -318,7 +318,7 @@ Item {
                                 width: 40
                                 height: 40
                                 radius: 10
-                                color: ruleSwitch.checked ? "#edf7f2" : "#f1f5f9"
+                                color: ruleSwitch.checked ? theme.primarySoft : "#f1f5f9"
 
                                 Text {
                                     anchors.centerIn: parent
@@ -456,7 +456,7 @@ Item {
                                     Layout.alignment: Qt.AlignHCenter
                                     visible: kColumn.kOverflow
                                     text: "המקסימום הוא " + settingsRoot.kMax
-                                    color: "#b91c1c"
+                                    color: theme.danger
                                     font.pixelSize: 11
                                 }
                             }
@@ -476,7 +476,7 @@ Item {
             Layout.fillWidth: true
             visible: settingsRoot.overflowMessageVisible
             text: "שגיאה: הזן מספר קטן מ-" + settingsRoot.kMax
-            color: "#b91c1c"
+            color: theme.danger
             font.pixelSize: 14
             font.bold: true
             wrapMode: Text.WordWrap
