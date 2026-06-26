@@ -431,6 +431,21 @@ add_exam_scheduler_test(phase3_regression_smoke_test Phase3RegressionSmokeTest "
 )
 
 # ---------------------------------------------------------------------------
+# Performance tests
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(scheduler_performance_smoke_test SchedulerPerformanceSmokeTest "Performance;Smoke;Scheduling;TES175"
+    performance/SchedulerPerformanceSmokeTest.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+# ---------------------------------------------------------------------------
 # GUI / QML tests
 # ---------------------------------------------------------------------------
 
