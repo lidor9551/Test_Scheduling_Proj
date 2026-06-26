@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Define the project name, version, and programming language.
-project(ExamScheduler VERSION 2.0 LANGUAGES CXX)
+project(ExamScheduler VERSION 4.0 LANGUAGES CXX)
 
 # Use C++17 for the entire project.
 set(CMAKE_CXX_STANDARD 17)
