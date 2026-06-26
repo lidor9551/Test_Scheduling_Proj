@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <atomic>
 #include <vector>
 #include "domain/ScheduleGenerationResult.h"
 
@@ -32,6 +33,14 @@ public:
      * limitPerBlock controls how many solutions should be generated.
      */
     SchedulingWorker(const ScheduleGenerator* generator, int limitPerBlock);
+
+    /*
+     * Requests cooperative cancellation of the current run.
+     *
+     * This method is thread-safe and may be called by SchedulingService while
+     * the worker is executing inside the background thread.
+     */
+    void requestCancellation();
 
 public slots:
     /*
@@ -70,4 +79,9 @@ private:
      * Maximum number of solutions to generate for the scheduling block.
      */
     int limitPerBlock_;
+
+    /*
+     * Set when the service asks the running generator to stop cooperatively.
+     */
+    std::atomic_bool cancellationRequested_;
 };

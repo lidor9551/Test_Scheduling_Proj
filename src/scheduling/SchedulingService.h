@@ -1,11 +1,17 @@
 #pragma once
 
 #include <QObject>
+#include <QMetaObject>
 #include <QString>
+#include <optional>
 #include <vector>
 #include "scheduling/Preprocessor.h" 
 #include "domain/ScheduleGenerationResult.h"
 #include "application/SchedulingSession.h"
+
+class QThread;
+class ScheduleGenerator;
+class SchedulingWorker;
 
 /*
  * SchedulingService is the high-level entry point for asynchronous scheduling.
@@ -51,6 +57,13 @@ public:
      */
     void startAsyncGeneration(const SchedulingBlock& block, const ScheduleSettings& settings, int limitPerBlock = -1);
 
+    /*
+     * Requests cooperative cancellation of the active scheduling run.
+     *
+     * If no run is active, the method does nothing.
+     */
+    void cancelActiveGeneration();
+
 signals:
     // Emitted when the scheduling process completes successfully with the generated solutions.
     /*
@@ -65,9 +78,61 @@ signals:
 
 private:
     /*
-     * Tracks whether a scheduling operation is already running.
+     * Represents the single scheduling operation currently owned by the service.
      *
-     * This prevents starting multiple solver threads at the same time.
+     * Keeping these objects together makes the lifecycle explicit: a scheduling
+     * run is not just a boolean flag, it is a coordinated thread, worker, and
+     * generator that must be cleaned up as one unit.
      */
-    bool m_isRunning; 
+    struct ActiveSchedulingJob {
+        enum class State {
+            Starting,
+            Running,
+            Cancelling,
+            Finishing,
+            ShuttingDown
+        };
+
+        QThread* thread = nullptr;
+        ScheduleGenerator* generator = nullptr;
+        SchedulingWorker* worker = nullptr;
+        int limitPerBlock = -1;
+        State state = State::Starting;
+        std::vector<QMetaObject::Connection> connections;
+    };
+
+    /*
+     * Updates the state of the current job if the signal belongs to it.
+     */
+    void markActiveJobRunning(QThread* expectedThread);
+
+    /*
+     * Stores a signal connection owned by the active job.
+     */
+    bool registerActiveJobConnection(const QMetaObject::Connection& connection);
+
+    /*
+     * Disconnects all signal connections owned by a job snapshot.
+     */
+    void disconnectJobConnections(const ActiveSchedulingJob& job);
+
+    /*
+     * Releases the resources owned by the active scheduling job.
+     *
+     * expectedWorker protects against accidentally cleaning a stale job if an
+     * old signal is delivered after a newer job has already been registered.
+     */
+    void cleanupActiveJob(SchedulingWorker* expectedWorker);
+
+    /*
+     * Stops and releases an active job while the service itself is being
+     * destroyed. This path waits for the worker thread before deleting objects.
+     */
+    void shutdownActiveJob();
+
+    /*
+     * Empty when the service is idle.
+     * Populated while a background scheduling run is active.
+     */
+    std::optional<ActiveSchedulingJob> m_activeJob;
 };

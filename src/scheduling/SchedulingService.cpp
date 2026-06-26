@@ -2,14 +2,17 @@
 #include "ScheduleGenerator.h"
 #include "SchedulingWorker.h"
 
+#include <QMetaType>
 #include <QThread>
-#include <QDebug>
+#include <exception>
+#include <memory>
 
 /*
  * Initializes the service in an idle state.
  */
 SchedulingService::SchedulingService(QObject* parent)
-    : QObject(parent), m_isRunning(false) {
+    : QObject(parent) {
+    qRegisterMetaType<std::vector<ScheduleGenerationResult>>("std::vector<ScheduleGenerationResult>");
 }
 
 /*
@@ -19,7 +22,122 @@ SchedulingService::SchedulingService(QObject* parent)
  * long-living resources.
  */
 SchedulingService::~SchedulingService() {
-    // Destructor: Ensure that if the service is destroyed while a scheduling operation is running, we handle it gracefully.
+    shutdownActiveJob();
+}
+
+/*
+ * Marks the active job as running after its QThread has started.
+ */
+void SchedulingService::markActiveJobRunning(QThread* expectedThread) {
+    if (!m_activeJob.has_value()) {
+        return;
+    }
+
+    if (m_activeJob->thread != expectedThread) {
+        return;
+    }
+
+    m_activeJob->state = ActiveSchedulingJob::State::Running;
+}
+
+/*
+ * Registers one signal connection under the active job.
+ */
+bool SchedulingService::registerActiveJobConnection(const QMetaObject::Connection& connection) {
+    if (!connection || !m_activeJob.has_value()) {
+        return false;
+    }
+
+    m_activeJob->connections.push_back(connection);
+    return true;
+}
+
+/*
+ * Disconnects every signal connection recorded for a job.
+ */
+void SchedulingService::disconnectJobConnections(const ActiveSchedulingJob& job) {
+    for (const QMetaObject::Connection& connection : job.connections) {
+        QObject::disconnect(connection);
+    }
+}
+
+/*
+ * Cleans the currently active scheduling job after the worker reports a final
+ * outcome.
+ */
+void SchedulingService::cleanupActiveJob(SchedulingWorker* expectedWorker) {
+    if (!m_activeJob.has_value()) {
+        return;
+    }
+
+    if (expectedWorker != nullptr && m_activeJob->worker != expectedWorker) {
+        return;
+    }
+
+    m_activeJob->state = ActiveSchedulingJob::State::Finishing;
+
+    ActiveSchedulingJob job = *m_activeJob;
+    m_activeJob.reset();
+
+    if (job.thread != nullptr) {
+        job.thread->quit();
+    }
+
+    if (job.worker != nullptr) {
+        job.worker->deleteLater();
+    }
+
+    delete job.generator;
+}
+
+/*
+ * Safely tears down a running job while SchedulingService is being destroyed.
+ */
+void SchedulingService::shutdownActiveJob() {
+    if (!m_activeJob.has_value()) {
+        return;
+    }
+
+    m_activeJob->state = ActiveSchedulingJob::State::ShuttingDown;
+
+    ActiveSchedulingJob job = *m_activeJob;
+    m_activeJob.reset();
+    disconnectJobConnections(job);
+
+    if (job.worker != nullptr) {
+        job.worker->requestCancellation();
+    }
+
+    if (job.thread != nullptr) {
+        if (job.thread->isRunning()) {
+            job.thread->requestInterruption();
+            job.thread->quit();
+            job.thread->wait();
+        }
+    }
+
+    delete job.worker;
+    delete job.generator;
+    delete job.thread;
+}
+
+/*
+ * Requests cooperative cancellation of the active scheduling run.
+ */
+void SchedulingService::cancelActiveGeneration() {
+    if (!m_activeJob.has_value()) {
+        return;
+    }
+
+    m_activeJob->state = ActiveSchedulingJob::State::Cancelling;
+
+    if (m_activeJob->worker != nullptr) {
+        m_activeJob->worker->requestCancellation();
+    }
+
+    if (m_activeJob->thread != nullptr) {
+        m_activeJob->thread->requestInterruption();
+    }
 }
 
 /*
@@ -35,15 +153,10 @@ void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, const
     /*
      * Reject a new request if a previous scheduling operation is still running.
      */
-    if (m_isRunning) {
+    if (m_activeJob.has_value()) {
         emit generationFailed("Scheduling is already running. Please wait.");
         return;
     }
-
-    /*
-     * Mark the service as busy before creating the worker thread.
-     */
-    m_isRunning = true;
 
     // create a new QThread and a new ScheduleGenerator for this operation
     /*
@@ -52,9 +165,37 @@ void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, const
      * The generator performs the actual algorithm.
      * The worker is responsible for running it inside the QThread.
      */
-    auto* thread = new QThread();
-    auto* generator = new ScheduleGenerator(block, settings, 30.0); // 30 seconds max runtime
-    auto* worker = new SchedulingWorker(generator, limitPerBlock); 
+    std::unique_ptr<QThread> threadOwner;
+    std::unique_ptr<ScheduleGenerator> generatorOwner;
+    std::unique_ptr<SchedulingWorker> workerOwner;
+
+    try {
+        threadOwner = std::make_unique<QThread>();
+        generatorOwner = std::make_unique<ScheduleGenerator>(block, settings, 30.0); // 30 seconds max runtime
+        workerOwner = std::make_unique<SchedulingWorker>(generatorOwner.get(), limitPerBlock);
+    } catch (const std::exception& ex) {
+        emit generationFailed(QString("Failed to start scheduling job: %1").arg(QString::fromStdString(ex.what())));
+        return;
+    } catch (...) {
+        emit generationFailed("Failed to start scheduling job due to an unknown error.");
+        return;
+    }
+
+    auto* thread = threadOwner.release();
+    auto* generator = generatorOwner.release();
+    auto* worker = workerOwner.release();
+
+    /*
+     * Register the active job before wiring and starting the thread.
+     * From this point on, the service has one concrete scheduling run to track.
+     */
+    m_activeJob = ActiveSchedulingJob{
+        thread,
+        generator,
+        worker,
+        limitPerBlock,
+        ActiveSchedulingJob::State::Starting
+    };
 
     // Move the worker to the new thread
     /*
@@ -70,7 +211,17 @@ void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, const
     /*
      * Start the worker when the QThread begins execution.
      */
-    connect(thread, &QThread::started, worker, &SchedulingWorker::run);
+    bool connectionsReady = true;
+
+    connectionsReady = connectionsReady && registerActiveJobConnection(
+        connect(thread, &QThread::started, this, [this, thread]() {
+            markActiveJobRunning(thread);
+        }, Qt::QueuedConnection)
+    );
+
+    connectionsReady = connectionsReady && registerActiveJobConnection(
+        connect(thread, &QThread::started, worker, &SchedulingWorker::run)
+    );
 
     // When the worker finishes successfully
     /*
@@ -79,17 +230,14 @@ void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, const
      * The service resets its running flag, emits the result,
      * then shuts down and cleans the worker resources.
      */
-    connect(worker, &SchedulingWorker::finished, this, [this, thread, worker, generator](const std::vector<ScheduleGenerationResult>& solutions) {
-        m_isRunning = false;
-        
-        // Emit the successful result back to the AppController
-        emit generationFinished(solutions);
-        
-        // Cleanup: Stop the thread and delete the worker and generator
-        thread->quit();          
-        worker->deleteLater();  
-        delete generator;       
-    });
+    connectionsReady = connectionsReady && registerActiveJobConnection(
+        connect(worker, &SchedulingWorker::finished, this, [this, worker](const std::vector<ScheduleGenerationResult>& solutions) {
+            cleanupActiveJob(worker);
+            
+            // Emit the successful result back to the AppController
+            emit generationFinished(solutions);
+        }, Qt::QueuedConnection)
+    );
 
     // When the worker fails with an error
     /*
@@ -98,21 +246,27 @@ void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, const
      * The service resets its running flag, emits the error message,
      * then shuts down and cleans the worker resources.
      */
-    connect(worker, &SchedulingWorker::failed, this, [this, thread, worker, generator](QString message) {
-        m_isRunning = false;
-        
-        emit generationFailed(message);
-        
-        thread->quit();
-        worker->deleteLater();
-        delete generator;
-    });
+    connectionsReady = connectionsReady && registerActiveJobConnection(
+        connect(worker, &SchedulingWorker::failed, this, [this, worker](QString message) {
+            cleanupActiveJob(worker);
+            
+            emit generationFailed(message);
+        }, Qt::QueuedConnection)
+    );
 
     // Ensure the thread is deleted when it finishes
     /*
      * Delete the QThread object after it finishes.
      */
-    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+    connectionsReady = connectionsReady && registerActiveJobConnection(
+        connect(thread, &QThread::finished, thread, &QObject::deleteLater)
+    );
+
+    if (!connectionsReady) {
+        shutdownActiveJob();
+        emit generationFailed("Failed to connect scheduling thread signals.");
+        return;
+    }
 
     /*
      * Start the background thread.
@@ -120,4 +274,9 @@ void SchedulingService::startAsyncGeneration(const SchedulingBlock& block, const
      * This triggers QThread::started, which then calls SchedulingWorker::run.
      */
     thread->start();
+
+    if (!thread->isRunning()) {
+        shutdownActiveJob();
+        emit generationFailed("Failed to start scheduling thread.");
+    }
 }

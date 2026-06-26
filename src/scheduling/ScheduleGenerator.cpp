@@ -1,5 +1,4 @@
 #include "ScheduleGenerator.h"
-#include "scheduling/SchedulingWorker.h"
 #include "scheduling/SameGroupConflictRule.h"
 #include "scheduling/AdvancedConflictRules.h"
 #include "scheduling/MetricsCalculator.h"
@@ -19,6 +18,12 @@ SolverTimeoutException::SolverTimeoutException(const std::string& message)
     : std::runtime_error(message) {}
 
 /*
+ * Creates a cancellation exception.
+ */
+SolverCancelledException::SolverCancelledException(const std::string& message)
+    : std::runtime_error(message) {}
+
+/*
  * Creates a ScheduleGenerator for one scheduling block.
  *
  * The generator stores:
@@ -32,14 +37,6 @@ ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, const ScheduleSettin
       groupCount_(computeGroupCount()),
       maxRuntimeSeconds_(maxRuntimeSeconds), 
       conflictRules_(createDefaultConflictRules()) {
-
-    /*
-     * Registers the result vector type with Qt.
-     *
-     * This allows vectors of ScheduleGenerationResult to pass safely through
-     * Qt signal/slot connections when used by worker objects.
-     */
-    qRegisterMetaType<std::vector<ScheduleGenerationResult>>("std::vector<ScheduleGenerationResult>");
 
     // 2.1 minimum days between obligatory exams
     if (settings.minDaysObligatory.isActive) {
@@ -77,8 +74,11 @@ ScheduleGenerator::ScheduleGenerator(SchedulingBlock block, const ScheduleSettin
  *
  * The actual recursive implementation is kept inside generateAll().
  */
-std::vector<ScheduleGenerationResult> ScheduleGenerator::runBacktracking(int limitPerBlock) const {
-    return generateAll(limitPerBlock);
+std::vector<ScheduleGenerationResult> ScheduleGenerator::runBacktracking(
+    int limitPerBlock,
+    const std::function<bool()>& shouldCancel
+) const {
+    return generateAll(limitPerBlock, shouldCancel);
 }
 
 /*
@@ -301,7 +301,10 @@ int ScheduleGenerator::selectNextCourse(const SchedulingState& state, const std:
  * This method creates the initial solver state and defines the recursive
  * backtracking function that explores all legal assignments.
  */
-std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPerBlock) const {
+std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(
+    int limitPerBlock,
+    const std::function<bool()>& shouldCancel
+) const {
     /*
      * Initial scheduling state:
      * - every course starts unassigned with date index -1
@@ -337,6 +340,10 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
      * and then undoes the assignment before trying the next option.
      */
     std::function<void()> backtrack = [&]() {
+        if (shouldCancel && shouldCancel()) {
+            throw SolverCancelledException("Scheduling was cancelled.");
+        }
+
         auto now = std::chrono::steady_clock::now();
         double elapsed = std::chrono::duration<double>(now - startTime).count();
         

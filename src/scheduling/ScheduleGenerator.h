@@ -6,6 +6,7 @@
 #include "domain/ScheduleGenerationResult.h" 
 #include "application/SchedulingSession.h" 
 #include "scheduling/AdvancedConflictRules.h"
+#include <functional>
 #include <vector>
 #include <memory>
 #include <string>
@@ -28,6 +29,14 @@ class SolverTimeoutException : public std::runtime_error {
 public:
     // Creates a timeout exception with a readable error message.
     explicit SolverTimeoutException(const std::string& message);
+};
+
+/*
+ * SolverCancelledException is thrown when a caller requests cancellation.
+ */
+class SolverCancelledException : public std::runtime_error {
+public:
+    explicit SolverCancelledException(const std::string& message);
 };
 
 /*
@@ -55,7 +64,10 @@ public:
      * limitPerBlock limits the number of solutions returned for this block.
      * A negative value means there is no explicit solution limit.
      */
-    std::vector<ScheduleGenerationResult> runBacktracking(int limitPerBlock = -1) const;
+    std::vector<ScheduleGenerationResult> runBacktracking(
+        int limitPerBlock = -1,
+        const std::function<bool()>& shouldCancel = {}
+    ) const;
 
 private:
 
@@ -114,7 +126,10 @@ private:
      *
      * This method creates the initial state and runs the recursive solver.
      */
-    std::vector<ScheduleGenerationResult> generateAll(int limitPerBlock) const;
+    std::vector<ScheduleGenerationResult> generateAll(
+        int limitPerBlock,
+        const std::function<bool()>& shouldCancel
+    ) const;
 
     // The scheduling block currently being solved.
     SchedulingBlock block_;
