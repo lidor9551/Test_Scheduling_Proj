@@ -247,6 +247,35 @@ add_exam_scheduler_test(schedule_output_manager_sorting_test ScheduleOutputManag
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
+add_exam_scheduler_test(schedule_output_manager_move_date_boundary_test ScheduleOutputManagerMoveDateBoundaryTest "Unit;Presentation;DragDrop;MVP;TES202"
+    unit/presentation/ScheduleOutputManagerMoveDateBoundaryTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+add_exam_scheduler_test(schedule_output_manager_move_hard_constraints_test ScheduleOutputManagerMoveHardConstraintsTest "Unit;Presentation;DragDrop;MVP;Phase3;TES203"
+    unit/presentation/ScheduleOutputManagerMoveHardConstraintsTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+add_exam_scheduler_test(schedule_output_manager_move_memory_integrity_test ScheduleOutputManagerMoveMemoryIntegrityTest "Unit;Presentation;DragDrop;MVP;Memory;TES204"
+    unit/presentation/ScheduleOutputManagerMoveMemoryIntegrityTest.cpp
+    ../src/presentation/ScheduleOutputManager.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/ExamPeriod.cpp
+    ../src/domain/Date.cpp
+    ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
 # ---------------------------------------------------------------------------
 # Integration tests — Parser + Preprocessor
 # ---------------------------------------------------------------------------
@@ -398,6 +427,21 @@ add_exam_scheduler_test(phase3_regression_smoke_test Phase3RegressionSmokeTest "
     ../src/domain/ExamPeriod.cpp
     ../src/domain/Date.cpp
     ../src/domain/DateAvailabilityPolicy.cpp
+    ../src/domain/ScheduleGenerationResult.cpp
+)
+
+# ---------------------------------------------------------------------------
+# Performance tests
+# ---------------------------------------------------------------------------
+
+add_exam_scheduler_test(scheduler_performance_smoke_test SchedulerPerformanceSmokeTest "Performance;Smoke;Scheduling;TES175"
+    performance/SchedulerPerformanceSmokeTest.cpp
+    ../src/scheduling/ScheduleGenerator.cpp
+    ../src/scheduling/SameGroupConflictRule.cpp
+    ../src/scheduling/AdvancedConflictRules.cpp
+    ../src/scheduling/MetricsCalculator.cpp
+    ../src/domain/Course.cpp
+    ../src/domain/Date.cpp
     ../src/domain/ScheduleGenerationResult.cpp
 )
 
