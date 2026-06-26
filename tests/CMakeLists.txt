@@ -173,6 +173,7 @@ add_exam_scheduler_test(app_controller_test AppControllerTest "Unit;Presentation
     ../src/presentation/CalendarManager.cpp
     ../src/presentation/DragAndDropAdapter.cpp
     ../src/application/SchedulingSession.cpp
+    ../src/application/MoveValidationService.cpp
     ../src/infrastructure/InputParser.cpp
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/SchedulingService.cpp
@@ -205,6 +206,7 @@ add_exam_scheduler_test(settings_workflow_test SettingsWorkflowTest "Unit;Presen
     ../src/presentation/CalendarManager.cpp
     ../src/presentation/DragAndDropAdapter.cpp
     ../src/application/SchedulingSession.cpp
+    ../src/application/MoveValidationService.cpp
     ../src/infrastructure/InputParser.cpp
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/SchedulingService.cpp
@@ -457,6 +459,7 @@ add_executable(qml_smoke_test
     ../src/presentation/CalendarManager.cpp
     ../src/presentation/DragAndDropAdapter.cpp
     ../src/application/SchedulingSession.cpp
+    ../src/application/MoveValidationService.cpp
     ../src/infrastructure/InputParser.cpp
     ../src/scheduling/Preprocessor.cpp
     ../src/scheduling/SchedulingService.cpp
