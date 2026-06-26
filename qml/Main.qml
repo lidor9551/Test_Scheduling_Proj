@@ -293,6 +293,25 @@ Window {
                 anchors.margins: 34
                 spacing: 22
 
+                // Scrollable content area: header + file cards + program list.
+                // Separated from the action bar (kept as a fixed footer below) so
+                // the action buttons can never be pushed off a small window.
+                ScrollView {
+                    id: contentScroll
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    contentWidth: availableWidth   // content never scrolls sideways
+
+                    ColumnLayout {
+                        id: scrollContent
+                        width: contentScroll.availableWidth
+                        // Match the viewport on large windows (identical layout),
+                        // but become taller than it on small windows so the
+                        // vertical scroll bar appears instead of clipping content.
+                        height: Math.max(implicitHeight, contentScroll.availableHeight)
+                        spacing: 22
+
                 // Header Section
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -351,6 +370,7 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true // Takes all remaining vertical space
+                    Layout.minimumHeight: 360 // keep the list usable once the page scrolls
                     radius: 18
                     color: "white"
                     border.color: appController.selectedPrograms.length > 0 ? root.primary : root.borderSoft
@@ -522,8 +542,12 @@ Window {
                         }
                     }
                 }
+                    } // scrollContent
+                } // contentScroll
 
-                // Action Buttons and System Messages Section
+                // Action Buttons and System Messages Section — fixed footer.
+                // Always visible regardless of window size; its row scrolls
+                // horizontally so no button is ever clipped sideways.
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 92
@@ -540,81 +564,95 @@ Window {
                                     : root.borderSoft
                     border.width: 1
 
-                    RowLayout {
+                    ScrollView {
+                        id: footerScroll
                         anchors.fill: parent
                         anchors.margins: 20
-                        spacing: 14
+                        clip: true
+                        // Horizontal scrolling only; the footer height is fixed.
+                        contentHeight: availableHeight
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                        ScrollBar.horizontal.policy: ScrollBar.AsNeeded
 
-                        AppButton {
-                            text: "החלף נתונים"
-                            outline: false
-                            onClicked: appController.replaceData()
-                        }
+                        RowLayout {
+                            // Equal to the viewport on wide windows (the status text
+                            // sits at the far edge exactly as before); expands to its
+                            // implicit width on narrow ones to enable scrolling.
+                            width: Math.max(implicitWidth, footerScroll.availableWidth)
+                            height: footerScroll.availableHeight
+                            spacing: 14
 
-                        AppButton {
-                            text: "הוסף נתונים"
-                            outline: true
-                            onClicked: appController.appendData()
-                        }
-
-                        AppButton {
-                            text: "📅 צפה בלוח השנה"
-                            outline: false
-                            visible: appController.hasData
-                            onClicked: {
-                                calendarManager.setData(
-                                    appController.examPeriods,
-                                    appController.courses
-                                )
-                                stackView.push(Qt.resolvedUrl("CalendarScreen.qml"))
+                            AppButton {
+                                text: "החלף נתונים"
+                                outline: false
+                                onClicked: appController.replaceData()
                             }
-                        }
-                        AppButton {
-                            text: "צור מערכות שיבוץ"
-                            outline: false
-                            // check if there's at least one program selected before showing the button
-                            visible: appController.hasData && appController.selectedPrograms.length > 0
-                            onClicked: {
-                                appController.generateSchedules()
 
-                                // go to the output screen after generating schedules
-                                stackView.push(Qt.resolvedUrl("OutputScreen.qml"))
+                            AppButton {
+                                text: "הוסף נתונים"
+                                outline: true
+                                onClicked: appController.appendData()
                             }
-                        }
 
-                        /**
-                         * Settings button — opens the hard constraint configuration screen.
-                         * Gated on hasData like the Calendar and Generate buttons: the k upper
-                         * bound (kMax) is derived from the loaded exam periods, so opening this
-                         * screen before any data is loaded would only show the fallback bound.
-                         */
-                        AppButton {
-                            text: "הגדרות"
-                            outline: true
-                            visible: appController.hasData
-                            onClicked: stackView.push(Qt.resolvedUrl("SettingsScreen.qml"))
-                        }
+                            AppButton {
+                                text: "📅 צפה בלוח השנה"
+                                outline: false
+                                visible: appController.hasData
+                                onClicked: {
+                                    calendarManager.setData(
+                                        appController.examPeriods,
+                                        appController.courses
+                                    )
+                                    stackView.push(Qt.resolvedUrl("CalendarScreen.qml"))
+                                }
+                            }
+                            AppButton {
+                                text: "צור מערכות שיבוץ"
+                                outline: false
+                                // check if there's at least one program selected before showing the button
+                                visible: appController.hasData && appController.selectedPrograms.length > 0
+                                onClicked: {
+                                    appController.generateSchedules()
 
-                        Item {
-                            Layout.fillWidth: true
-                        }
+                                    // go to the output screen after generating schedules
+                                    stackView.push(Qt.resolvedUrl("OutputScreen.qml"))
+                                }
+                            }
 
-                        Text {
-                            Layout.maximumWidth: 620
-                            text: appController.errorMessage.length > 0
-                                  ? "⚠️ " + appController.errorMessage
-                                  : appController.statusMessage.length > 0
-                                    ? "✅ " + appController.statusMessage
-                                    : "בחר קבצי קלט כדי להתחיל"
-                            color: appController.errorMessage.length > 0
-                                   ? root.danger
-                                   : appController.statusMessage.length > 0
-                                     ? root.success
-                                     : root.textMuted
-                            font.pixelSize: 14
-                            font.bold: appController.statusMessage.length > 0 || appController.errorMessage.length > 0
-                            horizontalAlignment: Text.AlignRight
-                            wrapMode: Text.WordWrap
+                            /**
+                             * Settings button — opens the hard constraint configuration screen.
+                             * Gated on hasData like the Calendar and Generate buttons: the k upper
+                             * bound (kMax) is derived from the loaded exam periods, so opening this
+                             * screen before any data is loaded would only show the fallback bound.
+                             */
+                            AppButton {
+                                text: "הגדרות"
+                                outline: true
+                                visible: appController.hasData
+                                onClicked: stackView.push(Qt.resolvedUrl("SettingsScreen.qml"))
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                Layout.maximumWidth: 620
+                                text: appController.errorMessage.length > 0
+                                      ? "⚠️ " + appController.errorMessage
+                                      : appController.statusMessage.length > 0
+                                        ? "✅ " + appController.statusMessage
+                                        : "בחר קבצי קלט כדי להתחיל"
+                                color: appController.errorMessage.length > 0
+                                       ? root.danger
+                                       : appController.statusMessage.length > 0
+                                         ? root.success
+                                         : root.textMuted
+                                font.pixelSize: 14
+                                font.bold: appController.statusMessage.length > 0 || appController.errorMessage.length > 0
+                                horizontalAlignment: Text.AlignRight
+                                wrapMode: Text.WordWrap
+                            }
                         }
                     }
                 }
