@@ -9,7 +9,6 @@
 #include <QDir>
 #include <QDebug>
 #include <QDate>
-#include <set>
 #include <QFile>
 #include <QTextStream>
 #include <algorithm>
@@ -172,58 +171,10 @@ void ScheduleOutputManager::setPeriodFilter(const QString& semester, const QStri
     m_selectedSemester = semester;
     m_selectedMoed = moed;
 
-    qDebug() << "[MANAGER] Filter updated to -> Semester:" << m_selectedSemester << "Moed:" << m_selectedMoed;
-
     /*
      * Rebuild the calendar after changing the selected period filter.
      */
     updateCalendarData();
-}
-
-/*
- * Placeholder method for export action from QML.
- *
- * The actual text-file export is implemented in saveCurrentScheduleToFile().
- */
-void ScheduleOutputManager::exportCurrentSchedule() {
-    qDebug() << "Exporting schedule index:" << m_currentIndex;
-}
-
-/*
- * Extracts unique semester and moed values from loaded exam periods.
- *
- * The extracted values are used by QML dropdowns or filters.
- */
-void ScheduleOutputManager::extractAvailableFilters() {
-    std::set<QString> uniqueSemesters;
-    std::set<QString> uniqueMoeds;
-
-    /*
-     * Use sets to avoid duplicate filter values.
-     */
-    for (const auto& period : m_periods) {
-        uniqueSemesters.insert(QString::fromStdString(semesterToString(period.getSemester())));
-        uniqueMoeds.insert(QString::fromStdString(moedToString(period.getMoed())));
-    }
-
-    /*
-     * Convert the sets into QStringList values for QML.
-     */
-    m_semesters = QStringList(uniqueSemesters.begin(), uniqueSemesters.end());
-    m_moeds = QStringList(uniqueMoeds.begin(), uniqueMoeds.end());
-
-    // Set default selection to the first available option
-    /*
-     * Select default filter values when possible.
-     */
-    if (!m_semesters.isEmpty()) m_selectedSemester = m_semesters.first();
-    if (!m_moeds.isEmpty()) m_selectedMoed = m_moeds.first();
-
-    /*
-     * Notify QML that available filter options changed.
-     */
-    emit availableSemestersChanged();
-    emit availableMoedsChanged();
 }
 
 /*
@@ -258,8 +209,6 @@ void ScheduleOutputManager::updateCalendarData() {
         return;
     }
 
-    qDebug() << "[CALENDAR] Trying to draw board for -> Sem:" << m_selectedSemester << "Moed:" << m_selectedMoed;
-
     // 1. Find the selected ExamPeriod based on the UI dropdowns
     /*
      * Locate the exam period that matches the selected semester and moed.
@@ -283,7 +232,7 @@ void ScheduleOutputManager::updateCalendarData() {
      * Without a matching period, the output screen cannot build a calendar.
      */
     if (!activePeriod) {
-        qDebug() << "[CALENDAR] ERROR: Could not find matching period in m_periods!";
+        qWarning() << "[CALENDAR] ERROR: Could not find matching period in m_periods!";
         emit currentCalendarDataChanged();
         return;
     }
@@ -499,8 +448,6 @@ void ScheduleOutputManager::clearData() {
     emit currentScheduleIndexChanged();
     emit currentCalendarDataChanged();
     emit currentMetricsChanged();
-    
-    qDebug() << "[MANAGER] Data cleared successfully.";
 }
 
 /*

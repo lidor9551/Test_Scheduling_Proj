@@ -1,8 +1,8 @@
-# Exam Scheduler V2.0
+# Exam Scheduler V4.0
 
 ## Overview
 
-Exam Scheduler V2.0 is a desktop application for generating valid exam schedules for selected engineering study programs.
+Exam Scheduler V4.0 is a desktop application for generating valid exam schedules for selected engineering study programs.
 
 The system allows the user to:
 
@@ -10,6 +10,7 @@ The system allows the user to:
 - Select up to five study programs.
 - View courses by program, year, and semester.
 - Edit exam periods through an interactive calendar.
+- Configure scheduling settings, including hard constraints and sorting priorities.
 - Generate valid exam schedules.
 - Browse generated schedules.
 - Export a selected schedule to a readable text file.
@@ -36,7 +37,8 @@ The project is implemented in **C++17** with a **Qt6/QML** graphical interface.
 │   ├── Main.qml
 │   ├── CalendarScreen.qml
 │   ├── PeriodEditorScreen.qml
-│   └── OutputScreen.qml
+│   ├── OutputScreen.qml
+│   └── SettingsScreen.qml
 │
 ├── src/
 │   ├── main.cpp
@@ -44,21 +46,31 @@ The project is implemented in **C++17** with a **Qt6/QML** graphical interface.
 │   ├── domain/
 │   │   ├── Course.h / Course.cpp
 │   │   ├── ExamPeriod.h / ExamPeriod.cpp
-│   │   └── Date.h / Date.cpp
+│   │   ├── Date.h / Date.cpp
+│   │   ├── DateAvailabilityPolicy.h / DateAvailabilityPolicy.cpp
+│   │   └── ScheduleGenerationResult.h / ScheduleGenerationResult.cpp
 │   │
 │   ├── application/
-│   │   └── reserved for application services and session state
+│   │   └── SchedulingSession.h / SchedulingSession.cpp   (central session state)
 │   │
 │   ├── scheduling/
 │   │   ├── Preprocessor.h / Preprocessor.cpp
 │   │   ├── ScheduleGenerator.h / ScheduleGenerator.cpp
-│   │   └── SchedulingWorker.h / SchedulingWorker.cpp
+│   │   ├── SchedulingWorker.h / SchedulingWorker.cpp
+│   │   ├── SchedulingService.h / SchedulingService.cpp
+│   │   ├── MetricsCalculator.h / MetricsCalculator.cpp
+│   │   ├── SameGroupConflictRule.h / SameGroupConflictRule.cpp
+│   │   ├── AdvancedConflictRules.h / AdvancedConflictRules.cpp
+│   │   ├── IConflictRule.h
+│   │   ├── IReadOnlySchedule.h
+│   │   └── SchedulingState.h
 │   │
 │   ├── presentation/
 │   │   ├── AppController.h / AppController.cpp
 │   │   ├── CalendarManager.h / CalendarManager.cpp
 │   │   ├── ProgramCourseModel.h / ProgramCourseModel.cpp
-│   │   └── ScheduleOutputManager.h / ScheduleOutputManager.cpp
+│   │   ├── ScheduleOutputManager.h / ScheduleOutputManager.cpp
+│   │   └── DragAndDropAdapter.h / DragAndDropAdapter.cpp
 │   │
 │   ├── infrastructure/
 │   │   ├── InputParser.h / InputParser.cpp
@@ -69,7 +81,14 @@ The project is implemented in **C++17** with a **Qt6/QML** graphical interface.
 │
 └── tests/
     ├── unit/
-    └── integration/
+    ├── integration/
+    ├── gui/
+    ├── regression/
+    ├── layout/
+    ├── manual/
+    ├── reports/
+    ├── common/
+    └── data/
 
 ---
 

@@ -72,7 +72,7 @@ std::vector<SchedulingBlock> SchedulingPreprocessor::buildBlocks() const {
      * If no blocks were created, there is nothing meaningful to send to the solver.
      */
     if (blocks.empty()) {
-        qDebug() << ">>> ERROR: Blocks are empty! Stopping generation."; 
+        qWarning() << ">>> ERROR: Blocks are empty! Stopping generation.";
         return{};
     }
 

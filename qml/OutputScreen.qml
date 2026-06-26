@@ -157,11 +157,10 @@ Item {
 
              // The C++ logic handled all the complex rule checks (Adapter + RulesEngine)
             if (response.status === 1) {
-                console.log("Move successful! C++ validated it.");
                 return { "status": 1 };
             } else {
                 // Here we handle the failure
-                console.log("Move rejected by C++ engine. Error: " + response.error);
+                console.warn("Move rejected by C++ engine. Error: " + response.error);
         
             // Use this to show a popup to the user in QML
             // showErrorDialog("Move rejected: " + response.error);
@@ -191,10 +190,8 @@ Item {
         onAccepted: {
             let path = saveDialog.selectedFile.toString().replace("file:///", "")
 
-            if (appController.outputManager.saveCurrentScheduleToFile(path)) {
-                console.log("File saved successfully to: " + path)
-            } else {
-                console.log("Failed to save!")
+            if (!appController.outputManager.saveCurrentScheduleToFile(path)) {
+                console.warn("Failed to save!")
             }
         }
     }
@@ -395,7 +392,7 @@ Item {
                         outputRoot.StackView.view.pop()
                         appController.outputManager.clearData()
                     } else {
-                        console.log("OutputScreen: StackView view was not found")
+                        console.warn("OutputScreen: StackView view was not found")
                     }
                 }
             }
@@ -439,7 +436,6 @@ Item {
                  * Opens the save dialog so the user can choose an export location.
                  */
                 onClicked: {
-                    console.log("Exporting schedule " + outputRoot.currentScheduleIndex)
                     saveDialog.open()
                 }
             }
@@ -1125,8 +1121,7 @@ Item {
                                                     var cell = appController.outputManager.currentCalendarData[idx]
                                                     var dk = cell ? cell.dateKey : ""
                                                     if (dk && dk !== "") {
-                                                        var result = mockScheduleManager.requestMove(capturedCourseId, dk);
-                                                        console.log("DROP", capturedCourseId, "→", dk, "| status =", result.status);
+                                                        mockScheduleManager.requestMove(capturedCourseId, dk);
                                                     }
                                                 }
 

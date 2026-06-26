@@ -67,7 +67,7 @@ private:
      */
     std::vector<ExamAssignment> m_assignments; // The list of all exams in this specific schedule
 
-    // V3.0 Preparation: Pre-calculated metrics for sorting optimal schedules
+    // Pre-calculated metrics used to rank and sort generated schedules.
     /*
      * Stores the number of elective conflicts calculated for this schedule.
      *
@@ -110,7 +110,7 @@ public:
      */
     const std::vector<ExamAssignment>& getAssignments() const;
     
-    // Metrics accessors (to be calculated and utilized per V3.0 requirements)
+    // Metrics accessors.
     /*
      * Returns the elective conflict metric for this schedule.
      *

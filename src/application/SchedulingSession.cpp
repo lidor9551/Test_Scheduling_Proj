@@ -1,5 +1,4 @@
 #include "application/SchedulingSession.h"
-#include "scheduling/IConflictRule.h"
 
 #include <algorithm>
 #include <utility>

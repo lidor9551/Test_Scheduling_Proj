@@ -38,7 +38,7 @@ const std::vector<ExamAssignment>& ScheduleGenerationResult::getAssignments() co
     return m_assignments;
 }
 
-// Retrieves the number of overlapping elective courses (V3.0 metric)
+// Retrieves the number of overlapping elective courses.
 /*
  * Returns the elective conflict metric.
  *
@@ -49,7 +49,7 @@ int ScheduleGenerationResult::getElectiveConflicts() const {
     return m_electiveConflicts;
 }
 
-// Retrieves the tightest gap between any two obligatory exams (V3.0 metric)
+// Retrieves the tightest gap between any two obligatory exams.
 /*
  * Returns the minimum distance metric between obligatory exams.
  *

@@ -77,7 +77,6 @@ int main(int argc, char *argv[]) {
     /*
      * Load the main QML file from the application output directory.
      */
-    qDebug() << "Loading Main.qml from disk...";
     engine.load(QUrl::fromLocalFile(
     QCoreApplication::applicationDirPath() + "/qml/Main.qml"
 ));
@@ -89,7 +88,7 @@ int main(int argc, char *argv[]) {
      * because of an initialization error.
      */
     if (engine.rootObjects().isEmpty()) {
-        qDebug() << ">>> FATAL ERROR: Engine root objects is empty!";
+        qCritical() << ">>> FATAL ERROR: Engine root objects is empty!";
         return -1;
     }
 
