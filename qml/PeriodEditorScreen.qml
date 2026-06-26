@@ -52,7 +52,7 @@ Page {
                     if (editorScreen.StackView.view) {
                         editorScreen.StackView.view.pop()
                     } else {
-                        console.log("PeriodEditorScreen: StackView view was not found")
+                        console.warn("PeriodEditorScreen: StackView view was not found")
                     }
                 }
             }

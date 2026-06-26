@@ -8,7 +8,6 @@
 #include <chrono>
 #include <functional>
 #include <limits>
-#include <QDebug>
 
 /*
  * Creates a timeout exception.
@@ -451,13 +450,6 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
      * Start the recursive search.
      */
     backtrack();
-    const auto searchFinishedTime = std::chrono::steady_clock::now();
-    const auto searchElapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-        searchFinishedTime - startTime
-    ).count();
-
-    qDebug() << "[ScheduleGenerator] Backtracking finished in"
-             << searchElapsedMs << "ms | solutions:" << solutions.size();
 
     // POST-PROCESSING: Calculate metrics for all valid schedules
     /*
@@ -469,18 +461,6 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(int limitPe
         // We will create the MetricsCalculator class next to handle this logic
         result.metrics = MetricsCalculator::calculate(result, block_); 
     }
-    const auto metricsFinishedTime = std::chrono::steady_clock::now();
-    const auto metricsElapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-        metricsFinishedTime - searchFinishedTime
-    ).count();
-    const auto totalElapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-        metricsFinishedTime - startTime
-    ).count();
-
-    qDebug() << "[ScheduleGenerator] Metrics calculated in"
-             << metricsElapsedMs << "ms | total generation pipeline:"
-             << totalElapsedMs << "ms";
-
     /*
      * Return all solutions found for this block.
      */

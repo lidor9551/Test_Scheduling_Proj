@@ -162,11 +162,9 @@ void CalendarManager::toggleDay(const QString& dateStr) {
      */
     QDate targetDate = QDate::fromString(dateStr, "yyyy-MM-dd");
     if (!targetDate.isValid()) {
-        qDebug() << ">>> INVALID DATE:" << dateStr;
+        qWarning() << ">>> INVALID DATE:" << dateStr;
         return;
     }
-
-    bool found = false;
 
     /*
      * Find the matching day and switch its status.
@@ -175,13 +173,10 @@ void CalendarManager::toggleDay(const QString& dateStr) {
      */
     for (DayInfo& d : days_) {
         if (d.date == targetDate) {
-            found = true;
             d.status = (d.status == 1) ? 2 : 1;
             break;
         }
     }
-
-    qDebug() << ">>> Date found and modified in C++:" << found;
 
     /*
      * Notify QML to redraw the calendar.
@@ -207,7 +202,7 @@ void CalendarManager::shiftPeriod(const QString& semester, const QString& newSta
     QDate newEnd   = QDate::fromString(newEndStr,   "yyyy-MM-dd");
 
     if (!newStart.isValid() || !newEnd.isValid()) {
-        qDebug() << ">>> shiftPeriod: invalid dates" << newStartStr << newEndStr;
+        qWarning() << ">>> shiftPeriod: invalid dates" << newStartStr << newEndStr;
         return;
     }
 
@@ -292,7 +287,6 @@ void CalendarManager::previousSemester() {
  */
 void CalendarManager::saveChanges() {
     flushDaysToPeriod();
-    qDebug() << ">>> Changes saved for period:" << getCurrentSemester();
     emit daysChanged();
 }
 

@@ -541,7 +541,6 @@ Window {
                                         onClicked: {
                                             root.currentProgramId = progId;
                                             root.currentProgramName = progName;
-                                            console.log("Passing to C++: ID =", progId, "Name =", progName);
                                             courseDetailsDialog.open();
                                         }
                                     }

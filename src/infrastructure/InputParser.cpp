@@ -12,7 +12,7 @@
  * so they cannot conflict with symbols from other files.
  */
 namespace {
-    // Note for V1.0: Hardcoded IDs. Consider moving to an external config file in future versions.
+    // TODO: Hardcoded IDs. Consider moving them to an external config file.
     /*
      * Valid academic program IDs supported by the system.
      *

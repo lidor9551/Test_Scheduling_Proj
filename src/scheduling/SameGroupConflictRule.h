@@ -5,7 +5,7 @@
 
 
 /*
- * SameGroupConflictRule implements the main V1/V2 same-day conflict logic.
+ * SameGroupConflictRule implements the main same-day conflict logic.
  *
  * The rule checks whether students from the same academic group would receive
  * conflicting exams on the same date.

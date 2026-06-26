@@ -129,7 +129,6 @@ AppController::AppController(QObject* parent)
         if (currentSettings.minDaysObligatory.isActive) {
             MinDaysObligatoryRule rule(currentSettings.minDaysObligatory.k, allowedDates, allCourses); 
             if (!rule.isSatisfied(uiAdapter, courseToMove, dateIndex)) {
-                qDebug() << "DEBUG: Blocked by MinDaysObligatoryRule on date" << targetDate.toString().c_str(); 
                 return false;
             }
         }
@@ -487,8 +486,6 @@ void AppController::cacheCurrentOutputSolutions() {
     );
 
     m_generatedSolutionsByPeriod.insert(cacheKey, m_outputManager.getSolutions());
-    qDebug() << "[CACHE] Updated schedules for" << cacheKey
-             << "| count:" << m_outputManager.getSolutions().size();
 }
 
 /*
@@ -576,12 +573,6 @@ void AppController::toggleProgram(const QString& programId) {
          * has already been reached.
          */
         changed = session_.selectProgram(id);
-
-        if (!changed) {
-            qDebug() << "Cannot select more than"
-                     << static_cast<int>(SchedulingSession::MaxSelectedPrograms)
-                     << "programs.";
-        }
     }
 
     /*
@@ -692,9 +683,6 @@ ScheduleOutputManager* AppController::outputManager() {
 void AppController::generateSchedules() {
     clearMessages();
     m_generatedSolutionsByPeriod.clear();
-    qDebug() << "=========================================";
-    qDebug() << ">>> generateSchedules STARTED! <<<";
-    qDebug() << "Selected programs count:" << session_.selectedProgramCount();
 
     // override original output with new instance to reset previous state
     /*
@@ -706,9 +694,6 @@ void AppController::generateSchedules() {
     if (m_calendarManager && !m_calendarManager->getPeriods().empty()) {
         m_calendarManager->saveChanges();
         session_.replaceExamPeriods(m_calendarManager->getPeriods());
-        qDebug() << "[SYNC] Successfully synced updated periods from CalendarManager.";
-    } else {
-        qDebug() << "[SYNC] CalendarManager is empty or not ready. Using original parsed periods.";
     }
 
     /*
@@ -721,7 +706,7 @@ void AppController::generateSchedules() {
 
     if (!validation.isValid()) {
         setError(QString::fromStdString(validation.message()));
-        qDebug() << "[VALIDATION] Schedule generation blocked:"
+        qWarning() << "[VALIDATION] Schedule generation blocked:"
                 << QString::fromStdString(validation.message());
         return;
     }
@@ -752,13 +737,6 @@ void AppController::generateSchedules() {
         }
     }
 
-    /*
-     * Debug output helps verify which courses are passed into the scheduling flow.
-     */
-    qDebug() << ">>> Courses exposed to algorithm:";
-    for (const auto& course : examOnlyCourses) {
-        qDebug() << "    -" << QString::fromStdString(course.getCourseName());
-    }
 
     // Expose the exam-only courses to the output manager  
     /*
@@ -791,7 +769,7 @@ void AppController::generateSchedules() {
      */
     if (m_allBlocks.empty()) {
         setError("לא נוצרו בלוקי שיבוץ עבור התוכניות ותקופות הבחינה שנבחרו.");
-        qDebug() << "[VALIDATION] Schedule generation blocked: no scheduling blocks were created.";
+        qWarning() << "[VALIDATION] Schedule generation blocked: no scheduling blocks were created.";
         return;
     }
 
@@ -847,21 +825,7 @@ void AppController::generateSchedules() {
 void AppController::onSchedulingFinished(const std::vector<ScheduleGenerationResult>& solutions) {
     m_generationInProgress = false;
 
-    qDebug() << "--- FINAL ALGORITHM OUTPUT ---";
-    qDebug() << "Total solutions calculated:" << solutions.size();
     setStatus("השיבוץ הושלם!");
-
-    qDebug() << "--- Sample Metrics for first 5 schedules ---"; 
-    int sampleCount = 0;
-    for (const auto& res : solutions) {
-        if (sampleCount++ >= 5) break;
-        qDebug() << "Schedule" << sampleCount 
-                << "-> Avg Obligatory:" << res.metrics.avgDaysBetweenObligatory
-                << "| Avg All:" << res.metrics.avgDaysBetweenAll
-                << "| Conflicts:" << res.metrics.totalElectiveConflicts
-                << "| Span:" << res.metrics.obligatorySpan
-                << "| Max/Day:" << res.metrics.maxExamsInSingleDay;
-    }
 
     // Filter the courses to only those that require exams, as the scheduling is based on exam periods
     /*
@@ -937,7 +901,6 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
      * If the requested block does not exist, clear the output data and stop.
      */
     if (!selectedBlock) {
-        qDebug() << "No block found for" << semester << moed;
         m_outputManager.setSchedulingData({}, session_.courses(), session_.examPeriods());
         return;
     }
@@ -945,8 +908,6 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
     const QString cacheKey = periodCacheKey(semester, moed);
 
     if (m_generationInProgress) {
-        qDebug() << "[CACHE] Ignoring period switch while generation is running for"
-                 << cacheKey;
         setStatus("מייצר מערכות שיבוץ, אנא המתן...");
         return;
     }
@@ -967,8 +928,6 @@ void AppController::generateForPeriod(const QString& semester, const QString& mo
 
     auto cachedSolutions = m_generatedSolutionsByPeriod.constFind(cacheKey);
     if (cachedSolutions != m_generatedSolutionsByPeriod.constEnd()) {
-        qDebug() << "[CACHE] Reusing schedules for" << cacheKey
-                 << "| count:" << cachedSolutions.value().size();
         setStatus("השיבוץ הושלם!");
 
         std::vector<Course> examOnlyCourses;
@@ -1124,13 +1083,6 @@ void AppController::saveHardConstraints(bool r21Enabled, int r21K,
     // Store the settings struct in the scheduling session for later use by the algorithm
     session_.setSettings(settings);
 
-    qDebug() << "[HardConstraints] Saved:"
-             << "r21=" << m_rule21Enabled << "k=" << m_rule21K
-             << "r22=" << m_rule22Enabled << "k=" << m_rule22K
-             << "r23=" << m_rule23Enabled << "k=" << m_rule23K
-             << "r24=" << m_rule24Enabled << "k=" << m_rule24K
-             << "r25=" << m_rule25Enabled << "k=" << m_rule25K;
-
 }
 
 /**
@@ -1229,7 +1181,6 @@ void AppController::saveSortingPriorities(const QVariantList& orderedMetricIds) 
         stdPriorities.push_back(idStr.toStdString()); 
     }
 
-    qDebug() << "[SortingPriorities] Saved order and triggering re-sort:" << m_sortingPriorities;
 
     // activate sort and print the new results
     m_outputManager.sortSchedules(stdPriorities);

@@ -171,8 +171,6 @@ void ScheduleOutputManager::setPeriodFilter(const QString& semester, const QStri
     m_selectedSemester = semester;
     m_selectedMoed = moed;
 
-    qDebug() << "[MANAGER] Filter updated to -> Semester:" << m_selectedSemester << "Moed:" << m_selectedMoed;
-
     /*
      * Rebuild the calendar after changing the selected period filter.
      */
@@ -211,8 +209,6 @@ void ScheduleOutputManager::updateCalendarData() {
         return;
     }
 
-    qDebug() << "[CALENDAR] Trying to draw board for -> Sem:" << m_selectedSemester << "Moed:" << m_selectedMoed;
-
     // 1. Find the selected ExamPeriod based on the UI dropdowns
     /*
      * Locate the exam period that matches the selected semester and moed.
@@ -236,7 +232,7 @@ void ScheduleOutputManager::updateCalendarData() {
      * Without a matching period, the output screen cannot build a calendar.
      */
     if (!activePeriod) {
-        qDebug() << "[CALENDAR] ERROR: Could not find matching period in m_periods!";
+        qWarning() << "[CALENDAR] ERROR: Could not find matching period in m_periods!";
         emit currentCalendarDataChanged();
         return;
     }
@@ -452,8 +448,6 @@ void ScheduleOutputManager::clearData() {
     emit currentScheduleIndexChanged();
     emit currentCalendarDataChanged();
     emit currentMetricsChanged();
-    
-    qDebug() << "[MANAGER] Data cleared successfully.";
 }
 
 /*
