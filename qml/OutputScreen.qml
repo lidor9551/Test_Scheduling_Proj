@@ -372,9 +372,20 @@ Item {
          * Contains the back button on the right side and the export button
          * on the left side.
          */
-        RowLayout {
+        ScrollView {
+            id: actionScroll
             Layout.fillWidth: true
-            layoutDirection: Qt.RightToLeft
+            Layout.preferredHeight: 46
+            clip: true
+            // Horizontal scroll only, so back/export never clip on a narrow window.
+            contentHeight: availableHeight
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+            ScrollBar.horizontal.policy: ScrollBar.AsNeeded
+
+            RowLayout {
+                width: Math.max(implicitWidth, actionScroll.availableWidth)
+                height: actionScroll.availableHeight
+                layoutDirection: Qt.RightToLeft
 
             /*
              * Back button.
@@ -441,6 +452,7 @@ Item {
                     saveDialog.open()
                 }
             }
+            }
         }
 
         // navigation between different schedules (if multiple were generated from the input)
@@ -457,10 +469,20 @@ Item {
             border.color: "#e1e5df"
             border.width: 1
 
-            RowLayout {
+            ScrollView {
+                id: navScroll
                 anchors.fill: parent
                 anchors.margins: 10
-                layoutDirection: Qt.RightToLeft
+                clip: true
+                // Horizontal scroll only, so prev/next never clip on a narrow window.
+                contentHeight: availableHeight
+                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                ScrollBar.horizontal.policy: ScrollBar.AsNeeded
+
+                RowLayout {
+                    width: Math.max(implicitWidth, navScroll.availableWidth)
+                    height: navScroll.availableHeight
+                    layoutDirection: Qt.RightToLeft
 
                 /*
                  * Previous schedule button.
@@ -526,6 +548,7 @@ Item {
                     }
                 }
             }
+            }
         }
 
         // choice of semester/moed for filtering the calendar
@@ -535,14 +558,28 @@ Item {
          * Changing either filter regenerates the displayed output for the
          * selected period.
          */
-        RowLayout {
+        ScrollView {
+            id: filterScroll
             Layout.fillWidth: true
-            layoutDirection: Qt.RightToLeft
-            spacing: 12
+            Layout.preferredHeight: 44
             Layout.topMargin: 8
             Layout.bottomMargin: 4
+            clip: true
+            // Horizontal scroll only: the filter controls (two 120 px combos plus
+            // the sort toggle) are never clipped sideways on a narrow window.
+            contentHeight: availableHeight
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+            ScrollBar.horizontal.policy: ScrollBar.AsNeeded
 
-            Item { Layout.fillWidth: true }
+            RowLayout {
+                // Match the viewport on wide windows (spacers behave exactly as
+                // before); grow to the implicit width on narrow ones to scroll.
+                width: Math.max(implicitWidth, filterScroll.availableWidth)
+                height: filterScroll.availableHeight
+                layoutDirection: Qt.RightToLeft
+                spacing: 12
+
+                Item { Layout.fillWidth: true }
 
             /*
              * Semester filter label.
@@ -663,6 +700,7 @@ Item {
                 }
                 onClicked: outputRoot.sidebarOpen = !outputRoot.sidebarOpen
             }
+            }
         }
 
         // ---------------------------------------------------------------------
@@ -692,6 +730,11 @@ Item {
                 id: sidebar
                 Layout.fillHeight: true
                 Layout.preferredWidth: outputRoot.sidebarOpen ? 340 : 0
+                // Minimum tracks the animated preferred width, so when open the
+                // sidebar keeps its full 340 px (the calendar, being fillWidth,
+                // absorbs any shrink) while the 340<->0 open/close animation stays
+                // pixel-perfect. No separate Behavior needed.
+                Layout.minimumWidth: sidebar.Layout.preferredWidth
                 clip: true
                 color: "white"
                 border.color: outputRoot.borderSoft
