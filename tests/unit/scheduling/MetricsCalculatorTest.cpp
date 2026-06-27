@@ -209,6 +209,40 @@ void testMaxExamsInSingleDay() {
     TEST_EXPECT_EQ(metrics.maxExamsInSingleDay, 3);
 }
 
+void testPreparedBlockDataMatchesDirectCalculation() {
+    std::vector<Course> courses;
+    courses.reserve(3);
+
+    courses.push_back(makeCourse("Mandatory A", "89101", Requirement::OBLIGATORY));
+    courses.push_back(makeCourse("Elective A", "89102", Requirement::ELECTIVE));
+    courses.push_back(makeCourse("Elective B", "89103", Requirement::ELECTIVE));
+
+    std::vector<RuntimeCourse> runtimeCourses = {
+        makeRuntimeCourse(0, courses[0], 0, Requirement::OBLIGATORY),
+        makeRuntimeCourse(1, courses[1], 0, Requirement::ELECTIVE),
+        makeRuntimeCourse(2, courses[2], 0, Requirement::ELECTIVE)
+    };
+
+    SchedulingBlock block = makeBlock(runtimeCourses);
+
+    ScheduleGenerationResult result = makeResult({
+        { &courses[0], Date(1, 1, 2026), true },
+        { &courses[1], Date(3, 1, 2026), false },
+        { &courses[2], Date(3, 1, 2026), false }
+    });
+
+    ScheduleMetrics directMetrics = MetricsCalculator::calculate(result, block);
+    MetricsCalculator::PreparedBlockData preparedBlockData =
+        MetricsCalculator::prepareBlockData(block);
+    ScheduleMetrics preparedMetrics = MetricsCalculator::calculate(result, preparedBlockData);
+
+    TEST_EXPECT_TRUE(almostEqual(preparedMetrics.avgDaysBetweenObligatory, directMetrics.avgDaysBetweenObligatory));
+    TEST_EXPECT_TRUE(almostEqual(preparedMetrics.avgDaysBetweenAll, directMetrics.avgDaysBetweenAll));
+    TEST_EXPECT_EQ(preparedMetrics.totalElectiveConflicts, directMetrics.totalElectiveConflicts);
+    TEST_EXPECT_EQ(preparedMetrics.obligatorySpan, directMetrics.obligatorySpan);
+    TEST_EXPECT_EQ(preparedMetrics.maxExamsInSingleDay, directMetrics.maxExamsInSingleDay);
+}
+
 } // namespace
 
 int main() {
@@ -217,6 +251,7 @@ int main() {
     testAverageDaysBetweenAllExams();
     testTotalElectiveConflicts();
     testMaxExamsInSingleDay();
+    testPreparedBlockDataMatchesDirectCalculation();
 
     std::cout << "MetricsCalculatorTest passed." << std::endl;
     return EXIT_SUCCESS;

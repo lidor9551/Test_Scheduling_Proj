@@ -1,155 +1,152 @@
 #include "MetricsCalculator.h"
+
 #include <algorithm>
-#include <cmath>
 
+namespace {
 
-ScheduleMetrics MetricsCalculator::calculate(const ScheduleGenerationResult& result, const SchedulingBlock& block) {
-    ScheduleMetrics metrics;
+int dateKey(const Date& date) {
+    return date.getYear() * 10000 + date.getMonth() * 100 + date.getDay();
+}
 
-    // Data structures to hold mapped schedule data for efficient processing.
-    // We group dates by 'groupId' to evaluate constraints per student track.
-    std::map<int, std::vector<Date>> groupMandatoryDates;
-    std::map<int, std::vector<Date>> groupAllDates;
-    
-    // We use a string representation of the Date as a key to avoid requiring 
-    // a custom 'operator<' for the Date class in std::map.
-    std::map<std::string, int> totalExamsPerDay;
-    std::map<int, std::map<std::string, int>> electiveExamsPerGroupPerDay;
+} // namespace
 
-    // Step 1: Data Preparation (Single Pass)
-    // We iterate through the raw assignments only once to populate our maps.
-    // This ensures high performance even with thousands of generated schedules.
-    for (const auto& assignment : result.getAssignments()) { 
-        std::string dateKey = assignment.examDate.toString(); 
-        
-        // Track the absolute number of exams taking place on any given day
-        totalExamsPerDay[dateKey]++;
+MetricsCalculator::PreparedBlockData MetricsCalculator::prepareBlockData(const SchedulingBlock& block) {
+    PreparedBlockData data;
+    data.membershipsByCourse.reserve(block.runtimeCourses.size());
 
-        // Find the matching RuntimeCourse in the original scheduling block
-        // to retrieve its specific group memberships and requirements.
-        const RuntimeCourse* runtimeCourse = nullptr;
-        for (const auto& rc : block.runtimeCourses) {
-            if (rc.course == assignment.course) {
-                runtimeCourse = &rc;
-                break;
-            }
-        }
-        
-        // Safety check, should not happen in a valid result
-        if (!runtimeCourse) continue;
+    int maxGroupId = -1;
+    for (const RuntimeCourse& runtimeCourse : block.runtimeCourses) {
+        data.membershipsByCourse[runtimeCourse.course] = runtimeCourse.memberships;
 
-        // Distribute the exam date into the relevant group timelines
-        for (const auto& membership : runtimeCourse->memberships) {
-            // Every exam is added to the general timeline for this group
-            groupAllDates[membership.groupId].push_back(assignment.examDate);
-            
-            if (membership.requirement == Requirement::OBLIGATORY) {
-                // Track separately for mandatory-only metrics (e.g., minimum days between mandatory)
-                groupMandatoryDates[membership.groupId].push_back(assignment.examDate);
-            } else if (membership.requirement == Requirement::ELECTIVE) {
-                // Track elective conflicts per day for this specific group
-                electiveExamsPerGroupPerDay[membership.groupId][dateKey]++;
-            }
+        for (const CourseMembership& membership : runtimeCourse.memberships) {
+            maxGroupId = std::max(maxGroupId, membership.groupId);
         }
     }
 
-    // Step 2: Delegation
-    // Pass the prepared data structures to dedicated helper functions 
-    // to calculate each specific metric autonomously.
-    metrics.obligatorySpan           = calcObligatorySpan(groupMandatoryDates);
-    metrics.avgDaysBetweenObligatory = calcAvgDaysObligatory(groupMandatoryDates);
-    metrics.avgDaysBetweenAll        = calcAvgDaysAll(groupAllDates);
-    metrics.totalElectiveConflicts   = calcTotalElectiveConflicts(electiveExamsPerGroupPerDay);
-    metrics.maxExamsInSingleDay      = calcMaxExamsInSingleDay(totalExamsPerDay);
+    data.groupCount = maxGroupId + 1;
+    return data;
+}
+
+ScheduleMetrics MetricsCalculator::calculate(const ScheduleGenerationResult& result, const SchedulingBlock& block) {
+    return calculate(result, prepareBlockData(block));
+}
+
+ScheduleMetrics MetricsCalculator::calculate(
+    const ScheduleGenerationResult& result,
+    const PreparedBlockData& blockData
+) {
+    ScheduleMetrics metrics;
+    PreparedScheduleData scheduleData = prepareScheduleData(result, blockData);
+
+    sortGroupDates(scheduleData.groupMandatoryDates);
+    sortGroupDates(scheduleData.groupAllDates);
+
+    metrics.obligatorySpan = calcObligatorySpan(scheduleData.groupMandatoryDates);
+    metrics.avgDaysBetweenObligatory = calcAverageGap(scheduleData.groupMandatoryDates);
+    metrics.avgDaysBetweenAll = calcAverageGap(scheduleData.groupAllDates);
+    metrics.totalElectiveConflicts = calcTotalElectiveConflicts(scheduleData.electiveExamsPerGroupPerDay);
+    metrics.maxExamsInSingleDay = calcMaxExamsInSingleDay(scheduleData.totalExamsPerDay);
 
     return metrics;
 }
 
-// HELPER FUNCTIONS IMPLEMENTATION
+MetricsCalculator::PreparedScheduleData MetricsCalculator::prepareScheduleData(
+    const ScheduleGenerationResult& result,
+    const PreparedBlockData& blockData
+) {
+    PreparedScheduleData data;
+    data.groupMandatoryDates.resize(blockData.groupCount);
+    data.groupAllDates.resize(blockData.groupCount);
+    data.electiveExamsPerGroupPerDay.resize(blockData.groupCount);
 
-/*
- * Calculates the maximum total time span (in days) from the first mandatory exam
- * to the last mandatory exam across all student groups.
- * A smaller span means the mandatory exams are more tightly packed.
- */
-int MetricsCalculator::calcObligatorySpan(std::map<int, std::vector<Date>> groupMandatoryDates) {
-    int maxSpan = 0;
-    for (auto& [groupId, dates] : groupMandatoryDates) {
-        if (dates.empty()) continue;
-        
-        // Sort chronologically to easily find the first and last dates
-        std::sort(dates.begin(), dates.end());
-        int currentSpan = dates.front().daysTo(dates.back());
-        maxSpan = std::max(maxSpan, currentSpan);
-    }
-    return maxSpan;
-}
+    for (const ExamAssignment& assignment : result.getAssignments()) {
+        const int assignmentDateKey = dateKey(assignment.examDate);
+        ++data.totalExamsPerDay[assignmentDateKey];
 
-/*
- * Calculates the average number of days between consecutive mandatory exams
- * across all student groups. Higher is usually better for student workload.
- */
-double MetricsCalculator::calcAvgDaysObligatory(std::map<int, std::vector<Date>> groupMandatoryDates) {
-    double totalGapsSum = 0.0;
-    int gapsCount = 0;
-    
-    for (auto& [groupId, dates] : groupMandatoryDates) {
-        if (dates.size() < 2) continue; // Need at least 2 exams to have a gap
-        
-        std::sort(dates.begin(), dates.end());
-        for (size_t i = 1; i < dates.size(); ++i) {
-            totalGapsSum += dates[i - 1].daysTo(dates[i]);
-            gapsCount++;
+        const auto membershipIt = blockData.membershipsByCourse.find(assignment.course);
+        if (membershipIt == blockData.membershipsByCourse.end()) {
+            continue;
         }
-    }
-    return (gapsCount > 0) ? (totalGapsSum / gapsCount) : 0.0;
-}
 
-/*
- * Calculates the average number of days between ANY consecutive exams
- * (mandatory or elective) across all student groups.
- */
-double MetricsCalculator::calcAvgDaysAll(std::map<int, std::vector<Date>> groupAllDates) {
-    double totalGapsSum = 0.0;
-    int gapsCount = 0;
-    
-    for (auto& [groupId, dates] : groupAllDates) {
-        if (dates.size() < 2) continue;
-        
-        std::sort(dates.begin(), dates.end());
-        for (size_t i = 1; i < dates.size(); ++i) {
-            totalGapsSum += dates[i - 1].daysTo(dates[i]);
-            gapsCount++;
-        }
-    }
-    return (gapsCount > 0) ? (totalGapsSum / gapsCount) : 0.0;
-}
+        const std::vector<CourseMembership>& memberships = membershipIt->second;
+        for (const CourseMembership& membership : memberships) {
+            if (membership.groupId < 0 || membership.groupId >= blockData.groupCount) {
+                continue;
+            }
 
-/*
- * Calculates the total number of elective exam conflicts.
- * A conflict occurs when a student group has more than 1 elective exam scheduled
- * on the exact same date. (e.g., 2 exams = 1 conflict, 3 exams = 2 conflicts).
- */
-int MetricsCalculator::calcTotalElectiveConflicts(const std::map<int, std::map<std::string, int>>& electiveExams) {
-    int conflicts = 0;
-    for (const auto& [groupId, dateMap] : electiveExams) {
-        for (const auto& [dateKey, count] : dateMap) {
-            if (count > 1) {
-                conflicts += (count - 1);
+            data.groupAllDates[static_cast<std::size_t>(membership.groupId)].push_back(assignment.examDate);
+
+            if (membership.requirement == Requirement::OBLIGATORY) {
+                data.groupMandatoryDates[static_cast<std::size_t>(membership.groupId)].push_back(assignment.examDate);
+            } else if (membership.requirement == Requirement::ELECTIVE) {
+                ++data.electiveExamsPerGroupPerDay[static_cast<std::size_t>(membership.groupId)][assignmentDateKey];
             }
         }
     }
+
+    return data;
+}
+
+void MetricsCalculator::sortGroupDates(std::vector<std::vector<Date>>& groupDates) {
+    for (std::vector<Date>& dates : groupDates) {
+        std::sort(dates.begin(), dates.end());
+    }
+}
+
+int MetricsCalculator::calcObligatorySpan(const std::vector<std::vector<Date>>& sortedGroupMandatoryDates) {
+    int maxSpan = 0;
+
+    for (const std::vector<Date>& dates : sortedGroupMandatoryDates) {
+        if (dates.empty()) {
+            continue;
+        }
+
+        maxSpan = std::max(maxSpan, dates.front().daysTo(dates.back()));
+    }
+
+    return maxSpan;
+}
+
+double MetricsCalculator::calcAverageGap(const std::vector<std::vector<Date>>& sortedGroupDates) {
+    double totalGapsSum = 0.0;
+    int gapsCount = 0;
+
+    for (const std::vector<Date>& dates : sortedGroupDates) {
+        if (dates.size() < 2) {
+            continue;
+        }
+
+        for (std::size_t i = 1; i < dates.size(); ++i) {
+            totalGapsSum += dates[i - 1].daysTo(dates[i]);
+            ++gapsCount;
+        }
+    }
+
+    return gapsCount > 0 ? totalGapsSum / gapsCount : 0.0;
+}
+
+int MetricsCalculator::calcTotalElectiveConflicts(
+    const std::vector<std::unordered_map<int, int>>& electiveExams
+) {
+    int conflicts = 0;
+
+    for (const std::unordered_map<int, int>& dateCounts : electiveExams) {
+        for (const auto& dateCount : dateCounts) {
+            if (dateCount.second > 1) {
+                conflicts += dateCount.second - 1;
+            }
+        }
+    }
+
     return conflicts;
 }
 
-/*
- * Calculates the maximum number of exams (from any group/track) that fall 
- * on a single date in the entire calendar. Helps identify institutional bottlenecks.
- */
-int MetricsCalculator::calcMaxExamsInSingleDay(const std::map<std::string, int>& totalExamsPerDay) {
+int MetricsCalculator::calcMaxExamsInSingleDay(const std::unordered_map<int, int>& totalExamsPerDay) {
     int maxExams = 0;
-    for (const auto& [dateKey, count] : totalExamsPerDay) {
-        maxExams = std::max(maxExams, count);
+
+    for (const auto& dateCount : totalExamsPerDay) {
+        maxExams = std::max(maxExams, dateCount.second);
     }
+
     return maxExams;
 }
