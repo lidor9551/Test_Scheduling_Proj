@@ -190,7 +190,8 @@ Page {
          * Sidebar used to navigate between exam periods.
          */
         Rectangle {
-            width: 200
+            Layout.preferredWidth: 200
+            Layout.minimumWidth: 160
             Layout.fillHeight: true
             color: "#1B4332"
 
@@ -586,82 +587,41 @@ Page {
                      * The model is a padded list so the first day appears under
                      * the correct weekday column.
                      */
-                    GridView {
+                    /*
+                     * Shared 7-column calendar grid (CalendarGrid.qml).
+                     *
+                     * Rendering, cell size, RTL direction and the per-day toggle
+                     * behaviour are identical to the previous inline grid; the
+                     * state colors come from the component's defaults, which match
+                     * the old hardcoded values exactly.
+                     */
+                    CalendarGrid {
                         id: calGrid
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        cellWidth:  Math.floor(width / 7)
-                        cellHeight: 120
-                        layoutDirection: Qt.RightToLeft
+
+                        // Vertical scroll bar shown when the weeks overflow the
+                        // visible area. The GridView scrolls natively, so the
+                        // day-cell MouseAreas stay aligned with their cells.
+                        ScrollBar.vertical: ScrollBar { active: true }
 
                         /*
-                         * Padded calendar days prepared for grid display.
+                         * Padded calendar days, refreshed together with the month
+                         * title whenever CalendarManager reports a change — unchanged.
                          */
                         property var paddedDays: calendarScreen.buildPaddedModel(calendarManager.days)
                         model: paddedDays
 
                         /*
-                         * Refresh the padded grid whenever CalendarManager reports
-                         * that the days list changed.
+                         * Toggle an allowed day exactly as before: forward the clicked
+                         * date to CalendarManager. Saturday/padding cells are filtered
+                         * inside CalendarGrid, so this only fires for togglable days.
                          */
+                        onDayToggled: (dateStr) => calendarManager.toggleDay(dateStr)
+
                         Connections {
                             target: calendarManager
                             function onDaysChanged() {
                                 calGrid.paddedDays = calendarScreen.buildPaddedModel(calendarManager.days)
                                 monthTitle.text    = calendarScreen.monthLabel(calendarManager.days)
-                            }
-                        }
-
-                        /*
-                         * Delegate for a single calendar cell.
-                         */
-                        delegate: Rectangle {
-                            width:  calGrid.cellWidth  - 10
-                            height: calGrid.cellHeight - 10
-                            radius: 8
-                            visible: modelData.status !== -1
-
-                            /*
-                             * Cell background color reflects whether the day is
-                             * excluded or not, using the OutputScreen palette.
-                             */
-                            color: modelData.status === 2 ? "#fef2f2" : "#f1f5f9"
-
-                            /*
-                             * Cell border color also reflects the day status,
-                             * using the OutputScreen palette.
-                             */
-                            border.color: modelData.status === 2 ? "#fecaca" : "#e2e8f0"
-                            border.width: 1
-
-                            /*
-                             * Calendar day number.
-                             */
-                            Text {
-                                anchors.top: parent.top
-                                anchors.left: parent.left
-                                anchors.margins: 8
-                                text: modelData.date
-                                      ? Qt.formatDate(modelData.date, "d") : ""
-                                font.pixelSize: 14
-                                font.bold: true
-                                color: modelData.status === 2 ? "#dc2626" : "#64748b"
-                            }
-
-                            /*
-                             * Clicking an allowed cell toggles the day status.
-                             *
-                             * Saturday is disabled because it should not be used
-                             * as an exam day.
-                             */
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                enabled: modelData.status !== -1 && modelData.date.getDay() !== 6
-                                onClicked: {
-                                    let dateStr = Qt.formatDate(modelData.date, "yyyy-MM-dd")
-                                    calendarManager.toggleDay(dateStr)
-                                }
                             }
                         }
                     }
