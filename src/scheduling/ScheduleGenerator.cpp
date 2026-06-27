@@ -6,7 +6,40 @@
 #include <algorithm>
 #include <chrono>
 #include <functional>
+#include <iostream>
 #include <limits>
+
+namespace {
+
+double elapsedSeconds(
+    std::chrono::steady_clock::time_point start,
+    std::chrono::steady_clock::time_point end
+) {
+    return std::chrono::duration<double>(end - start).count();
+}
+
+void logSchedulingTiming(
+    const SchedulingBlock& block,
+    int limitPerBlock,
+    std::size_t solutionCount,
+    double searchSeconds,
+    double metricsSeconds,
+    const char* status
+) {
+    std::cerr << "[SchedulingTiming]"
+              << " status=" << status
+              << " block=" << block.semester << "/" << block.moed
+              << " courses=" << block.runtimeCourses.size()
+              << " dates=" << block.allowedDates.size()
+              << " solutions=" << solutionCount
+              << " limit=" << limitPerBlock
+              << " searchSeconds=" << searchSeconds
+              << " metricsSeconds=" << metricsSeconds
+              << " totalSeconds=" << (searchSeconds + metricsSeconds)
+              << '\n';
+}
+
+} // namespace
 
 /*
  * Creates a timeout exception.
@@ -456,7 +489,22 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(
     /*
      * Start the recursive search.
      */
-    backtrack();
+    const auto searchStartTime = std::chrono::steady_clock::now();
+    try {
+        backtrack();
+    } catch (...) {
+        const auto failedSearchEndTime = std::chrono::steady_clock::now();
+        logSchedulingTiming(
+            block_,
+            limitPerBlock,
+            solutions.size(),
+            elapsedSeconds(searchStartTime, failedSearchEndTime),
+            0.0,
+            "failed"
+        );
+        throw;
+    }
+    const auto searchEndTime = std::chrono::steady_clock::now();
 
     // POST-PROCESSING: Calculate metrics for all valid schedules
     /*
@@ -464,10 +512,24 @@ std::vector<ScheduleGenerationResult> ScheduleGenerator::generateAll(
      * using the soft constraints to generate a score (Metrics) for each.
      * This avoids slowing down the backtracking process itself.
      */
+    const auto metricsStartTime = std::chrono::steady_clock::now();
+    const MetricsCalculator::PreparedBlockData metricsBlockData =
+        MetricsCalculator::prepareBlockData(block_);
+
     for (auto& result : solutions) {
-        // We will create the MetricsCalculator class next to handle this logic
-        result.metrics = MetricsCalculator::calculate(result, block_); 
+        result.metrics = MetricsCalculator::calculate(result, metricsBlockData);
     }
+    const auto metricsEndTime = std::chrono::steady_clock::now();
+
+    logSchedulingTiming(
+        block_,
+        limitPerBlock,
+        solutions.size(),
+        elapsedSeconds(searchStartTime, searchEndTime),
+        elapsedSeconds(metricsStartTime, metricsEndTime),
+        "completed"
+    );
+
     /*
      * Return all solutions found for this block.
      */
