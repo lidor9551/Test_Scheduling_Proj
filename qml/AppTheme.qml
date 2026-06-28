@@ -3,99 +3,123 @@ import QtQuick
 /**
  * AppTheme.qml
  *
- * Centralized design tokens (colors, spacing, radii) shared across every screen.
+ * Single source of truth for the app's design language (colors, spacing, radii).
  *
  * Implemented as a plain QtObject (NOT a qmldir singleton) on purpose: this app
- * loads its QML from disk (the files are copied next to the executable by a
- * CMake POST_BUILD step; there is no .qrc and no qmldir). A file-based qmldir
- * singleton would not be copied and would fail to import at runtime, so each
- * consumer instantiates a local instance instead:
+ * loads its QML from disk (files copied next to the executable by a CMake
+ * POST_BUILD step; no .qrc / qmldir). Each consumer instantiates a local copy:
  *
  *     AppTheme { id: theme }
  *     ... color: theme.primary
  *
- * Every value below is the exact token that was previously hardcoded across the
- * screens, so centralizing them produces no visual change.
+ * Structure:
+ *   1. CANONICAL PALETTE — the whole DA, ~a dozen real colors.
+ *   2. SEMANTIC ALIASES  — the names used by the screens, all pointing back to
+ *      the canonical palette so the look is uniform everywhere (one green, white
+ *      surfaces, one soft tint, one border). Screens don't need to change when
+ *      the palette is tuned: edit a canonical value once.
  */
 QtObject {
-    // ── Brand green (primary action) ─────────────────────────────────────────
-    readonly property color primary:        "#14533f"
-    readonly property color primaryDark:    "#0f3f30"
-    readonly property color primaryHover:   "#1b664f"
-    readonly property color primarySoft:    "#edf7f2"
+    // ═══════════════ 1. CANONICAL PALETTE ═══════════════
 
-    // ── Outline-button surface states ────────────────────────────────────────
-    readonly property color outlineDownBg:  "#e3efe9"
-    readonly property color outlineHoverBg: "#f3faf6"
+    // Brand green — the single green used across every screen (chrome + actions).
+    readonly property color green:       "#14533f"
+    readonly property color greenDark:   "#0f3f30"  // pressed
+    readonly property color greenHover:  "#1b664f"  // hover / highlight
+    readonly property color greenAccent: "#52B788"  // selection / KPI / calendar accent
+    readonly property color greenOnDark: "#A8D5B5"  // light green text over green chrome
 
-    // ── Header / sidebar / tree chrome (darker green family) ─────────────────
-    readonly property color headerGreen:    "#1B4332"
-    readonly property color treeYearBg:     "#2D6A4F"
-    readonly property color treeSemBg:      "#3A7D5E"
-    readonly property color accentGreen:    "#52B788"
-    readonly property color saveGreen:      "#157347"
-    readonly property color saveGreenHover: "#1a6b45"
-    readonly property color sidebarLabel:   "#A8D5B5"
-    readonly property color sidebarSemText: "#D4EDD9"
+    // Surfaces — a normal white, one warm page background, one soft green tint,
+    // one muted cool fill.
+    readonly property color surface:      "white"
+    readonly property color appBg:        "#f7f5ef"
+    readonly property color surfaceSoft:  "#edf7f2"
+    readonly property color surfaceMuted: "#f1f5f9"
 
-    // ── Text ─────────────────────────────────────────────────────────────────
+    // Borders — one neutral border, plus a stronger one for emphasis.
+    readonly property color border:       "#e2e8f0"
+    readonly property color borderStrong: "#cbd5e1"
+
+    // Text greys.
     readonly property color textDark:       "#1f2933"
     readonly property color textMuted:      "#69737a"
-    readonly property color textSlate:      "#64748b"
-    readonly property color textSubtle:     "#6C757D"
     readonly property color textBreadcrumb: "#9aa0a6"
     readonly property color textSteel:      "#475569"
 
-    // ── Surfaces / neutrals ──────────────────────────────────────────────────
-    readonly property color pageBg:             "#f7f5ef"
-    readonly property color screenBg:           "#FAF8F3"
-    readonly property color neutralBg:          "#f1f5f9"
-    readonly property color neutralBgAlt:       "#f8fafc"
-    readonly property color neutralBorder:      "#e2e8f0"
-    readonly property color neutralBorderStrong:"#cbd5e1"
-    readonly property color borderSoft:         "#e1e5df"
-    readonly property color borderCard:         "#E9ECEF"
-    readonly property color inputBg:            "#F8F9FA"
-
-    // ── Status / semantic ────────────────────────────────────────────────────
-    readonly property color danger:         "#b91c1c"
-    readonly property color dangerStrong:   "#991b1b"
-    readonly property color success:        "#047857"
-    readonly property color successText:    "#059669"
-    readonly property color errorRed:       "#C0392B"
-    readonly property color disabledGrey:   "#94a3b8"
-    readonly property color saveDisabledBg: "#9aa5a0"
+    // Status / state colors — kept distinct because each carries meaning.
+    readonly property color danger:          "#b91c1c"
+    readonly property color dangerStrong:    "#991b1b"
+    readonly property color success:         "#047857"
+    readonly property color successText:     "#059669"
+    readonly property color disabledGrey:    "#94a3b8"
+    readonly property color saveDisabledBg:  "#9aa5a0"
     readonly property color saveDisabledText:"#e2e8e4"
+    readonly property color softRedBg:       "#fef2f2"
+    readonly property color softRedBorder:   "#fecaca"
+    readonly property color cellExcludedText:"#dc2626"
+    readonly property color dropValid:       "#86efac"
+    readonly property color dropInvalid:     "#fca5a5"
+    readonly property color deleteHover:     "#f87171"
+    readonly property color statusOkBorder:  "#bbf7d0"
 
-    // ── Calendar cell / drag-drop states ─────────────────────────────────────
-    readonly property color softRedBg:        "#fef2f2"
-    readonly property color softRedBorder:    "#fecaca"
-    readonly property color cellExcludedText: "#dc2626"
-    readonly property color dropValid:        "#86efac"
-    readonly property color dropInvalid:      "#fca5a5"
-    readonly property color deleteHover:      "#f87171"
+    // ═══════════════ 2. SEMANTIC ALIASES (point to the palette above) ═══════════════
 
-    // ── Input screen accents (program selection / file cards / banners) ──────
-    readonly property color selectedBg:     "#f0fdf4"
-    readonly property color checkIconBg:    "#dcfce7"
-    readonly property color uploadIconBg:   "#e7f3ee"
-    readonly property color cardEmptyBg:    "#f2f7f5"
-    readonly property color cardFilledBg:   "#f8faf9"
-    readonly property color cardEmptyBorder:"#d3ddd8"
-    readonly property color cardFilledBorder:"#cbded5"
-    readonly property color statusOkBg:     "#ecfdf5"
-    readonly property color statusOkBorder: "#bbf7d0"
+    // Greens — every dark green in the app is now the same brand green.
+    readonly property color primary:        green
+    readonly property color primaryDark:    greenDark
+    readonly property color primaryHover:   greenHover
+    readonly property color primarySoft:    surfaceSoft
+    readonly property color headerGreen:    green
+    readonly property color saveGreen:      green
+    readonly property color saveGreenHover: greenHover
+    readonly property color accentGreen:    greenAccent
+    readonly property color treeYearBg:     greenHover
+    readonly property color treeSemBg:      greenHover
+    readonly property color sidebarLabel:   greenOnDark
+    readonly property color sidebarSemText: greenOnDark
 
-    // ── Spacing scale (most frequent existing values) ────────────────────────
+    // Outline-button surface states.
+    readonly property color outlineHoverBg: surfaceSoft
+    readonly property color outlineDownBg:  surfaceSoft
+
+    // Backgrounds — one page bg, white cards, one soft tint, one muted fill.
+    readonly property color pageBg:       appBg
+    readonly property color screenBg:     appBg
+    readonly property color neutralBg:    surfaceMuted
+    readonly property color neutralBgAlt: surfaceMuted
+    readonly property color inputBg:      surfaceMuted
+    readonly property color selectedBg:   surfaceSoft
+    readonly property color statusOkBg:   surfaceSoft
+    readonly property color checkIconBg:  surfaceSoft
+    readonly property color uploadIconBg: surfaceSoft
+    readonly property color cardEmptyBg:  surfaceSoft
+    readonly property color cardFilledBg: surface
+
+    // Borders — collapsed to a single neutral border (+ the strong one).
+    readonly property color borderSoft:          border
+    readonly property color neutralBorder:       border
+    readonly property color borderCard:          border
+    readonly property color cardEmptyBorder:     border
+    readonly property color cardFilledBorder:    border
+    readonly property color neutralBorderStrong: borderStrong
+
+    // Near-identical greys merged onto one muted text color.
+    readonly property color textSlate:  textMuted
+    readonly property color textSubtle: textMuted
+
+    // One error red.
+    readonly property color errorRed: danger
+
+    // ═══════════════ Spacing scale ═══════════════
     readonly property int spacingS:  8
     readonly property int spacingM:  12
     readonly property int spacingL:  16
     readonly property int spacingXL: 22
     readonly property int marginL:   34
 
-    // ── Corner radii ─────────────────────────────────────────────────────────
+    // ═══════════════ Corner radii ═══════════════
     readonly property int radiusS:  8
-    readonly property int radius:    12
+    readonly property int radius:   12
     readonly property int radiusL:  16
     readonly property int radiusXL: 18
 }
