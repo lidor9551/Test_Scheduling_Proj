@@ -24,11 +24,13 @@ Item {
      * out of scope from a screen pushed onto the StackView, so the colors used
      * here are redeclared locally, exactly as SettingsScreen.qml does.
      */
-    readonly property color primary:     "#14533f"
-    readonly property color primaryDark: "#0f3f30"
-    readonly property color borderSoft:  "#e1e5df"
-    readonly property color textDark:    "#1f2933"
-    readonly property color textMuted:   "#69737a"
+    AppTheme { id: theme }
+
+    readonly property color primary:     theme.primary
+    readonly property color primaryDark: theme.primaryDark
+    readonly property color borderSoft:  theme.borderSoft
+    readonly property color textDark:    theme.textDark
+    readonly property color textMuted:   theme.textMuted
 
     /**
      * Whether the left sorting sidebar is expanded.
@@ -238,7 +240,7 @@ Item {
                 width: delegateRoot.width
                 height: delegateRoot.height - 8
                 radius: 10
-                color: delegateRoot.held ? "#edf7f2" : "#f8fafc"
+                color: delegateRoot.held ? theme.primarySoft : theme.neutralBgAlt
                 border.color: delegateRoot.held ? outputRoot.primary
                                                 : outputRoot.borderSoft
                 border.width: delegateRoot.held ? 2 : 1
@@ -263,7 +265,7 @@ Item {
                     Rectangle {
                         width: 26
                         height: 26
-                        radius: 8
+                        radius: theme.radiusS
                         color: outputRoot.primary
                         Text {
                             anchors.centerIn: parent
@@ -360,8 +362,8 @@ Item {
     ColumnLayout {
         id: mainContent
         anchors.fill: parent
-        anchors.margins: 34
-        spacing: 16
+        anchors.margins: theme.marginL
+        spacing: theme.spacingL
 
         // export + back buttons
         /*
@@ -370,9 +372,20 @@ Item {
          * Contains the back button on the right side and the export button
          * on the left side.
          */
-        RowLayout {
+        ScrollView {
+            id: actionScroll
             Layout.fillWidth: true
-            layoutDirection: Qt.RightToLeft
+            Layout.preferredHeight: 46
+            clip: true
+            // Horizontal scroll only, so back/export never clip on a narrow window.
+            contentHeight: availableHeight
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+            ScrollBar.horizontal.policy: ScrollBar.AsNeeded
+
+            RowLayout {
+                width: Math.max(implicitWidth, actionScroll.availableWidth)
+                height: actionScroll.availableHeight
+                layoutDirection: Qt.RightToLeft
 
             /*
              * Back button.
@@ -384,8 +397,8 @@ Item {
                 font.pixelSize: 16
                 font.bold: true
                 background: Rectangle {
-                    color: parent.down ? "#e2e8f0" : (parent.hovered ? "#f1f5f9" : "transparent")
-                    radius: 8
+                    color: parent.down ? theme.neutralBorder : (parent.hovered ? theme.neutralBg : "transparent")
+                    radius: theme.radiusS
                 }
                 onClicked: {
                     if (outputRoot.StackView.view) {
@@ -416,8 +429,8 @@ Item {
                 appController.outputManager.currentScheduleIndex >= 1
 
                 background: Rectangle {
-                    color: !parent.enabled ? "#94a3b8" : (parent.down ? "#0f3f30" : (parent.hovered ? "#1b664f" : "#14533f"))
-                    radius: 8
+                    color: !parent.enabled ? theme.disabledGrey : (parent.down ? theme.primaryDark : (parent.hovered ? theme.primaryHover : theme.primary))
+                    radius: theme.radiusS
                 }
 
                 /*
@@ -439,6 +452,7 @@ Item {
                     saveDialog.open()
                 }
             }
+            }
         }
 
         // navigation between different schedules (if multiple were generated from the input)
@@ -450,15 +464,25 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 60
-            radius: 12
+            radius: theme.radius
             color: "white"
-            border.color: "#e1e5df"
+            border.color: theme.borderSoft
             border.width: 1
 
-            RowLayout {
+            ScrollView {
+                id: navScroll
                 anchors.fill: parent
                 anchors.margins: 10
-                layoutDirection: Qt.RightToLeft
+                clip: true
+                // Horizontal scroll only, so prev/next never clip on a narrow window.
+                contentHeight: availableHeight
+                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                ScrollBar.horizontal.policy: ScrollBar.AsNeeded
+
+                RowLayout {
+                    width: Math.max(implicitWidth, navScroll.availableWidth)
+                    height: navScroll.availableHeight
+                    layoutDirection: Qt.RightToLeft
 
                 /*
                  * Previous schedule button.
@@ -473,9 +497,9 @@ Item {
                     enabled: appController.outputManager.currentScheduleIndex > 1
 
                     background: Rectangle {
-                        color: parent.enabled ? (parent.down ? "#e2e8f0" : (parent.hovered ? "#f8fafc" : "white")) : "#f1f5f9"
-                        border.color: parent.enabled ? "#cbd5e1" : "#e2e8f0"
-                        radius: 8
+                        color: parent.enabled ? (parent.down ? theme.neutralBorder : (parent.hovered ? theme.neutralBgAlt : "white")) : theme.neutralBg
+                        border.color: parent.enabled ? theme.neutralBorderStrong : theme.neutralBorder
+                        radius: theme.radiusS
                     }
 
                     /*
@@ -494,7 +518,7 @@ Item {
                     text: "מערכת " + appController.outputManager.currentScheduleIndex + " מתוך " + appController.outputManager.totalSchedulesCount
                     font.pixelSize: 18
                     font.bold: true
-                    color: "#1f2933"
+                    color: theme.textDark
                     horizontalAlignment: Text.AlignHCenter
                 }
 
@@ -511,9 +535,9 @@ Item {
                     enabled: appController.outputManager.currentScheduleIndex < appController.outputManager.totalSchedulesCount
 
                     background: Rectangle {
-                        color: parent.enabled ? (parent.down ? "#e2e8f0" : (parent.hovered ? "#f8fafc" : "white")) : "#f1f5f9"
-                        border.color: parent.enabled ? "#cbd5e1" : "#e2e8f0"
-                        radius: 8
+                        color: parent.enabled ? (parent.down ? theme.neutralBorder : (parent.hovered ? theme.neutralBgAlt : "white")) : theme.neutralBg
+                        border.color: parent.enabled ? theme.neutralBorderStrong : theme.neutralBorder
+                        radius: theme.radiusS
                     }
 
                     /*
@@ -524,6 +548,7 @@ Item {
                     }
                 }
             }
+            }
         }
 
         // choice of semester/moed for filtering the calendar
@@ -533,14 +558,28 @@ Item {
          * Changing either filter regenerates the displayed output for the
          * selected period.
          */
-        RowLayout {
+        ScrollView {
+            id: filterScroll
             Layout.fillWidth: true
-            layoutDirection: Qt.RightToLeft
-            spacing: 12
+            Layout.preferredHeight: 44
             Layout.topMargin: 8
             Layout.bottomMargin: 4
+            clip: true
+            // Horizontal scroll only: the filter controls (two 120 px combos plus
+            // the sort toggle) are never clipped sideways on a narrow window.
+            contentHeight: availableHeight
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+            ScrollBar.horizontal.policy: ScrollBar.AsNeeded
 
-            Item { Layout.fillWidth: true }
+            RowLayout {
+                // Match the viewport on wide windows (spacers behave exactly as
+                // before); grow to the implicit width on narrow ones to scroll.
+                width: Math.max(implicitWidth, filterScroll.availableWidth)
+                height: filterScroll.availableHeight
+                layoutDirection: Qt.RightToLeft
+                spacing: theme.spacingM
+
+                Item { Layout.fillWidth: true }
 
             /*
              * Semester filter label.
@@ -549,7 +588,7 @@ Item {
                 text: "סמסטר:"
                 font.pixelSize: 16
                 font.bold: true
-                color: "#1f2933"
+                color: theme.textDark
             }
 
             /*
@@ -568,10 +607,10 @@ Item {
                 model: appController.outputManager.availableSemesters
 
                 background: Rectangle {
-                    color: "#f8fafc"
-                    border.color: "#cbd5e1"
+                    color: theme.neutralBgAlt
+                    border.color: theme.neutralBorderStrong
                     border.width: 1
-                    radius: 8
+                    radius: theme.radiusS
                 }
 
                 /*
@@ -591,7 +630,7 @@ Item {
                 text: "מועד:"
                 font.pixelSize: 16
                 font.bold: true
-                color: "#1f2933"
+                color: theme.textDark
             }
 
             /*
@@ -610,10 +649,10 @@ Item {
                 model: appController.outputManager.availableMoeds
 
                 background: Rectangle {
-                    color: "#f8fafc"
-                    border.color: "#cbd5e1"
+                    color: theme.neutralBgAlt
+                    border.color: theme.neutralBorderStrong
                     border.width: 1
-                    radius: 8
+                    radius: theme.radiusS
                 }
 
                 /*
@@ -644,12 +683,12 @@ Item {
 
                 background: Rectangle {
                     color: outputRoot.sidebarOpen ? outputRoot.primaryDark
-                         : parent.down            ? "#e2e8f0"
-                         : parent.hovered          ? "#f1f5f9"
+                         : parent.down            ? theme.neutralBorder
+                         : parent.hovered          ? theme.neutralBg
                          : "white"
-                    border.color: "#cbd5e1"
+                    border.color: theme.neutralBorderStrong
                     border.width: 1
-                    radius: 8
+                    radius: theme.radiusS
                 }
                 contentItem: Text {
                     text: parent.text
@@ -660,6 +699,7 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: outputRoot.sidebarOpen = !outputRoot.sidebarOpen
+            }
             }
         }
 
@@ -690,11 +730,16 @@ Item {
                 id: sidebar
                 Layout.fillHeight: true
                 Layout.preferredWidth: outputRoot.sidebarOpen ? 340 : 0
+                // Minimum tracks the animated preferred width, so when open the
+                // sidebar keeps its full 340 px (the calendar, being fillWidth,
+                // absorbs any shrink) while the 340<->0 open/close animation stays
+                // pixel-perfect. No separate Behavior needed.
+                Layout.minimumWidth: sidebar.Layout.preferredWidth
                 clip: true
                 color: "white"
                 border.color: outputRoot.borderSoft
                 border.width: outputRoot.sidebarOpen ? 1 : 0
-                radius: 16
+                radius: theme.radiusL
 
                 /** Smooth width animation driving the Gemini-style push effect. */
                 Behavior on Layout.preferredWidth {
@@ -707,20 +752,20 @@ Item {
                  */
                 ScrollView {
                     anchors.fill: parent
-                    anchors.margins: 16
+                    anchors.margins: theme.spacingL
                     clip: true
                     contentWidth: availableWidth
 
                     ColumnLayout {
                         id: priorityColumn
                         width: parent.width
-                        spacing: 12
+                        spacing: theme.spacingM
 
                         /** Sidebar header row: title + close button. */
                         RowLayout {
                             Layout.fillWidth: true
                             layoutDirection: Qt.RightToLeft
-                            spacing: 8
+                            spacing: theme.spacingS
 
                             /** Panel title. */
                             Text {
@@ -740,10 +785,10 @@ Item {
                                 implicitWidth: 32
                                 implicitHeight: 32
                                 background: Rectangle {
-                                    color: parent.down ? "#e2e8f0"
-                                         : parent.hovered ? "#f1f5f9"
+                                    color: parent.down ? theme.neutralBorder
+                                         : parent.hovered ? theme.neutralBg
                                          : "transparent"
-                                    radius: 8
+                                    radius: theme.radiusS
                                 }
                                 onClicked: outputRoot.sidebarOpen = false
                             }
@@ -796,9 +841,9 @@ Item {
 
                             background: Rectangle {
                                 color: parent.down    ? outputRoot.primaryDark
-                                     : parent.hovered ? "#1b664f"
+                                     : parent.hovered ? theme.primaryHover
                                      : outputRoot.primary
-                                radius: 8
+                                radius: theme.radiusS
                             }
                             contentItem: Text {
                                 text: parent.text
@@ -830,9 +875,9 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: 16
+                radius: theme.radiusL
                 color: "white"
-                border.color: "#e1e5df"
+                border.color: theme.borderSoft
                 border.width: 1
                 clip: true
 
@@ -860,7 +905,7 @@ Item {
                                 text: modelData
                                 font.pixelSize: 14
                                 font.bold: true
-                                color: "#69737a"
+                                color: theme.textMuted
                                 horizontalAlignment: Text.AlignHCenter
                             }
                         }
@@ -905,7 +950,7 @@ Item {
                             return "transparent"
                         }
 
-                        return status === true ? "#86efac" : "#fca5a5"
+                        return status === true ? theme.dropValid : theme.dropInvalid
                     }
 
                     cellWidth: width / 7
@@ -994,18 +1039,18 @@ Item {
 
                         width: calendarGrid.cellWidth - 10
                         height: calendarGrid.cellHeight - 10
-                        radius: 8
+                        radius: theme.radiusS
 
                         /*
                          * Background color depends on whether the day is empty,
                          * excluded, contains an exam, or is a regular day.
                          */
-                        color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fef2f2" : (modelData.hasExam ? "#f8fafc" : "#f1f5f9"))
+                        color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? theme.softRedBg : (modelData.hasExam ? theme.neutralBgAlt : theme.neutralBg))
 
                         /*
                          * Border color highlights excluded days and exam requirement type.
                          */
-                        border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? "#fecaca" : (modelData.hasExam ? (dayCell.hasObligatory ? "#fca5a5" : "#86efac") : "#e2e8f0"))
+                        border.color: modelData.dayText === "" ? "transparent" : (modelData.isExcluded ? theme.softRedBorder : (modelData.hasExam ? (dayCell.hasObligatory ? theme.dropInvalid : theme.dropValid) : theme.neutralBorder))
                         border.width: 1
 
                         /**
@@ -1033,7 +1078,7 @@ Item {
                             text: modelData.dayText || ""
                             font.pixelSize: 14
                             font.bold: true
-                            color: modelData.isExcluded ? "#dc2626" : "#64748b"
+                            color: modelData.isExcluded ? theme.cellExcludedText : theme.textSlate
                             visible: modelData.dayText !== ""
                         }
 
@@ -1046,7 +1091,7 @@ Item {
                             anchors.fill: parent
                             anchors.margins: 8
                             anchors.topMargin: 24
-                            spacing: 8
+                            spacing: theme.spacingS
                             visible: modelData.hasExam === true
 
                             Repeater {
@@ -1186,7 +1231,7 @@ Item {
                                             text: modelData.examName || ""
                                             font.pixelSize: 13
                                             font.bold: true
-                                            color: "#1f2933"
+                                            color: theme.textDark
                                             elide: Text.ElideRight
                                             horizontalAlignment: Text.AlignRight
                                         }
@@ -1198,7 +1243,7 @@ Item {
                                             Layout.fillWidth: true
                                             text: (modelData.courseId || "") + " | " + (modelData.req || "")
                                             font.pixelSize: 11
-                                            color: modelData.req === "חובה" ? "#b91c1c" : "#047857"
+                                            color: modelData.req === "חובה" ? theme.danger : theme.success
                                             horizontalAlignment: Text.AlignRight
                                         }
 
@@ -1209,7 +1254,7 @@ Item {
                                             Layout.fillWidth: true
                                             text: "👤 " + (modelData.program || "")
                                             font.pixelSize: 10
-                                            color: "#14533f"
+                                            color: theme.primary
                                             elide: Text.ElideRight
                                             horizontalAlignment: Text.AlignRight
                                         }
@@ -1223,7 +1268,7 @@ Item {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 1
-                                        color: "#e2e8f0"
+                                        color: theme.neutralBorder
                                         visible: index < (dayCell.examCount - 1)
                                     }
                                 }
@@ -1254,9 +1299,9 @@ Item {
                     anchors.centerIn: parent
                     width: 350
                     height: 80
-                    radius: 8
-                    color: "#fef2f2"
-                    border.color: "#f87171"
+                    radius: theme.radiusS
+                    color: theme.softRedBg
+                    border.color: theme.deleteHover
                     border.width: 1
 
                     // only visible when there is no solutions
@@ -1267,7 +1312,7 @@ Item {
                         text: "לא נמצאו מערכות שיבוץ תקינות לנתונים אלו."
                         font.pixelSize: 16
                         font.bold: true
-                        color: "#991b1b"
+                        color: theme.dangerStrong
                     }
                 }
             }

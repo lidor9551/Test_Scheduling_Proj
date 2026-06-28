@@ -15,12 +15,14 @@ Item {
     // -------------------------------------------------------------------------
     // Local color palette — Main.qml root is out of scope from a pushed screen.
     // -------------------------------------------------------------------------
-    readonly property color primary:     "#14533f"
-    readonly property color primaryDark: "#0f3f30"
-    readonly property color borderSoft:  "#e1e5df"
-    readonly property color textDark:    "#1f2933"
-    readonly property color textMuted:   "#69737a"
-    readonly property color pageBg:      "#f7f5ef"
+    AppTheme { id: theme }
+
+    readonly property color primary:     theme.primary
+    readonly property color primaryDark: theme.primaryDark
+    readonly property color borderSoft:  theme.borderSoft
+    readonly property color textDark:    theme.textDark
+    readonly property color textMuted:   theme.textMuted
+    readonly property color pageBg:      theme.pageBg
 
     // -------------------------------------------------------------------------
     // Public constraint properties — five on/off flags and five k thresholds.
@@ -284,7 +286,7 @@ Item {
                         Layout.fillWidth: true
                         implicitHeight: cardRow.implicitHeight + 40
 
-                        radius: 16
+                        radius: theme.radiusL
                         color: "white"
                         border.color: settingsRoot.borderSoft
                         border.width: 1
@@ -299,7 +301,7 @@ Item {
                                 rightMargin: 20
                                 topMargin:   20
                             }
-                            spacing: 16
+                            spacing: theme.spacingL
 
                             /** Toggle that enables or disables this constraint. */
                             Switch {
@@ -316,7 +318,7 @@ Item {
                                 width: 40
                                 height: 40
                                 radius: 10
-                                color: ruleSwitch.checked ? "#edf7f2" : "#f1f5f9"
+                                color: ruleSwitch.checked ? theme.primarySoft : theme.neutralBg
 
                                 Text {
                                     anchors.centerIn: parent
@@ -454,7 +456,7 @@ Item {
                                     Layout.alignment: Qt.AlignHCenter
                                     visible: kColumn.kOverflow
                                     text: "המקסימום הוא " + settingsRoot.kMax
-                                    color: "#b91c1c"
+                                    color: theme.danger
                                     font.pixelSize: 11
                                 }
                             }
@@ -474,7 +476,7 @@ Item {
             Layout.fillWidth: true
             visible: settingsRoot.overflowMessageVisible
             text: "שגיאה: הזן מספר קטן מ-" + settingsRoot.kMax
-            color: "#b91c1c"
+            color: theme.danger
             font.pixelSize: 14
             font.bold: true
             wrapMode: Text.WordWrap
@@ -486,7 +488,7 @@ Item {
         // Classic UX pattern: Back on the left, primary Save action on the right.
         RowLayout {
             Layout.fillWidth: true
-            spacing: 16
+            spacing: theme.spacingL
 
             /** Back button — pops this screen off the StackView without saving. */
             Button {
@@ -494,10 +496,10 @@ Item {
                 font.pixelSize: 16
                 font.bold: true
                 background: Rectangle {
-                    color: parent.down    ? "#e2e8f0"
-                         : parent.hovered ? "#f1f5f9"
+                    color: parent.down    ? theme.neutralBorder
+                         : parent.hovered ? theme.neutralBg
                          : "transparent"
-                    radius: 8
+                    radius: theme.radiusS
                 }
                 onClicked: {
                     if (settingsRoot.StackView.view) {
@@ -527,16 +529,16 @@ Item {
                 background: Rectangle {
                     // Grayed out and flat when disabled (overflow); primary styling
                     // with hover/press feedback when the value is valid again.
-                    color: !saveButton.enabled ? "#9aa5a0"
+                    color: !saveButton.enabled ? theme.saveDisabledBg
                          : saveButton.down     ? settingsRoot.primaryDark
-                         : saveButton.hovered  ? "#1b664f"
+                         : saveButton.hovered  ? theme.primaryHover
                          : settingsRoot.primary
-                    radius: 8
+                    radius: theme.radiusS
                 }
                 contentItem: Text {
                     text: saveButton.text
                     // Dim the label slightly when the button is disabled.
-                    color: saveButton.enabled ? "white" : "#e2e8e4"
+                    color: saveButton.enabled ? "white" : theme.saveDisabledText
                     font.pixelSize: 16
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter

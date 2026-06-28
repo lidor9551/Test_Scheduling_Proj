@@ -15,10 +15,12 @@ import QtQuick.Layouts
 Page {
     id: editorScreen
 
+    AppTheme { id: theme }
+
     /*
      * Main background color for the period editor screen.
      */
-    background: Rectangle { color: "#FAF8F3" }
+    background: Rectangle { color: theme.screenBg }
 
     /*
      * Header bar for navigation and title display.
@@ -26,11 +28,11 @@ Page {
     header: Rectangle {
         width: parent.width
         height: 64
-        color: "#1B4332"
+        color: theme.headerGreen
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 16
+            anchors.margins: theme.spacingL
 
             /*
              * Back button.
@@ -118,10 +120,20 @@ Page {
     /*
      * Main layout of the period editor.
      */
-    ColumnLayout {
+    ScrollView {
+        id: contentScroll
         anchors.fill: parent
         anchors.margins: 24
-        spacing: 20
+        clip: true
+        contentWidth: availableWidth   // content never scrolls sideways
+
+        ColumnLayout {
+            id: scrollContent
+            width: contentScroll.availableWidth
+            // Fill the viewport on large windows (identical layout), but grow
+            // taller on small ones so the page scroll bar appears.
+            height: Math.max(implicitHeight, contentScroll.availableHeight)
+            spacing: 20
 
         // Date range inputs + buttons
         /*
@@ -132,10 +144,11 @@ Page {
          */
         Rectangle {
             Layout.fillWidth: true
-            height: 120
-            radius: 12
+            Layout.preferredHeight: 120
+            Layout.minimumHeight: 120
+            radius: theme.radius
             color: "white"
-            border.color: "#E9ECEF"
+            border.color: theme.borderCard
             border.width: 1
 
             RowLayout {
@@ -150,15 +163,15 @@ Page {
                  */
                 ColumnLayout {
                     spacing: 6
-                    Text { text: "תאריך התחלה"; font.pixelSize: 13; color: "#6C757D" }
+                    Text { text: "תאריך התחלה"; font.pixelSize: 13; color: theme.textSubtle }
                     TextField {
                         id: startDateField
                         placeholderText: "YYYY-MM-DD"
                         font.pixelSize: 15
                         background: Rectangle {
-                            radius: 8
-                            color: "#F8F9FA"
-                            border.color: "#1B4332"
+                            radius: theme.radiusS
+                            color: theme.inputBg
+                            border.color: theme.headerGreen
                             border.width: 1
                         }
                     }
@@ -171,15 +184,15 @@ Page {
                  */
                 ColumnLayout {
                     spacing: 6
-                    Text { text: "תאריך סיום"; font.pixelSize: 13; color: "#6C757D" }
+                    Text { text: "תאריך סיום"; font.pixelSize: 13; color: theme.textSubtle }
                     TextField {
                         id: endDateField
                         placeholderText: "YYYY-MM-DD"
                         font.pixelSize: 15
                         background: Rectangle {
-                            radius: 8
-                            color: "#F8F9FA"
-                            border.color: "#1B4332"
+                            radius: theme.radiusS
+                            color: theme.inputBg
+                            border.color: theme.headerGreen
                             border.width: 1
                         }
                     }
@@ -195,8 +208,8 @@ Page {
                     text: "החל הזזה"
                     Layout.alignment: Qt.AlignBottom
                     background: Rectangle {
-                        radius: 8
-                        color: parent.hovered ? "#52B788" : "#1B4332"
+                        radius: theme.radiusS
+                        color: parent.hovered ? theme.accentGreen : theme.headerGreen
                     }
                     contentItem: Text {
                         text: parent.text
@@ -246,8 +259,8 @@ Page {
                     text: "💾 שמור"
                     Layout.alignment: Qt.AlignBottom
                     background: Rectangle {
-                        radius: 8
-                        color: parent.hovered ? "#1a6b45" : "#157347"
+                        radius: theme.radiusS
+                        color: parent.hovered ? theme.saveGreenHover : theme.saveGreen
                     }
                     contentItem: Text {
                         text: parent.text
@@ -270,7 +283,7 @@ Page {
                 Text {
                     id: saveConfirm
                     text: "✅ נשמר"
-                    color: "#157347"
+                    color: theme.saveGreen
                     font.pixelSize: 13
                     font.bold: true
                     visible: false
@@ -292,7 +305,7 @@ Page {
                 Text {
                     id: shiftErrorMsg
                     text: "⚠ שגיאה: תאריך ההתחלה מאוחר מתאריך הסיום"
-                    color: "#C0392B"
+                    color: theme.errorRed
                     font.pixelSize: 13
                     font.bold: true
                     visible: false
@@ -318,15 +331,16 @@ Page {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 16
+            Layout.minimumHeight: 320 // keep the calendar usable once the page scrolls
+            radius: theme.radiusL
             color: "white"
-            border.color: "#E9ECEF"
+            border.color: theme.borderCard
             border.width: 1
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 8
+                anchors.margins: theme.spacingL
+                spacing: theme.spacingS
 
                 /*
                  * Instruction text for the user.
@@ -334,7 +348,7 @@ Page {
                 Text {
                     text: "לחץ על יום כדי להחריג / לשחזר אותו"
                     font.pixelSize: 13
-                    color: "#6C757D"
+                    color: theme.textSubtle
                     font.italic: true
                 }
 
@@ -346,7 +360,7 @@ Page {
                     text: editorScreen.monthLabel(calendarManager.days)
                     font.pixelSize: 15
                     font.bold: true
-                    color: "#1B4332"
+                    color: theme.headerGreen
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -363,7 +377,7 @@ Page {
                             text: modelData
                             font.pixelSize: 14
                             font.bold: true
-                            color: "#69737a"
+                            color: theme.textMuted
                             horizontalAlignment: Text.AlignHCenter
                         }
                     }
@@ -375,23 +389,31 @@ Page {
                  * The grid uses paddedDays so the first day appears under the
                  * correct weekday.
                  */
-                GridView {
+                /*
+                 * Shared 7-column calendar grid (CalendarGrid.qml).
+                 *
+                 * Rendering, cell size, RTL and the per-day toggle behaviour are
+                 * identical to the previous inline grid; the state colors come
+                 * from the component's defaults, which match the old hardcoded
+                 * values exactly.
+                 */
+                CalendarGrid {
                     id: editorGrid
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    cellWidth:  Math.floor(width / 7)
-                    cellHeight: 120
-                    layoutDirection: Qt.RightToLeft
 
                     /*
-                     * Padded model generated from CalendarManager.days.
+                     * Padded model built from CalendarManager.days, refreshed (with
+                     * the month title) whenever the day list changes — unchanged.
                      */
                     property var paddedDays: editorScreen.buildPaddedModel(calendarManager.days)
                     model: paddedDays
 
                     /*
-                     * Refresh the grid whenever CalendarManager updates the day list.
+                     * Toggle a day exactly as before: forward the clicked date to
+                     * CalendarManager. Saturday/padding cells are filtered inside
+                     * CalendarGrid, so this only fires for togglable days.
                      */
+                    onDayToggled: (dateStr) => calendarManager.toggleDay(dateStr)
+
                     Connections {
                         target: calendarManager
                         function onDaysChanged() {
@@ -399,59 +421,9 @@ Page {
                             editorMonthTitle.text = editorScreen.monthLabel(calendarManager.days)
                         }
                     }
-
-                    /*
-                     * Delegate for a single calendar day cell.
-                     */
-                    delegate: Rectangle {
-                        width:  editorGrid.cellWidth  - 10
-                        height: editorGrid.cellHeight - 10
-                        radius: 8
-                        visible: modelData.status !== -1
-
-                        /*
-                         * Cell background color reflects whether the day is
-                         * excluded or not, using the OutputScreen palette.
-                         */
-                        color: modelData.status === 2 ? "#fef2f2" : "#f1f5f9"
-
-                        /*
-                         * Cell border color also reflects the day status,
-                         * using the OutputScreen palette.
-                         */
-                        border.color: modelData.status === 2 ? "#fecaca" : "#e2e8f0"
-                        border.width: 1
-
-                        /*
-                         * Calendar day number.
-                         */
-                        Text {
-                            anchors.top: parent.top
-                            anchors.left: parent.left
-                            anchors.margins: 8
-                            text: modelData.date ? Qt.formatDate(modelData.date, "d") : ""
-                            font.pixelSize: 14
-                            font.bold: true
-                            color: modelData.status === 2 ? "#dc2626" : "#64748b"
-                        }
-
-                        /*
-                         * Clicking a day toggles it between active and excluded.
-                         *
-                         * Saturday is disabled and cannot be toggled.
-                         */
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            enabled: modelData.status !== -1 && modelData.date.getDay() !== 6
-                            onClicked: {
-                                let dateStr = Qt.formatDate(modelData.date, "yyyy-MM-dd")
-                                calendarManager.toggleDay(dateStr)
-                            }
-                        }
-                    }
                 }
             }
         }
-    }
+        } // scrollContent
+    } // contentScroll
 }

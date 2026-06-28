@@ -11,10 +11,12 @@ import QtQuick.Layouts
 Page {
     id: calendarScreen
 
+    AppTheme { id: theme }
+
     /*
      * Main background color for the calendar screen.
      */
-    background: Rectangle { color: "#FAF8F3" }
+    background: Rectangle { color: theme.screenBg }
 
     // ── Header ──────────────────────────────────────────────────────────────
     /*
@@ -26,12 +28,12 @@ Page {
     header: Rectangle {
         width: parent.width
         height: 64
-        color: "#1B4332"
+        color: theme.headerGreen
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 12
+            anchors.margins: theme.spacingL
+            spacing: theme.spacingM
 
             /*
              * Back button.
@@ -86,8 +88,8 @@ Page {
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
-                    radius: 8
-                    color: parent.hovered ? "#1a6b45" : "#157347"
+                    radius: theme.radiusS
+                    color: parent.hovered ? theme.saveGreenHover : theme.saveGreen
                 }
                 onClicked: {
                     calendarManager.saveChanges()
@@ -131,8 +133,8 @@ Page {
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
-                    radius: 8
-                    color: parent.hovered ? "#52B788" : "transparent"
+                    radius: theme.radiusS
+                    color: parent.hovered ? theme.accentGreen : "transparent"
                     border.color: "white"
                     border.width: 1
                 }
@@ -190,9 +192,10 @@ Page {
          * Sidebar used to navigate between exam periods.
          */
         Rectangle {
-            width: 200
+            Layout.preferredWidth: 200
+            Layout.minimumWidth: 160
             Layout.fillHeight: true
-            color: "#1B4332"
+            color: theme.headerGreen
 
             ColumnLayout {
                 anchors.fill: parent
@@ -204,7 +207,7 @@ Page {
                  */
                 Text {
                     text: "תקופות"
-                    color: "#A8D5B5"
+                    color: theme.sidebarLabel
                     font.pixelSize: 12
                     font.bold: true
                     topPadding: 8
@@ -285,9 +288,9 @@ Page {
                         Rectangle {
                             Layout.fillWidth: true
                             height: 36
-                            radius: 8
+                            radius: theme.radiusS
                             color: treeView.expandedYears[modelData.year]
-                                   ? "#2D6A4F" : "transparent"
+                                   ? theme.treeYearBg : "transparent"
 
                             RowLayout {
                                 anchors.fill: parent
@@ -300,7 +303,7 @@ Page {
                                 Text {
                                     text: treeView.expandedYears[modelData.year]
                                           ? "▾" : "▸"
-                                    color: "#A8D5B5"
+                                    color: theme.sidebarLabel
                                     font.pixelSize: 12
                                 }
 
@@ -351,9 +354,9 @@ Page {
                                 Rectangle {
                                     Layout.fillWidth: true
                                     height: 32
-                                    radius: 8
+                                    radius: theme.radiusS
                                     color: treeView.expandedSemesters[modelData.semester]
-                                           ? "#3A7D5E" : "transparent"
+                                           ? theme.treeSemBg : "transparent"
 
                                     RowLayout {
                                         anchors.fill: parent
@@ -366,7 +369,7 @@ Page {
                                         Text {
                                             text: treeView.expandedSemesters[modelData.semester]
                                                   ? "▾" : "▸"
-                                            color: "#A8D5B5"
+                                            color: theme.sidebarLabel
                                             font.pixelSize: 11
                                         }
 
@@ -375,7 +378,7 @@ Page {
                                          */
                                         Text {
                                             text: modelData.semester
-                                            color: "#D4EDD9"
+                                            color: theme.sidebarSemText
                                             font.pixelSize: 13
                                             Layout.fillWidth: true
                                         }
@@ -407,7 +410,7 @@ Page {
                                         Layout.fillWidth: true
                                         width: treeView.width
                                         height: 30
-                                        radius: 8
+                                        radius: theme.radiusS
 
                                         /*
                                          * Highlights the currently selected exam period.
@@ -416,7 +419,7 @@ Page {
                                                && calendarManager.currentSemester ===
                                                (calendarManager.getPeriodTree()[modelData.index].semester
                                                 + " - " + calendarManager.getPeriodTree()[modelData.index].moed)
-                                               ? "#52B788" : "transparent"
+                                               ? theme.accentGreen : "transparent"
 
                                         /*
                                          * Moed name.
@@ -455,7 +458,7 @@ Page {
             Layout.fillWidth: true
             Layout.fillHeight: true
             anchors.margins: 24
-            spacing: 16
+            spacing: theme.spacingL
 
             Item { height: 24 }
 
@@ -467,7 +470,7 @@ Page {
                 Layout.fillWidth: true
                 Layout.leftMargin: 24
                 Layout.rightMargin: 24
-                spacing: 12
+                spacing: theme.spacingM
 
                 /*
                  * Repeated card data.
@@ -478,13 +481,13 @@ Page {
                     model: [
                         { label: "סך הימים",
                           value: calendarManager.days.length,
-                          color: "#1B4332" },
+                          color: theme.headerGreen },
                         { label: "ימים פעילים",
                           value: calendarManager.days.filter(d => d.status === 1).length,
-                          color: "#52B788" },
+                          color: theme.accentGreen },
                         { label: "ימים מוחרגים",
                           value: calendarManager.days.filter(d => d.status === 2).length,
-                          color: "#C0392B" }
+                          color: theme.errorRed }
                     ]
 
                     /*
@@ -493,9 +496,9 @@ Page {
                     delegate: Rectangle {
                         Layout.fillWidth: true
                         height: 80
-                        radius: 12
+                        radius: theme.radius
                         color: "white"
-                        border.color: "#E9ECEF"
+                        border.color: theme.borderCard
                         border.width: 1
 
                         ColumnLayout {
@@ -519,7 +522,7 @@ Page {
                             Text {
                                 text: modelData.label
                                 font.pixelSize: 12
-                                color: "#6C757D"
+                                color: theme.textSubtle
                                 Layout.alignment: Qt.AlignHCenter
                             }
                         }
@@ -539,15 +542,15 @@ Page {
                 Layout.leftMargin: 24
                 Layout.rightMargin: 24
                 Layout.bottomMargin: 24
-                radius: 16
+                radius: theme.radiusL
                 color: "white"
-                border.color: "#E9ECEF"
+                border.color: theme.borderCard
                 border.width: 1
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 16
-                    spacing: 8
+                    anchors.margins: theme.spacingL
+                    spacing: theme.spacingS
 
                     /*
                      * Month title above the grid.
@@ -557,7 +560,7 @@ Page {
                         text: calendarScreen.monthLabel(calendarManager.days)
                         font.pixelSize: 16
                         font.bold: true
-                        color: "#1B4332"
+                        color: theme.headerGreen
                         Layout.alignment: Qt.AlignHCenter
                     }
 
@@ -574,7 +577,7 @@ Page {
                                 text: modelData
                                 font.pixelSize: 14
                                 font.bold: true
-                                color: "#69737a"
+                                color: theme.textMuted
                                 horizontalAlignment: Text.AlignHCenter
                             }
                         }
@@ -586,82 +589,41 @@ Page {
                      * The model is a padded list so the first day appears under
                      * the correct weekday column.
                      */
-                    GridView {
+                    /*
+                     * Shared 7-column calendar grid (CalendarGrid.qml).
+                     *
+                     * Rendering, cell size, RTL direction and the per-day toggle
+                     * behaviour are identical to the previous inline grid; the
+                     * state colors come from the component's defaults, which match
+                     * the old hardcoded values exactly.
+                     */
+                    CalendarGrid {
                         id: calGrid
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        cellWidth:  Math.floor(width / 7)
-                        cellHeight: 120
-                        layoutDirection: Qt.RightToLeft
+
+                        // Vertical scroll bar shown when the weeks overflow the
+                        // visible area. The GridView scrolls natively, so the
+                        // day-cell MouseAreas stay aligned with their cells.
+                        ScrollBar.vertical: ScrollBar { active: true }
 
                         /*
-                         * Padded calendar days prepared for grid display.
+                         * Padded calendar days, refreshed together with the month
+                         * title whenever CalendarManager reports a change — unchanged.
                          */
                         property var paddedDays: calendarScreen.buildPaddedModel(calendarManager.days)
                         model: paddedDays
 
                         /*
-                         * Refresh the padded grid whenever CalendarManager reports
-                         * that the days list changed.
+                         * Toggle an allowed day exactly as before: forward the clicked
+                         * date to CalendarManager. Saturday/padding cells are filtered
+                         * inside CalendarGrid, so this only fires for togglable days.
                          */
+                        onDayToggled: (dateStr) => calendarManager.toggleDay(dateStr)
+
                         Connections {
                             target: calendarManager
                             function onDaysChanged() {
                                 calGrid.paddedDays = calendarScreen.buildPaddedModel(calendarManager.days)
                                 monthTitle.text    = calendarScreen.monthLabel(calendarManager.days)
-                            }
-                        }
-
-                        /*
-                         * Delegate for a single calendar cell.
-                         */
-                        delegate: Rectangle {
-                            width:  calGrid.cellWidth  - 10
-                            height: calGrid.cellHeight - 10
-                            radius: 8
-                            visible: modelData.status !== -1
-
-                            /*
-                             * Cell background color reflects whether the day is
-                             * excluded or not, using the OutputScreen palette.
-                             */
-                            color: modelData.status === 2 ? "#fef2f2" : "#f1f5f9"
-
-                            /*
-                             * Cell border color also reflects the day status,
-                             * using the OutputScreen palette.
-                             */
-                            border.color: modelData.status === 2 ? "#fecaca" : "#e2e8f0"
-                            border.width: 1
-
-                            /*
-                             * Calendar day number.
-                             */
-                            Text {
-                                anchors.top: parent.top
-                                anchors.left: parent.left
-                                anchors.margins: 8
-                                text: modelData.date
-                                      ? Qt.formatDate(modelData.date, "d") : ""
-                                font.pixelSize: 14
-                                font.bold: true
-                                color: modelData.status === 2 ? "#dc2626" : "#64748b"
-                            }
-
-                            /*
-                             * Clicking an allowed cell toggles the day status.
-                             *
-                             * Saturday is disabled because it should not be used
-                             * as an exam day.
-                             */
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                enabled: modelData.status !== -1 && modelData.date.getDay() !== 6
-                                onClicked: {
-                                    let dateStr = Qt.formatDate(modelData.date, "yyyy-MM-dd")
-                                    calendarManager.toggleDay(dateStr)
-                                }
                             }
                         }
                     }
