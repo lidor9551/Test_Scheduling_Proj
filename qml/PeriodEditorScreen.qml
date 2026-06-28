@@ -15,10 +15,12 @@ import QtQuick.Layouts
 Page {
     id: editorScreen
 
+    AppTheme { id: theme }
+
     /*
      * Main background color for the period editor screen.
      */
-    background: Rectangle { color: "#FAF8F3" }
+    background: Rectangle { color: theme.screenBg }
 
     /*
      * Header bar for navigation and title display.
@@ -26,11 +28,11 @@ Page {
     header: Rectangle {
         width: parent.width
         height: 64
-        color: "#1B4332"
+        color: theme.headerGreen
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 16
+            anchors.margins: theme.spacingL
 
             /*
              * Back button.
@@ -144,9 +146,9 @@ Page {
             Layout.fillWidth: true
             Layout.preferredHeight: 120
             Layout.minimumHeight: 120
-            radius: 12
+            radius: theme.radius
             color: "white"
-            border.color: "#E9ECEF"
+            border.color: theme.borderCard
             border.width: 1
 
             RowLayout {
@@ -161,15 +163,15 @@ Page {
                  */
                 ColumnLayout {
                     spacing: 6
-                    Text { text: "תאריך התחלה"; font.pixelSize: 13; color: "#6C757D" }
+                    Text { text: "תאריך התחלה"; font.pixelSize: 13; color: theme.textSubtle }
                     TextField {
                         id: startDateField
                         placeholderText: "YYYY-MM-DD"
                         font.pixelSize: 15
                         background: Rectangle {
-                            radius: 8
-                            color: "#F8F9FA"
-                            border.color: "#1B4332"
+                            radius: theme.radiusS
+                            color: theme.inputBg
+                            border.color: theme.headerGreen
                             border.width: 1
                         }
                     }
@@ -182,15 +184,15 @@ Page {
                  */
                 ColumnLayout {
                     spacing: 6
-                    Text { text: "תאריך סיום"; font.pixelSize: 13; color: "#6C757D" }
+                    Text { text: "תאריך סיום"; font.pixelSize: 13; color: theme.textSubtle }
                     TextField {
                         id: endDateField
                         placeholderText: "YYYY-MM-DD"
                         font.pixelSize: 15
                         background: Rectangle {
-                            radius: 8
-                            color: "#F8F9FA"
-                            border.color: "#1B4332"
+                            radius: theme.radiusS
+                            color: theme.inputBg
+                            border.color: theme.headerGreen
                             border.width: 1
                         }
                     }
@@ -206,8 +208,8 @@ Page {
                     text: "החל הזזה"
                     Layout.alignment: Qt.AlignBottom
                     background: Rectangle {
-                        radius: 8
-                        color: parent.hovered ? "#52B788" : "#1B4332"
+                        radius: theme.radiusS
+                        color: parent.hovered ? theme.accentGreen : theme.headerGreen
                     }
                     contentItem: Text {
                         text: parent.text
@@ -257,8 +259,8 @@ Page {
                     text: "💾 שמור"
                     Layout.alignment: Qt.AlignBottom
                     background: Rectangle {
-                        radius: 8
-                        color: parent.hovered ? "#1a6b45" : "#157347"
+                        radius: theme.radiusS
+                        color: parent.hovered ? theme.saveGreenHover : theme.saveGreen
                     }
                     contentItem: Text {
                         text: parent.text
@@ -281,7 +283,7 @@ Page {
                 Text {
                     id: saveConfirm
                     text: "✅ נשמר"
-                    color: "#157347"
+                    color: theme.saveGreen
                     font.pixelSize: 13
                     font.bold: true
                     visible: false
@@ -303,7 +305,7 @@ Page {
                 Text {
                     id: shiftErrorMsg
                     text: "⚠ שגיאה: תאריך ההתחלה מאוחר מתאריך הסיום"
-                    color: "#C0392B"
+                    color: theme.errorRed
                     font.pixelSize: 13
                     font.bold: true
                     visible: false
@@ -330,15 +332,15 @@ Page {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: 320 // keep the calendar usable once the page scrolls
-            radius: 16
+            radius: theme.radiusL
             color: "white"
-            border.color: "#E9ECEF"
+            border.color: theme.borderCard
             border.width: 1
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 8
+                anchors.margins: theme.spacingL
+                spacing: theme.spacingS
 
                 /*
                  * Instruction text for the user.
@@ -346,7 +348,7 @@ Page {
                 Text {
                     text: "לחץ על יום כדי להחריג / לשחזר אותו"
                     font.pixelSize: 13
-                    color: "#6C757D"
+                    color: theme.textSubtle
                     font.italic: true
                 }
 
@@ -358,7 +360,7 @@ Page {
                     text: editorScreen.monthLabel(calendarManager.days)
                     font.pixelSize: 15
                     font.bold: true
-                    color: "#1B4332"
+                    color: theme.headerGreen
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -375,7 +377,7 @@ Page {
                             text: modelData
                             font.pixelSize: 14
                             font.bold: true
-                            color: "#69737a"
+                            color: theme.textMuted
                             horizontalAlignment: Text.AlignHCenter
                         }
                     }

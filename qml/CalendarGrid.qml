@@ -30,13 +30,15 @@ GridView {
     /** Emitted when an allowed day cell is clicked. dateStr is "yyyy-MM-dd". */
     signal dayToggled(string dateStr)
 
+    AppTheme { id: theme }
+
     // ── State colors (defaults match the previous inline values exactly) ──────
-    property color excludedCellColor:   "#fef2f2"
-    property color normalCellColor:     "#f1f5f9"
-    property color excludedBorderColor: "#fecaca"
-    property color normalBorderColor:   "#e2e8f0"
-    property color excludedTextColor:   "#dc2626"
-    property color normalTextColor:     "#64748b"
+    property color excludedCellColor:   theme.softRedBg
+    property color normalCellColor:     theme.neutralBg
+    property color excludedBorderColor: theme.softRedBorder
+    property color normalBorderColor:   theme.neutralBorder
+    property color excludedTextColor:   theme.cellExcludedText
+    property color normalTextColor:     theme.textSlate
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -50,7 +52,7 @@ GridView {
     delegate: Rectangle {
         width:  calendarGrid.cellWidth  - 10
         height: calendarGrid.cellHeight - 10
-        radius: 8
+        radius: theme.radiusS
         visible: modelData.status !== -1
 
         /*

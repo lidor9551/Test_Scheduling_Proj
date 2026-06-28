@@ -91,6 +91,7 @@ set(QML_FILES
     qml/OutputScreen.qml
     qml/PeriodEditorScreen.qml
     qml/SettingsScreen.qml
+    qml/InputScreen.qml
 
     # Shared, reusable QML components (must be copied next to the executable so
     # the file-based implicit-directory import resolves them at runtime).

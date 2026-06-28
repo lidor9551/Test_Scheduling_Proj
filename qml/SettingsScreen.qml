@@ -286,7 +286,7 @@ Item {
                         Layout.fillWidth: true
                         implicitHeight: cardRow.implicitHeight + 40
 
-                        radius: 16
+                        radius: theme.radiusL
                         color: "white"
                         border.color: settingsRoot.borderSoft
                         border.width: 1
@@ -301,7 +301,7 @@ Item {
                                 rightMargin: 20
                                 topMargin:   20
                             }
-                            spacing: 16
+                            spacing: theme.spacingL
 
                             /** Toggle that enables or disables this constraint. */
                             Switch {
@@ -318,7 +318,7 @@ Item {
                                 width: 40
                                 height: 40
                                 radius: 10
-                                color: ruleSwitch.checked ? theme.primarySoft : "#f1f5f9"
+                                color: ruleSwitch.checked ? theme.primarySoft : theme.neutralBg
 
                                 Text {
                                     anchors.centerIn: parent
@@ -488,7 +488,7 @@ Item {
         // Classic UX pattern: Back on the left, primary Save action on the right.
         RowLayout {
             Layout.fillWidth: true
-            spacing: 16
+            spacing: theme.spacingL
 
             /** Back button — pops this screen off the StackView without saving. */
             Button {
@@ -496,10 +496,10 @@ Item {
                 font.pixelSize: 16
                 font.bold: true
                 background: Rectangle {
-                    color: parent.down    ? "#e2e8f0"
-                         : parent.hovered ? "#f1f5f9"
+                    color: parent.down    ? theme.neutralBorder
+                         : parent.hovered ? theme.neutralBg
                          : "transparent"
-                    radius: 8
+                    radius: theme.radiusS
                 }
                 onClicked: {
                     if (settingsRoot.StackView.view) {
@@ -529,16 +529,16 @@ Item {
                 background: Rectangle {
                     // Grayed out and flat when disabled (overflow); primary styling
                     // with hover/press feedback when the value is valid again.
-                    color: !saveButton.enabled ? "#9aa5a0"
+                    color: !saveButton.enabled ? theme.saveDisabledBg
                          : saveButton.down     ? settingsRoot.primaryDark
-                         : saveButton.hovered  ? "#1b664f"
+                         : saveButton.hovered  ? theme.primaryHover
                          : settingsRoot.primary
-                    radius: 8
+                    radius: theme.radiusS
                 }
                 contentItem: Text {
                     text: saveButton.text
                     // Dim the label slightly when the button is disabled.
-                    color: saveButton.enabled ? "white" : "#e2e8e4"
+                    color: saveButton.enabled ? "white" : theme.saveDisabledText
                     font.pixelSize: 16
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter

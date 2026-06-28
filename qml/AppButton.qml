@@ -4,17 +4,31 @@ import QtQuick.Controls
 /**
  * AppButton.qml
  *
- * Shared primary / outline button, extracted verbatim from the inline component
- * that used to live in Main.qml. Appearance, sizes and behaviour are unchanged;
- * the palette colors now come from AppTheme instead of the Main.qml root.
+ * Shared themed button used across all screens.
+ *
+ * Variant (`variant` property):
+ *   "primary" : filled brand-green button (default)
+ *   "outline" : white button with a brand-green border and label
+ *   "danger"  : filled red button for destructive actions
+ *
+ * The legacy boolean `outline` is kept for backward compatibility with existing
+ * call sites (Main.qml / InputScreen.qml): when true it forces the "outline"
+ * variant.
+ *
+ * implicitWidth/implicitHeight (165 x 46) stay overridable per call site; all
+ * colors come from AppTheme so there is no hardcoded hex here.
  *
  * Usage:
- *     AppButton { text: "..."; outline: true; onClicked: ... }
+ *     AppButton { text: "..."; variant: "danger"; onClicked: ... }
+ *     AppButton { text: "..."; outline: true }          // == variant "outline"
  */
 Button {
     id: control
 
+    property string variant: "primary"
+    // Back-compat alias: `outline: true` behaves exactly like variant "outline".
     property bool outline: false
+    readonly property string resolvedVariant: control.outline ? "outline" : control.variant
 
     implicitWidth: 165
     implicitHeight: 46
@@ -25,19 +39,31 @@ Button {
 
     contentItem: Text {
         text: control.text
-        color: control.outline ? theme.primary : "white"
-        font.pixelSize: 15
-        font.bold: true
+        color: control.resolvedVariant === "outline" ? theme.primary : "white"
+        font: control.font
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }
 
     background: Rectangle {
-        radius: 12
-        color: control.outline
-               ? (control.down ? "#e3efe9" : control.hovered ? "#f3faf6" : "white")
-               : (control.down ? theme.primaryDark : control.hovered ? "#1b664f" : theme.primary)
-        border.color: theme.primary
+        radius: theme.radius
         border.width: 1
+        border.color: control.resolvedVariant === "danger" ? theme.danger : theme.primary
+        color: {
+            switch (control.resolvedVariant) {
+            case "outline":
+                return control.down    ? theme.outlineDownBg
+                     : control.hovered ? theme.outlineHoverBg
+                     : "white"
+            case "danger":
+                return control.down    ? theme.dangerStrong
+                     : control.hovered ? theme.deleteHover
+                     : theme.danger
+            default: // "primary"
+                return control.down    ? theme.primaryDark
+                     : control.hovered ? theme.primaryHover
+                     : theme.primary
+            }
+        }
     }
 }
